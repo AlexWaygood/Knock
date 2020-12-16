@@ -1,0 +1,26 @@
+aiohttp==3.7.2
+altgraph==0.17
+async-timeout==3.0.1
+attrs==20.3.0
+cachetools==4.1.1
+certifi==2020.6.20
+chardet==3.0.4
+future==0.18.2
+idna==2.10
+ipinfo==4.0.0
+multidict==5.0.0
+olefile==0.46
+pefile==2019.4.18
+Pillow @ file:///C:/ci/pillow_1602770972588/work
+pycryptodome==3.9.9
+pygame==1.9.6
+PyInputPlus==0.2.10
+PySimpleValidate==0.2.12
+pywin32-ctypes==0.2.0
+requests==2.25.0
+screeninfo==0.6.6
+stdiomask==0.0.5
+typing-extensions==3.7.4.3
+urllib3==1.26.2
+wincertstore==0.2
+yarl==1.6.2
