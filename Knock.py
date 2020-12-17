@@ -9,6 +9,7 @@ from FireworkSparker import Sparker
 from Network import *
 from PasswordChecker import *
 from Player import Player
+from AttributeDicts import *
 
 from time import time
 from PIL import Image
@@ -140,33 +141,7 @@ class Window(object):
 		self.GameUpdatesNeeded = False
 		self.lock = Lock()
 		
-		self.ClientSideTriggers = {
-			'GameInitialisation': 0,
-			'RoundStart': 0,
-			'NewPack': 0,
-			'CardsDealt': 0,
-			'TrickStart': 0,
-			'TrickEnd': 0,
-			'RoundEnd': 0,
-			'PointsAwarded': 0,
-			'WinnersAnnounced': 0,
-			'TournamentLeaders': 0,
-			'NewGameReset': 0
-		}
-
-		self.ServerSideTriggers = {
-			'GameInitialisation': 0,
-			'RoundStart': 0,
-			'NewPack': 0,
-			'CardsDealt': 0,
-			'TrickStart': 0,
-			'TrickEnd': 0,
-			'RoundEnd': 0,
-			'PointsAwarded': 0,
-			'WinnersAnnounced': 0,
-			'TournamentLeaders': 0,
-			'NewGameReset': 0
-		}
+		self.ClientSideTriggers, self.ServerSideTriggers = TriggerDict(), TriggerDict()
 
 		self.OperationsDict = {
 			'GameInitialisation': self.GameInitialisation,
@@ -177,57 +152,14 @@ class Window(object):
 		}
 
 		self.gameplayers = []
-
-		self.SurfaceIterations = {
-			'Scoreboard': 0,
-			'TrumpCard': 0,
-			'Hand': 0,
-			'CurrentBoard': 0,
-		}
-
-		self.ServerSurfaceIterations = {
-			'Scoreboard': 0,
-			'TrumpCard': 0,
-			'Hand': 0,
-			'CurrentBoard': 0,
-		}
-
-		self.TournamentAttributes = {
-			'GamesPlayed': 0,
-			'TournamentLeaders': [],
-			'MaxGamesWon': 0,
-			'NumberOfPlayers': 0,
-			'MaxCardNumber': 0
-		}
-
-		self.GameAttributes = {
-			'StartCardNumber': 0,
-			'Winners': [],
-			'MaxPoints': 0
-		}
-
-		self.RoundAttributes = {
-			'RoundNumber': 1,
-			'PackOfCards': [],
-			'CardNumberThisRound': 0,
-			'TrumpCard': None,
-			'trumpsuit': '',
-			'RoundLeader': None
-		}
-
-		self.TrickAttributes = {
-			'PlayedCards': [],
-			'FirstPlayerIndex': 0,
-			'TrickNumber': 1,
-			'Winner': None,
-			'WhoseTurnPlayerIndex': -1,
-			'TrickInProgress': False
-		}
-
+		self.SurfaceIterations, self.ServerSurfaceIterations = SurfaceIterationsDict(), SurfaceIterationsDict()
+		self.TournamentAttributes = TournamentAttributesDict(False)
+		self.GameAttributes = GameAttributesDict()
+		self.RoundAttributes = RoundAttributesDict()
+		self.TrickAttributes = TrickAttributesDict()
 		self.ErrorMessages, self.ErrorsThisPass, self.ToBlit, self.CardRectsInHand, self.HandCoverRects = [], [], [], [], []
 		self.InputText = ''
 		self.ErrorMessageTitle = None
-
 		self.ErrorMessagePos = (int(WindowX * Fraction(550, 683)), int(WindowY * Fraction(125, 192)))
 
 		pg.init()

@@ -2,7 +2,9 @@
 
 from random import shuffle
 from itertools import chain, cycle
+
 from Card import Card
+from AttributeDicts import *
 from Player import Player
 
 from os import environ
@@ -19,69 +21,24 @@ class Game(object):
 		self.CardPositions = self.StartCardPositions
 		self.StartPlay = False
 		self.RepeatGame = True
-
-		self.TournamentAttributes = {
-			'GamesPlayed': 0,
-			'TournamentLeaders': [],
-			'MaxGamesWon': 0,
-			'NumberOfPlayers': NumberOfPlayers,
-			'MaxCardNumber': min(13, (51 // NumberOfPlayers)),
-			'gameplayers': Player.AllPlayers
-		}
-
-		self.GameAttributes = {
-			'StartCardNumber': 0,
-			'Winners': [],
-			'MaxPoints': 0
-		}
-
-		self.RoundAttributes = {
-			'RoundNumber': 1,
-			'PackOfCards': [],
-			'CardNumberThisRound': 0,
-			'TrumpCard': None,
-			'trumpsuit': '',
-			'RoundLeader': None
-		}
-
-		self.TrickAttributes = {
-			'PlayedCards': [],
-			'FirstPlayerIndex': 0,
-			'TrickNumber': 0,
-			'Winner': None,
-			'WhoseTurnPlayerIndex': -1,
-			'TrickInProgress': False
-		}
-
-		self.ClientTriggers = {
-			'GameInitialisation': 0,
-			'RoundStart': 0,
-			'NewPack': 0,
-			'CardsDealt': 0,
-			'TrickStart': 0,
-			'TrickEnd': 0,
-			'RoundEnd': 0,
-			'PointsAwarded': 0,
-			'WinnersAnnounced': 0,
-			'TournamentLeaders': 0,
-			'NewGameReset': 0
-		}
-
-		self.SurfaceIterations = {
-			'Scoreboard': 1,
-			'CurrentBoard': 1,
-			'TrumpCard': 0
-		}
+		self.TournamentAttributes = TournamentAttributesDict(True, NumberOfPlayers)
+		self.GameAttributes = GameAttributesDict()
+		self.RoundAttributes = RoundAttributesDict()
+		self.TrickAttributes = TrickAttributesDict()
+		self.ClientTriggers = TriggerDict()
+		self.SurfaceIterations = SurfaceIterationsDict()
 
 	# A few functions to be accessed by the threaded-client function.
 
-	def AddPlayerName(self, name, playerindex):
+	@staticmethod
+	def AddPlayerName(name, playerindex):
 		Player.AllPlayers[playerindex].AddName(name)
 
 	def TimeToStart(self):
 		self.StartPlay = True
 
-	def PlayerActionCompleted(self, playerindex):
+	@staticmethod
+	def PlayerActionCompleted(playerindex):
 		Player.AllPlayers[playerindex].ActionComplete = True
 
 	def SetCardNumber(self, number):
