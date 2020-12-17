@@ -37,14 +37,17 @@ class Player(object):
 
 		return all(any(card.ActualSuit == Suit for card in Hand) for Suit in Suits)
 
+	@staticmethod
+	def MidRoundSortHelper(Hand, SuitPlayed, SuitTuple):
+		"""Helper method for the SortHand method below"""
+
+		return all((SuitPlayed, any((any(SuitPlayed == card.ActualSuit for card in Hand), (SuitPlayed in SuitTuple)))))
+
 	def SortHand(self, Hand, TrumpSuit, SuitPlayed='', SuitTuple=('', '')):
 		"""Method to ensure the Hand is ordered black-red-black-red wherever possible"""
 
-		if SuitPlayed:
-			if not Hand:
-				return Hand
-			elif any((any(SuitPlayed == card.ActualSuit for card in Hand), (SuitPlayed in SuitTuple))):
-				return Hand
+		if SuitPlayed and not Hand:
+			return Hand
 
 		Hand = [card.SetTrumpSuit(TrumpSuit) for card in Hand]
 
@@ -52,17 +55,32 @@ class Player(object):
 			if self.CardSortHelper(Hand, 'D'):
 				if self.CardSortHelper(Hand, 'S'):
 					if self.CardSortHelper(Hand, 'H'):
+						if SuitPlayed:
+							return Hand
 						return sorted(Hand, key=Card.SuitAndValue, reverse=True)
+					elif self.MidRoundSortHelper(Hand, SuitPlayed, SuitTuple):
+						return Hand
 					return sorted(Hand, key=Card.SuitAndValueWithoutHearts, reverse=True)
 				elif self.CardSortHelper(Hand, 'H'):
+					if self.MidRoundSortHelper(Hand, SuitPlayed, SuitTuple):
+						return Hand
 					return sorted(Hand, key=Card.SuitAndValueWithoutSpades, reverse=True)
 				elif SuitPlayed:
 					return Hand
 			elif self.CardSortHelper(Hand, ('S', 'H')):
+				if self.MidRoundSortHelper(Hand, SuitPlayed, SuitTuple):
+					return Hand
 				return sorted(Hand, key=Card.SuitAndValueWithoutDiamonds, reverse=True)
+			elif SuitPlayed:
+				return Hand
 		elif self.CardSortHelper(Hand, ('D', 'S', 'H')):
+			if self.MidRoundSortHelper(Hand, SuitPlayed, SuitTuple):
+				return Hand
 			return sorted(Hand, key=Card.SuitAndValueWithoutClubs, reverse=True)
 		elif SuitPlayed:
+			return Hand
+
+		if self.MidRoundSortHelper(Hand, SuitPlayed, SuitTuple):
 			return Hand
 
 		return sorted(Hand, key=Card.SuitAndValue, reverse=True)
