@@ -37,13 +37,13 @@ class Player(object):
 
 		return all(any(card.ActualSuit == Suit for card in Hand) for Suit in Suits)
 
-	def SortHand(self, Hand, TrumpSuit, SuitPlayed=''):
+	def SortHand(self, Hand, TrumpSuit, SuitPlayed='', SuitTuple=('', '')):
 		"""Method to ensure the Hand is ordered black-red-black-red wherever possible"""
 
 		if SuitPlayed:
 			if not Hand:
 				return Hand
-			elif any((SuitPlayed == Hand[0].ActualSuit, SuitPlayed == Hand[-1].ActualSuit)):
+			elif any((any(SuitPlayed == card.ActualSuit for card in Hand), (SuitPlayed in SuitTuple))):
 				return Hand
 
 		Hand = [card.SetTrumpSuit(TrumpSuit) for card in Hand]
@@ -52,8 +52,6 @@ class Player(object):
 			if self.CardSortHelper(Hand, 'D'):
 				if self.CardSortHelper(Hand, 'S'):
 					if self.CardSortHelper(Hand, 'H'):
-						if SuitPlayed:
-							return Hand
 						return sorted(Hand, key=Card.SuitAndValue, reverse=True)
 					return sorted(Hand, key=Card.SuitAndValueWithoutHearts, reverse=True)
 				elif self.CardSortHelper(Hand, 'H'):
@@ -82,9 +80,16 @@ class Player(object):
 
 	def PlayCard(self, card, TrumpSuit):
 		Hand = self.Hand
+		SuitTuple = (Hand[0].ActualSuit, Hand[-1].ActualSuit)
 		Hand.remove(card)
 		Suit = card.ActualSuit
-		Hand = [card.SetPos(i) for i, card in enumerate(self.SortHand(Hand, TrumpSuit, SuitPlayed=Suit))]
+
+		Hand = [
+			card.SetPos(i) for i, card in enumerate(
+				self.SortHand(Hand, TrumpSuit, SuitPlayed=Suit, SuitTuple=SuitTuple)
+			)
+		]
+
 		self.Hand = Hand
 		self.HandIteration += 1
 
