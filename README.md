@@ -9,10 +9,12 @@ This game accepts between 2 and 6 players.
 In order to play this game:
 * KnockServer.py (the server script) must be run on a computer.
 * Simultaneously, each player must run Knock.py (the client script).
+* The client script can be run either on Python or as a .exe file. The server script can only be run on Python.
+* All scripts require Python 3.8. Run pip install requirements.txt on the command line to install the necessary dependencies.
 * All players must have an internet connection.
 * The router for the wifi network that the server-script is using must have port forwarding set up (see below).
 * You will need to set a password length, if you wish to use a password, in PasswordChecker.py.
-* If you wish to pre-screen attempted connections before allowing them to join the game, you will need to create an account at https://ipinfo.io/, and insert your account access token in Network.py.
+* If the person running the server script wishes to pre-screen attempted connections before allowing them to join the game, you will need to create an account at https://ipinfo.io/, and insert your account access token in Network.py.
 * Users running either the client or the server script may need to disable their firewall settings for Python.
 
 # Setting up port forwarding for the server script.
