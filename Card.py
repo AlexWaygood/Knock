@@ -133,12 +133,12 @@ class Card(object):
 		if not self.colliderect.collidepoint(*MousePos):
 			return 'Not clicked'
 
-		if game.TrickAttributes['PlayedCards']:
-			SuitLed = game.TrickAttributes['PlayedCards'][0].ActualSuit
+		if game.Attributes.Trick['PlayedCards']:
+			SuitLed = game.Attributes.Trick['PlayedCards'][0].ActualSuit
 
 			Condition = any(
 				UnplayedCard.ActualSuit == SuitLed
-				for UnplayedCard in game.TournamentAttributes['gameplayers'][self.PlayedBy.playerindex].Hand
+				for UnplayedCard in game.Attributes.Tournament['gameplayers'][self.PlayedBy.playerindex].Hand
 			)
 
 			if self.ActualSuit != SuitLed and Condition:

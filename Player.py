@@ -11,7 +11,7 @@ class Player(object):
 
 	def __init__(self, playerindex):
 		self.AllPlayers.append(self)
-		self.name = ''
+		self.name = playerindex
 		self.playerindex = playerindex
 		self.Hand = []
 		self.Bid = -1
@@ -80,9 +80,6 @@ class Player(object):
 		elif SuitPlayed:
 			return Hand
 
-		if self.MidRoundSortHelper(Hand, SuitPlayed, SuitTuple):
-			return Hand
-
 		return sorted(Hand, key=Card.SuitAndValue, reverse=True)
 
 	def ReceiveCards(self, cards, TrumpSuit):
@@ -147,4 +144,4 @@ class Player(object):
 		return self
 
 	def __repr__(self):
-		return self.name if self.name else f'Player with index {self.playerindex}, as yet unnamed'
+		return self.name if isinstance(self.name, str) else f'Player with index {self.playerindex}, as yet unnamed'
