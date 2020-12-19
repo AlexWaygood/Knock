@@ -94,3 +94,6 @@ There is an option to set up a password for each session, which is communicated 
 
 Most of the code for the gameplay is in Game.py and the Knock.py. 
 As a result, this file is fairly thin on content, acting as a lightweight coordinator between the clients and classes.
+
+# Licence
+The licence in this repo officially gives you permission to use this code for anything, but I would greatly prefer it if you did not use it for commercial purposes without consulting me first!
