@@ -113,6 +113,10 @@ class Player(object):
 		self.Tricks += 1
 		return self
 
+	def WinsGame(self):
+		self.GamesWon += 1
+		return self
+
 	def GetPointsThisRound(self):
 		"""Function for use on the client side"""
 
@@ -126,12 +130,9 @@ class Player(object):
 
 		return self.GamesWon
 
-	def ReceivePoints(self):
+	def EndOfRound(self):
 		self.PointsThisRound += (10 if self.Bid == self.PointsThisRound else 0)
 		self.Points += self.PointsThisRound
-		return self
-
-	def EndOfRound(self):
 		self.PointsThisRound = 0
 		self.Bid = -1
 		self.Tricks = 0

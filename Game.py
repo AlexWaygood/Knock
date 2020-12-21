@@ -37,15 +37,21 @@ class Game(object):
 		Player.AllPlayers[playerindex].ActionComplete = True
 
 	def SetCardNumber(self, number):
-		self.Attributes.Game['StartCardNumber'] = int(number)
+		self.Attributes.StartCardNumber = int(number)
 
-	def PlayerMakesBid(self, playerindex, bid):
-		Player.AllPlayers[playerindex].MakeBid(int(bid))
+	def PlayerMakesBid(self, bid, playerindex=-1, player=None):
+		"""This method is designed to be used by the server or the client"""
+		player = player if player else Player.AllPlayers[playerindex]
+		player.MakeBid(int(bid))
 		self.Triggers.Surfaces['CurrentBoard'] += 1
 
-	def ExecutePlay(self, cardID, playerindex):
-		player = Player.AllPlayers[playerindex]
-		card = next(card for card in player.Hand if card.ID == cardID)
+	def ExecutePlay(self, cardID='', playerindex=-1, card=None, player=None):
+		"""This method is designed to be used by the server or the client"""
+
+		if not player:
+			player = Player.AllPlayers[playerindex]
+			card = next(card for card in player.Hand if card.ID == cardID)
+
 		player.PlayCard(card, self.Attributes.Round['trumpsuit'])
 		card.SetPos(self.CardPositions[len(self.Attributes.Trick['PlayedCards'])])
 		self.Attributes.Trick['PlayedCards'].append(card)
@@ -55,6 +61,7 @@ class Game(object):
 		self.RepeatGame = True
 
 	# The remaining functions relate to the order of gameplay.
+	# All are used only on the server sie, except where specified.
 
 	def WaitForPlayers(self, attribute):
 		self.Triggers.Events[attribute] += 1
@@ -64,42 +71,87 @@ class Game(object):
 
 		Player.AllPlayers = [player.NextStage() for player in Player.AllPlayers]
 
-	def PlayGame(self):
-		# Wait until the opening sequence is complete
-		self.WaitForPlayers('GameInitialisation')
+	def GetGameParameters(self):
+		"""Can be used on either the client side or the server side"""
 
-		WhichRound = range(1, (self.Attributes.Game['StartCardNumber'] + 1))
-		HowManyCards = range(self.Attributes.Game['StartCardNumber'], 0, -1)
-		WhoLeads = cycle(Player.AllPlayers)
+		WhichRound = range(1, (self.Attributes.StartCardNumber + 1))
+		HowManyCards = range(self.Attributes.StartCardNumber, 0, -1)
+		WhoLeads = cycle(self.Attributes.Tournament['gameplayers'])
+		return WhichRound, HowManyCards, WhoLeads
 
-		for roundnumber, cardnumber, RoundLeader in zip(WhichRound, HowManyCards, WhoLeads):
-			self.PlayRound(roundnumber, cardnumber, RoundLeader)
+	def TrickCleanUp(self, PlayedCards):
+		"""This is to be used on the client side as well as the server side."""
 
-		self.Attributes.Game['MaxPoints'] = max(player.Points for player in Player.AllPlayers)
+		self.Attributes.Trick.update({
+			'WhoseTurnPlayerIndex': -1,
+			'TrickInProgress': False,
 
-		self.Attributes.Game['Winners'] = [
-			player for player in Player.AllPlayers
-			if player.Points == self.Attributes.Game['MaxPoints']
-		]
+			'Winner': (
+				max((card.DetermineWinValue(PlayedCards[0].ActualSuit, self.Attributes.Round['trumpsuit'])
+				     for card in PlayedCards), key=Card.GetWinValue)).PlayedBy,
 
-		for player in self.Attributes.Game['Winners']:
-			player.GamesWon += 1
+			'FirstPlayerIndex': -1
+		})
 
+		self.Attributes.Trick['Winner'].WinsTrick()
+
+	def RoundCleanUp(self):
+		"""Can be used on either the client or the server side"""
+
+		players = [player.EndOfRound() for player in self.Attributes.Tournament['gameplayers']]
 		self.Triggers.Surfaces['Scoreboard'] += 1
 
-		# Wait until all players have finished announcing the game winners.
-		self.WaitForPlayers('WinnersAnnounced')
+		self.Attributes.Round.update({
+			'TrumpCard': None,
+			'trumpsuit': ''
+		})
 
-		if self.Attributes.Tournament['GamesPlayed']:
-			self.Attributes.Tournament['MaxGamesWon'] = max(player.GamesWon for player in Player.AllPlayers)
+		if self.Attributes.Round['RoundNumber'] != self.Attributes.StartCardNumber:
+			self.Attributes.Round['RoundNumber'] += 1
+			self.Attributes.Round['CardNumberThisRound'] -= 1
+			self.Attributes.Trick['TrickNumber'] = 1
 
-			self.Attributes.Tournament['TournamentLeaders'] = [
-				player for player in Player.AllPlayers
-				if player.GamesWon == self.Attributes.Tournament['MaxGamesWon']
-			]
+		self.Triggers.Surfaces['CurrentBoard'] += 1
+		self.Triggers.Surfaces['Scoreboard'] += 1
 
-			self.Triggers.Events['TournamentLeaders'] += 1
+	def GameCleanUp(self, GamesPlayed):
+		"""To be used on both client and server sides"""
 
+		players = self.Attributes.Tournament['gameplayers']
+		MaxPoints = max(player.Points for player in players)
+		Winners = [player.WinsGame() for player in players if player.Points == MaxPoints]
+		self.Triggers.Surfaces['Scoreboard'] += 1
+
+		if GamesPlayed:
+			MaxGamesWon = self.Attributes.Tournament['MaxGamesWon'] = max(player.GamesWon for player in players)
+			TournamentLeaders = [player for player in players if player.GamesWon == MaxGamesWon]
+			self.Attributes.Tournament['TournamentLeaders'] = TournamentLeaders
+		else:
+			MaxGamesWon = 0
+			TournamentLeaders = []
+
+		return Winners, MaxPoints, TournamentLeaders, MaxGamesWon
+
+	def NewGameReset(self):
+		self.Attributes.StartCardNumber = 0
+		self.Attributes.Round['RoundNumber'] = 1
+
+		Player.AllPlayers = Player.AllPlayers[1:] + Player.AllPlayers[:1]
+		Player.AllPlayers = [player.ResetPlayer(Player.AllPlayers.index(player)) for player in Player.AllPlayers]
+		self.Attributes.Tournament['gameplayers'] = Player.AllPlayers
+
+		self.Triggers.Surfaces['Scoreboard'] += 1
+		self.StartPlay = False
+
+	def PlayGame(self, GamesPlayed):
+		# Wait until the opening sequence is complete
+		self.WaitForPlayers('GameInitialisation')
+		self.Triggers.Events['StartNumberSet'] += 1
+
+		for roundnumber, cardnumber, RoundLeader in zip(*self.GetGameParameters()):
+			self.PlayRound(cardnumber, RoundLeader.playerindex)
+
+		self.GameCleanUp(GamesPlayed)
 		self.RepeatGame = False
 
 		while not self.RepeatGame:
@@ -110,120 +162,63 @@ class Game(object):
 		# Wait until all players have logged their new playerindex.
 		self.WaitForPlayers('NewGameReset')
 
-		self.PlayGame()
-
-	def PlayRound(self, roundnumber, cardnumber, RoundLeader):
-		self.Attributes.Round['CardNumberThisRound'] = cardnumber
-		self.Attributes.Round['RoundNumber'] = roundnumber
-		self.Attributes.Round['RoundLeader'] = RoundLeader
-		RoundLeader.RoundLeader = True
+	def PlayRound(self, cardnumber, FirstPlayerIndex):
 		self.Triggers.Surfaces['Scoreboard'] += 1
 
-		self.WaitForPlayers('RoundStart')
+		# Make a new pack of cards, set the trumpsuit.
+		Pack = [Card(value, suit) for value in range(2, 15) for suit in ('D', 'S', 'C', 'H')]
+		shuffle(Pack)
 
-		# the trumpcard is set as part of this function call.
-		self.NewPack()
-		self.WaitForPlayers('NewPack')
+		self.Attributes.Round.update({
+			'TrumpCard': (TrumpCard := Pack.pop()),
+			'trumpsuit': (trumpsuit := TrumpCard.ActualSuit),
+			'PackOfCards': Pack,
+
+		})
+
+		self.Triggers.Surfaces['TrumpCard'] += 1
+		self.Triggers.Events['NewPack'] += 1
 
 		# Deal cards
-		Pack, trumsuit = self.Attributes.Round['PackOfCards'], self.Attributes.Round['trumpsuit']
-
-		Player.AllPlayers = [
-			player.ReceiveCards([Pack.pop() for i in range(cardnumber)], trumsuit)
-			for player in Player.AllPlayers
-		]
+		players = Player.AllPlayers
+		players = [player.ReceiveCards([Pack.pop() for i in range(cardnumber)], trumpsuit) for player in players]
 
 		self.Triggers.Surfaces['TrumpCard'] += 1
 		self.Triggers.Surfaces['CurrentBoard'] += 1
+
 		self.WaitForPlayers('CardsDealt')
 
-		FirstPlayer = RoundLeader
-		RoundLeader.RoundLeader = False
-
+		# Play tricks
 		for i in range(cardnumber):
-			FirstPlayerIndex = self.TrickStart(i + 1, FirstPlayer)
-			self.TrickMiddle(FirstPlayerIndex)
-			FirstPlayer = self.TrickEnd(self.Attributes.Trick['PlayedCards'])
+			FirstPlayerIndex = self.PlayTrick((i + 1), FirstPlayerIndex)
 
-		self.WaitForPlayers('RoundEnd')
+		# Award points, reset players for the next round.
+		self.RoundCleanUp()
 
-		Player.AllPlayers = [player.ReceivePoints() for player in Player.AllPlayers]
+	def PlayTrick(self, TrickNumber, FirstPlayerIndex):
+		self.Attributes.Trick.update({
+			'TrickInProgress': True,
+			'TrickNumber': TrickNumber
+		})
 
-		self.Triggers.Surfaces['Scoreboard'] += 1
-		self.WaitForPlayers('PointsAwarded')
+		self.CardPositions = self.StartCardPositions[FirstPlayerIndex:] + self.StartCardPositions[:FirstPlayerIndex]
 
-		Player.AllPlayers = [player.EndOfRound() for player in Player.AllPlayers]
-
-		self.Attributes.Round['TrumpCard'] = None
-		self.Attributes.Round['trumpsuit'] = ''
-
-		if self.Attributes.Round['RoundNumber'] != self.Attributes.Game['StartCardNumber']:
-			self.Attributes.Round['RoundNumber'] += 1
-			self.Attributes.Round['CardNumberThisRound'] -= 1
-			self.Attributes.Trick['TrickNumber'] = 1
-
-		self.Triggers.Surfaces['CurrentBoard'] += 1
-		self.Triggers.Surfaces['Scoreboard'] += 1
-
-	def NewPack(self):
-		PackOfCards = [Card(value, suit) for value in range(2, 15) for suit in ('D', 'S', 'C', 'H')]
-		shuffle(PackOfCards)
-		TrumpCard = PackOfCards.pop()
-
-		self.Attributes.Round['trumpsuit'] = TrumpCard.ActualSuit
-		self.Attributes.Round['PackOfCards'] = PackOfCards
-		self.Attributes.Round['TrumpCard'] = TrumpCard
-		self.Triggers.Surfaces['TrumpCard'] += 1
-
-	def TrickStart(self, TrickNumber, FirstPlayer):
-		self.Attributes.Trick['TrickInProgress'] = True
-		self.Attributes.Trick['TrickNumber'] = TrickNumber
-
-		FirstPlayerIndex = FirstPlayer.playerindex
-		self.Attributes.Trick['FirstPlayerIndex'] = FirstPlayerIndex
-
-		self.CardPositions = (self.StartCardPositions[FirstPlayerIndex:]
-		                      + self.StartCardPositions[:FirstPlayerIndex])
-		return FirstPlayerIndex
-
-	def TrickMiddle(self, FirstPlayerIndex):
+		PlayerNo = self.Attributes.Tournament['PlayerNumber']
+		PlayerOrder = enumerate(chain(range(FirstPlayerIndex, PlayerNo), range(FirstPlayerIndex)))
 		self.WaitForPlayers('TrickStart')
 
-		for i in chain(range(FirstPlayerIndex, self.Attributes.Tournament['PlayerNumber']), range(FirstPlayerIndex)):
-
-			currentnumber = len(self.Attributes.Trick['PlayedCards'])
-			self.Attributes.Trick['WhoseTurnPlayerIndex'] = i
+		for CardNumberOnBoard, WhoseTurn in PlayerOrder:
+			self.Attributes.Trick['WhoseTurnPlayerIndex'] = WhoseTurn
 			self.Triggers.Surfaces['CurrentBoard'] += 1
+			while len(self.Attributes.Trick['PlayedCards']) == CardNumberOnBoard:
+				delay(1)
 
-			while len(self.Attributes.Trick['PlayedCards']) == currentnumber:
-				delay(60)
+		self.TrickCleanUp(self.Attributes.Trick['PlayedCards'])
 
-	def TrickEnd(self, PlayedCards):
-		self.Attributes.Trick['WhoseTurnPlayerIndex'] = -1
-		self.Attributes.Trick['TrickInProgress'] = False
-		self.Attributes.Trick['Winner'] = (
-			max((card.DetermineWinValue(PlayedCards[0].ActualSuit, self.Attributes.Round['trumpsuit'])
-			     for card in PlayedCards), key=Card.GetWinValue)).PlayedBy
+		# This can happen immediately on the server side, but happens after a delay on the client side.
+		# The TrickCleanUp method is to be used on both sides.
+		self.Attributes.Trick['PlayedCards'].clear()
 
-		self.Attributes.Trick['Winner'].WinsTrick()
-		self.Attributes.Trick['FirstPlayerIndex'] = 0
-
-		delay(500)
-
-		PlayedCards.clear()
 		self.Triggers.Surfaces['CurrentBoard'] += 1
-
 		self.WaitForPlayers('TrickEnd')
-		return self.Attributes.Trick['Winner']
-
-	def NewGameReset(self):
-		self.Attributes.Game['StartCardNumber'] = 0
-		self.Attributes.Round['RoundNumber'] = 1
-
-		Player.AllPlayers = Player.AllPlayers[1:] + Player.AllPlayers[:1]
-		Player.AllPlayers = [player.ResetPlayer(Player.AllPlayers.index(player)) for player in Player.AllPlayers]
-
-		self.Attributes.Tournament['gameplayers'] = Player.AllPlayers
-		self.Attributes.Tournament['GamesPlayed'] += 1
-		self.Triggers.Surfaces['Scoreboard'] += 1
-		self.StartPlay = False
+		return self.Attributes.Trick['Winner'].playerindex

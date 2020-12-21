@@ -28,7 +28,8 @@ class Triggers(object):
 			'PointsAwarded': 0,
 			'WinnersAnnounced': 0,
 			'TournamentLeaders': 0,
-			'NewGameReset': 0
+			'NewGameReset': 0,
+			'StartNumberSet': 0
 		}
 
 		self.Surfaces = {
@@ -42,40 +43,32 @@ class Triggers(object):
 class AttributeTracker(object):
 	"""This class holds information about the current state of play"""
 
-	__slots__ = 'Tournament', 'Game', 'Round', 'Trick', 'Errors'
+	__slots__ = 'Tournament', 'StartCardNumber', 'Round', 'Trick', 'Errors'
 
 	def __init__(self, server=False, PlayerNumber=0):
 		self.Tournament = {
 			'GamesPlayed': 0,
-			'TournamentLeaders': [],
-			'MaxGamesWon': 0,
 			'PlayerNumber': PlayerNumber,
 			'MaxCardNumber': (51 // PlayerNumber) if server else 0,
 			'gameplayers': Player.AllPlayers if server else []
 		}
 
-		self.Game = {
-			'StartCardNumber': 0,
-			'Winners': [],
-			'MaxPoints': 0
-		}
+		self.StartCardNumber = 0
 
 		self.Round = {
-			'RoundNumber': 1,
 			'PackOfCards': [],
-			'CardNumberThisRound': 0,
 			'TrumpCard': None,
 			'trumpsuit': '',
-			'RoundLeader': None
+			'CardNumberThisRound': 0,
+			'RoundNumber': 1
 		}
 
 		self.Trick = {
 			'PlayedCards': [],
-			'FirstPlayerIndex': 0,
-			'TrickNumber': 0,
 			'Winner': None,
-			'WhoseTurnPlayerIndex': -1,
-			'TrickInProgress': False
+			'TrickInProgress': False,
+			'TrickNumber': 0,
+			'WhoseTurnPlayerIndex': -1
 		}
 
 

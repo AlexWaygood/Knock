@@ -18,6 +18,7 @@ from itertools import chain, accumulate
 from threading import Thread, Lock
 from pyinputplus import inputCustom
 from fractions import Fraction
+from string import whitespace
 
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame as pg
@@ -36,10 +37,10 @@ class Window(object):
 
 	"""
 
-	__slots__ = 'GameUpdatesNeeded', 'lock', 'Triggers', 'OperationsDict', 'fonts', 'gameplayers', 'Attributes', \
-	            'player', 'ToBlit', 'InputText', 'Client', 'game', 'Window', 'CardImages', 'MessagesFromServer', \
-	            'Surfaces', 'ScoreboardAttributes', 'CoverRects',  'clock', 'PlayerTextPositions', 'name', 'Dimensions', \
-	            'Errors', 'PlayStarted'
+	__slots__ = 'GameUpdatesNeeded', 'lock', 'Triggers', 'fonts', 'gameplayers', 'Attributes', 'player', 'ToBlit', \
+	            'InputText', 'Client', 'game', 'Window', 'CardImages', 'MessagesFromServer', 'Surfaces', 'PlayStarted', \
+	            'ScoreboardAttributes', 'CoverRects',  'clock', 'PlayerTextPositions', 'name', 'Dimensions', 'Errors', \
+	            'GameUpdateInProgress', 'ThreadedCommsComplete', 'ThreadedCommsThread'
 
 	DefaultFont = 'Times New Roman'
 
@@ -67,6 +68,7 @@ class Window(object):
 		self.ScoreboardAttributes = {}
 		self.InputText = ''
 		self.GameUpdatesNeeded = False
+		self.GameUpdateInProgress = False
 		self.PlayStarted = False
 		self.gameplayers = []
 		self.ToBlit = []		
@@ -88,14 +90,6 @@ class Window(object):
 			'ThisPass': [],
 			'Title': None,
 			'Pos': (int(WindowX * Fraction(550, 683)), int(WindowY * Fraction(125, 192)))
-		}
-
-		self.OperationsDict = {
-			'GameInitialisation': self.GameInitialisation,
-			'RoundStart': self.StartRound,
-			'TrickStart': self.PlayTrick,
-			'RoundEnd': self.EndRound,
-			'WinnersAnnounced': self.EndGame
 		}
 
 		self.Triggers = {
@@ -199,6 +193,8 @@ class Window(object):
 		# Remember - this part of the code will fail if the server's network router does not have port forwarding set up.
 		# (Warning does not apply if you are playing within one local area network.)
 
+		Time = time()
+
 		while True:
 			try:
 				self.Client = Network(IP, Port, password=password)
@@ -215,7 +211,13 @@ class Window(object):
 					print("OSError. Check you're connected to the internet?")
 					raise e
 
-			print('Connection failed; trying again.')
+			if (CurrentTime := time()) > Time + 5:
+				print(
+					"Connection failed; trying again. "
+					"Check that the server script is running and you're connected to the internet."
+				)
+
+				Time = CurrentTime
 
 		print(f'Connected at {GetTime()}.')
 
@@ -242,11 +244,8 @@ class Window(object):
 			)
 		}
 
-		self.MessagesFromServer['Please enter your bid:'] = self.GetText(
-			'Please enter your bid:',
-			font='Title',
-			pos=self.Dimensions['BoardCentre']
-		)
+		Pos, font = self.Dimensions['BoardCentre'], 'Title'
+		self.MessagesFromServer['Please enter your bid:'] = self.GetText('Please enter your bid:', font=font, pos=Pos)
 
 		TrumpCardSurfaceDimensions = ((CardX + 2), (CardY + int(NormalLinesize * 2.5) + 10))
 		TrumpCardPos = (pg.Rect(1, int(NormalLinesize * 2.5), *CardDimensions),)
@@ -313,31 +312,48 @@ class Window(object):
 			self.UpdateWindow(self.BlitInputText())
 
 		self.GameUpdatesNeeded = True
+		self.ThreadedCommsComplete = False
+		self.ThreadedCommsThread = None
 		PlayerNo = self.Attributes.Tournament['PlayerNumber']
 
 		while any(isinstance(player.name, int) for player in self.gameplayers) or len(self.gameplayers) < PlayerNo:
 			self.CheckForExit()
 			self.Fill(self.Window, 'LightGrey')
+
+			if all(isinstance(player.name, str) for player in self.gameplayers) and len(self.gameplayers) == PlayerNo:
+				break
+
 			self.UpdateWindow([self.MessagesFromServer['Waiting for all players to connect and enter their names.']])
 
-		# Main gameplay loop
+		GamesPlayed = 0
 
 		while True:
-			self.GameUpdatesNeeded = True
+			self.PlayGame(GamesPlayed)
+			GamesPlayed += 1
 
-			for condition, function in self.OperationsDict.items():
-				if self.Triggers['Server'].Events[condition] > self.Triggers['Client'].Events[condition]:
-					self.GameUpdatesNeeded = False
-					self.Triggers['Client'].Events[condition] = self.Triggers['Server'].Events[condition]
-					function()
-					self.GameUpdatesNeeded = True
+	def PlayGame(self, GamesPlayed):
+		self.GameInitialisation(GamesPlayed)
+		self.Wait(Attribute='StartNumberSet', FunctionOfGame=True, OutsideRound=True)
+
+		for roundnumber, cardnumber, RoundLeader in zip(*self.game.GetGameParameters()):
+			self.StartRound(roundnumber, cardnumber, RoundLeader, GamesPlayed)
+			FirstPlayerIndex = RoundLeader.playerindex
+
+			for i in range(cardnumber):
+				FirstPlayerIndex = self.PlayTrick(FirstPlayerIndex, (i + 1), cardnumber)
+
+			self.EndRound()
+
+		self.EndGame(GamesPlayed)
 
 	def ThreadedGameUpdate(self):
 		"""This method runs throughout gameplay on a separate thread."""
 
 		while True:
 			if self.GameUpdatesNeeded:
+				self.GameUpdateInProgress = True
 				self.GetGame(CheckForExit=False)
+				self.GameUpdateInProgress = False
 
 	def Fill(self, SurfaceObject, colour):
 		if isinstance(SurfaceObject, str):
@@ -374,6 +390,12 @@ class Window(object):
 		self.Triggers['Server'] = self.game.Triggers
 
 	def GetGame(self, arg='GetGame', CheckForExit=True, UpdateAfter=False):
+		self.GameUpdatesNeeded = False
+		self.ThreadedCommsComplete = False
+
+		while self.GameUpdateInProgress:
+			pass
+
 		with self.lock:
 			self.game = self.Client.ClientSimpleSend(arg)
 
@@ -385,11 +407,20 @@ class Window(object):
 		if UpdateAfter:
 			self.UpdateGameSurface(UpdateWindow=True)
 
+		self.ThreadedCommsComplete = True
+
 	def SendToServer(self, MessageType, Message):
+		self.GameUpdatesNeeded = False
+		self.ThreadedCommsComplete = False
+
+		while self.GameUpdateInProgress:
+			pass
+
 		with self.lock:
 			self.game = self.Client.send(MessageType, Message)
 
 		self.UpdateGameAttributes()
+		self.ThreadedCommsComplete = True
 
 	def UpdateWindow(self, List=None):
 		if List:
@@ -404,8 +435,17 @@ class Window(object):
 		self.Client.CloseDown()
 		raise Exception('The game has ended.')
 
+	def ThreadedServerComms(self, *args, target=None):
+		self.UpdateGameAttributes()
+		self.ThreadedCommsThread = Thread(target=(target if target else self.SendToServer), args=args)
+		self.ThreadedCommsThread.start()
+
 	def HandleAllEvents(self, ClicksNeeded, TypingNeeded):
-		"""Main 'event loop'"""
+		"""
+
+		Main 'event loop'
+
+		"""
 
 		self.Errors['ThisPass'].clear()
 		click = False
@@ -431,8 +471,8 @@ class Window(object):
 
 			elif TypingNeeded and event.type == pg.KEYDOWN:
 				if not self.game.RepeatGame and event.key in (pg.K_SPACE, pg.K_RETURN):
-					self.GetGame('1', CheckForExit=False)
-					return None
+					self.game.RepeatGame = True
+					self.ThreadedServerComms('1', False, target=self.GetGame)
 				elif event.unicode in PrintableCharacters:
 					try:
 						self.InputText += event.unicode
@@ -449,7 +489,8 @@ class Window(object):
 			Dict = self.Attributes.Trick
 
 			if not self.game.StartPlay:
-				self.GetGame('StartGame')
+				self.game.StartPlay = True
+				self.ThreadedServerComms(('StartGame',), target=self.GetGame)
 
 			elif Dict['TrickInProgress'] and Dict['WhoseTurnPlayerIndex'] == self.player.playerindex:
 				for card in self.player.Hand:
@@ -458,19 +499,27 @@ class Window(object):
 					elif Result:
 						self.Errors['ThisPass'].append(Result)
 					else:
-						self.SendToServer('PlayCard', card.ID)
+						self.game.ExecutePlay(card=card, player=self.player)
+						self.ThreadedServerComms('PlayCard', card.ID)
 
 		if SendInputText:
 			if isinstance(self.name, int):
-				self.name = self.InputText
-				self.SendToServer('player', self.InputText)
+				try:
+					assert len(self.InputText) < 30
+					assert all(any((letter in PrintableCharacters, letter in whitespace)) for letter in self.InputText)
+					self.name = self.InputText
+					self.SendToServer('player', self.InputText)
+				except:
+					Errs = self.Errors['ThisPass']
+					Errs.append('Name must be <30 characters, and ASCII-compliant; please try again.')
 
-			elif not (self.Attributes.Game['StartCardNumber'] or self.player.playerindex):
+			elif not (self.Attributes.StartCardNumber or self.player.playerindex):
 				Max = self.Attributes.Tournament['MaxCardNumber']
 				try:
 					assert 1 <= float(self.InputText) <= Max
 					assert float(self.InputText).is_integer()
-					self.SendToServer('CardNumber', int(self.InputText))
+					self.game.Attributes.StartCardNumber = int(self.InputText)
+					self.ThreadedServerComms('CardNumber', self.InputText)
 				except:					
 					self.Errors['ThisPass'].append(f'Please enter an integer between 1 and {Max}')
 
@@ -479,7 +528,8 @@ class Window(object):
 				try:
 					assert 0 <= float(self.InputText) <= Count
 					assert float(self.InputText).is_integer()
-					self.SendToServer('Bid', self.InputText)
+					self.game.PlayerMakesBid(self.InputText, player=self.player)
+					self.ThreadedServerComms('Bid', self.InputText)
 				except:
 					self.Errors['ThisPass'].append(f'Your bid must be an integer between 0 and {Count}.')
 
@@ -705,7 +755,7 @@ class Window(object):
 
 		y += NormalLineSize * 2
 		TrickNo, CardNo = self.Attributes.Trick["TrickNumber"], self.Attributes.Round["CardNumberThisRound"]
-		RoundNo, StartCardNo = self.Attributes.Round['RoundNumber'], self.Attributes.Game['StartCardNumber']
+		RoundNo, StartCardNo = self.Attributes.Round['RoundNumber'], self.Attributes.StartCardNumber
 		TrickText = f'Trick {TrickNo} of {CardNo}' if TrickNo else 'Trick not in progress'
 
 		ScoreboardBlits += [
@@ -877,7 +927,7 @@ class Window(object):
 	def CalculateHandRectDimensions(self):
 		x = self.Dimensions['WindowMargin']
 		DoubleWindowMargin = x * 2
-		StartNumber = self.Attributes.Game['StartCardNumber']
+		StartNumber = self.Attributes.StartCardNumber
 		CardX, CardY = CardDimensions = self.Dimensions['Card']
 		PotentialBuffer = CardX // 2
 		WindowWidth = self.Dimensions['Window'][0]
@@ -899,11 +949,11 @@ class Window(object):
 		for item in chain(self.CoverRects['Hand'], (self.CoverRects['Trump'],)):
 			self.Fill(item[0], 'Maroon')
 
-	def GameInitialisation(self):
-		BoardColour = 'Maroon' if self.Attributes.Tournament['GamesPlayed'] else 'LightGrey'
+	def GameInitialisation(self, GamesPlayed):
+		BoardColour = 'Maroon' if GamesPlayed else 'LightGrey'
 
 		self.Fill('Game', BoardColour)
-		if self.Attributes.Tournament['GamesPlayed']:
+		if GamesPlayed:
 
 			self.TypeWriterText(
 				'NEW GAME STARTING:',
@@ -913,14 +963,14 @@ class Window(object):
 				BoardColour=BoardColour
 			)
 
-		if self.player.playerindex and self.Attributes.Tournament['GamesPlayed']:
+		if self.player.playerindex and GamesPlayed:
 			text = f"Waiting for {self.gameplayers[0]} to decide how many cards the game will start with."
 
 		elif self.player.playerindex:
 			text = f"As the first player to join this game, it is {self.gameplayers[0]}'s " \
 			       f"turn to decide how many cards the game will start with."
 
-		elif self.Attributes.Tournament['GamesPlayed']:
+		elif GamesPlayed:
 
 			self.TypeWriterText(
 				'Your turn to decide the starting card number!',
@@ -938,7 +988,7 @@ class Window(object):
 		self.TypeWriterText(text)
 		self.GameUpdatesNeeded = True
 
-		while not self.Attributes.Game['StartCardNumber']:
+		while not self.Attributes.StartCardNumber:
 			self.ToBlit = [self.Surfaces['Game'].surfandpos]
 			self.UpdateWindow(self.BlitInputText(CardNumberInput=True))
 
@@ -950,7 +1000,7 @@ class Window(object):
 
 		self.Wait(function=lambda x, y: not x.StartPlay, FunctionOfGame=True, ClicksNeeded=True, OutsideRound=True)
 
-		if not self.Attributes.Tournament['GamesPlayed']:
+		if not GamesPlayed:
 			self.Fade('LightGrey', 'Maroon', TextFade=False, BoardColour=True)
 
 		self.Fade('Maroon', 'LightGrey', TextFade=False, ScoreboardFade=True)
@@ -1027,24 +1077,17 @@ class Window(object):
 
 		return ToBlit2
 
-	def StartRound(self):
-		cardnumber = self.Attributes.Round["CardNumberThisRound"]
-		RoundNumber = self.Attributes.Round["RoundNumber"]
-
+	def StartRound(self, RoundNumber, cardnumber, RoundLeader, GamesPlayed):
 		self.TypeWriterText(
-			f'{f"ROUND {RoundNumber} starting" if self.Attributes.Game["StartCardNumber"] != 1 else "Round starting"}! '
+			f'{f"ROUND {RoundNumber} starting" if cardnumber != 1 else "Round starting"}! '
 			f'This round has {cardnumber} card{"s" if cardnumber != 1 else ""}.',
 			MidRound=False,
 			UpdateGameSurfaceAfter=True
 		)
 
-		self.TypeWriterText(
-			f'{self.Attributes.Round["RoundLeader"].name} starts this round.',
-			MidRound=False,
-			UpdateGameSurfaceAfter=True
-		)
+		self.TypeWriterText(f'{RoundLeader.name} starts this round.', MidRound=False, UpdateGameSurfaceAfter=True)
 
-		if not self.Attributes.Tournament['GamesPlayed'] and self.Attributes.Round['RoundNumber'] == 1:
+		if not GamesPlayed and RoundNumber == 1:
 
 			self.TypeWriterText(
 				"Over the course of the game, your name will be underlined if it's your turn to play.",
@@ -1058,9 +1101,6 @@ class Window(object):
 				UpdateGameSurfaceAfter=True
 			)
 
-		# Tell the server we've finished typing the above.
-		self.GetGame('AC')
-
 		# Wait for the server to make a new pack of cards.
 		self.Wait(Attribute='NewPack', FunctionOfGame=True, OutsideRound=True)
 
@@ -1070,8 +1110,6 @@ class Window(object):
 			MidRound=False
 		)
 
-		# Tell the server we've typed the above text.
-		self.GetGame('AC')
 		self.UpdateGameSurface(RoundOpening=True)
 
 		# Wait for the server to deal cards for this round.
@@ -1087,7 +1125,7 @@ class Window(object):
 		for RectTuple in CoverRects:
 			RectTuple[0].set_alpha(255)
 
-		if self.Attributes.Round["RoundNumber"] == 1 and not self.Attributes.Tournament['GamesPlayed']:
+		if self.Attributes.Round["RoundNumber"] == 1 and not GamesPlayed:
 			self.TypeWriterText('Cards for this round have been dealt; each player must decide what they will bid.')
 
 		# We need to enter our bid.
@@ -1098,8 +1136,6 @@ class Window(object):
 			Bidding=True,
 			SwitchUpdatesOffAfter=False
 		)
-
-		self.Wait(TimeToWait=100, SwitchUpdatesOnBefore=False)
 
 		# We now need to wait until everybody else has bid.
 		if any(player.Bid == -1 for player in self.gameplayers):
@@ -1122,7 +1158,7 @@ class Window(object):
 			WipeClean=True
 		)
 
-		RoundLeaderIndex = self.Attributes.Round["RoundLeader"].playerindex
+		RoundLeaderIndex = RoundLeader.playerindex
 
 		if AllEqual(player.Bid for player in self.gameplayers):
 			BidNumber = self.gameplayers[0].Bid
@@ -1134,47 +1170,48 @@ class Window(object):
 
 		self.GetGame('AC')
 
-	def PlayTrick(self):
-		TrickNumber, CardNumber = self.Attributes.Trick["TrickNumber"], self.Attributes.Round["CardNumberThisRound"]
+	def PlayTrick(self, FirstPlayerIndex, TrickNumber, CardNumberThisRound):
+		PlayerNo = self.Attributes.Tournament['PlayerNumber']
+		Pos = list(chain(range(FirstPlayerIndex, PlayerNo), range(0, FirstPlayerIndex))).index(self.player.playerindex)
+
 		self.GetGame(UpdateAfter=True)
-		Text = f'{f"TRICK {TrickNumber} starting" if CardNumber != 1 else "TRICK STARTING"} :'
+		Text = f'{f"TRICK {TrickNumber} starting" if CardNumberThisRound != 1 else "TRICK STARTING"} :'
 		self.TypeWriterText(Text, WipeClean=True)
+
+		# Make sure the server is ready for the trick to start.
+		self.Wait(Attribute='TrickStart', FunctionOfGame=True)
 
 		# Tell the server we're ready to play the trick.
 		self.GetGame('AC', UpdateAfter=True)
+		self.GameUpdatesNeeded = True
 
-		self.Wait(
-			function=lambda x, y: x.Attributes.Trick['WhoseTurnPlayerIndex'] == -1,
-			FunctionOfGame=True,
-			SwitchUpdatesOffAfter=False
-		)
-
-		# Play the trick, wait for all players to play
-
+		# Play the trick, wait for all players to play.
 		while len(self.Attributes.Trick['PlayedCards']) < self.Attributes.Tournament['PlayerNumber']:
-			if self.Attributes.Trick['WhoseTurnPlayerIndex'] != self.player.playerindex:
+			if len(self.Attributes.Trick['PlayedCards']) != Pos:
 				self.CheckForExit()
 			else:
 				self.HandleAllEvents(ClicksNeeded=True, TypingNeeded=False)
 			self.UpdateGameSurface(UpdateWindow=True)
 
-		self.Wait(TimeToWait=100, SwitchUpdatesOffAfter=False)
-
-		# Wait for a signal from the server that a winner has been determined.
-		self.Wait(FunctionOfGame=True, Attribute='TrickEnd')
-		WinnerName = self.Attributes.Trick['Winner'].name
-		Text = f'{WinnerName} won {f"trick {TrickNumber}" if CardNumber != 1 else "the trick"}!'
+		self.GameUpdatesNeeded = False
+		self.game.TrickCleanUp(self.Attributes.Trick['PlayedCards'])
+		self.Wait(TimeToWait=500, SwitchUpdatesOnBefore=False)
+		Winner = self.Attributes.Trick["Winner"]
+		Text = f'{Winner.name} won {f"trick {TrickNumber}" if CardNumberThisRound != 1 else "the trick"}!'
 		self.TypeWriterText(Text, WipeClean=True)
-		self.GetGame('AC')
+		self.Attributes.Trick['PlayedCards'].clear()
+		self.Triggers['Server'].Surfaces['CurrentBoard'] += 1
 		self.UpdateGameSurface(UpdateWindow=True)
+		self.GetGame('AC')
+		return Winner.playerindex
 
 	def EndRound(self):
-		self.GetGame()
 		self.BuildScoreboard('LightGrey')
 		self.BlitSurface('Game', 'Scoreboard')
 
-		# Wait for points to be awarded.
-		self.Wait(Attribute='PointsAwarded', FunctionOfGame=True, OutsideRound=True)
+		# Award points.
+		self.game.RoundCleanUp()
+		self.UpdateGameAttributes()
 		self.BuildScoreboard()
 		self.RoundInProgressBlits()
 
@@ -1220,14 +1257,14 @@ class Window(object):
 
 		self.GetGame('AC')
 
-	def EndGame(self):
-		if len(Winners := self.Attributes.Game['Winners']) > 1:
-			self.TypeWriterText('Tied game!', WipeClean=True, MidRound=False)
+	def EndGame(self, GamesPlayed):
+		Winners, MaxPoints, TournamentLeaders, MaxGamesWon = self.game.GameCleanUp(GamesPlayed)
 
+		if len(Winners) > 1:
+			self.TypeWriterText('Tied game!', WipeClean=True, MidRound=False)
+			ListOfWinners = ", ".join(Winner.name for Winner in Winners)
 			self.TypeWriterText(
-				f'The joint winners of this game were '
-				f'{", ".join(Winner.name for Winner in Winners)}, '
-				f'with {self.Attributes.Game["MaxPoints"]} each!',
+				f'The joint winners of this game were {ListOfWinners}, with {MaxPoints} each!',
 				WipeClean=True,
 				MidRound=False
 			)
@@ -1242,11 +1279,8 @@ class Window(object):
 		self.Wait(TimeToWait=1000, UpdateWindow=False, OutsideRound=True)
 		self.Fill('Game', 'Maroon')
 
-		# Tell the server we've finished typing the above
-		self.GetGame('AC')
-
-		if self.Attributes.Tournament['GamesPlayed']:
-			self.TournamentWinners()
+		if GamesPlayed:
+			self.TournamentWinners(TournamentLeaders, MaxGamesWon)
 
 		self.TypeWriterText(
 			'Press the spacebar to play again with the same players, or close the window to exit the game.',
@@ -1319,11 +1353,7 @@ class Window(object):
 
 		self.Fade((0, 0, 0), 'Maroon', TextFade=False, BoardColour=True)
 
-	def TournamentWinners(self):
-		# Wait for server to update the tournament leaderboard.
-		self.Wait(Attribute='TournamentLeaders', FunctionOfGame=True, UpdateWindow=False, OutsideRound=True)
-		MaxGamesWon = self.Attributes.Tournament["MaxGamesWon"]
-		TournamentLeaders = self.Attributes.Tournament["TournamentLeaders"]
+	def TournamentWinners(self, TournamentLeaders, MaxGamesWon):
 		SortedGameplayers = sorted(self.gameplayers, reverse=True, key=Player.GetGamesWon)
 
 		for p, player in enumerate(SortedGameplayers):

@@ -21,7 +21,9 @@ import pygame as pg
 print('Welcome to Knock!')
 
 # Default operation is if the client is telling us which card they want to play
-Operations = defaultdict(lambda: lambda game, Info: game.ExecutePlay(Info['Message'], Info['playerindex']))
+Operations = defaultdict(
+	lambda: lambda game, Info: game.ExecutePlay(cardID=Info['Message'], playerindex=Info['playerindex'])
+)
 
 Operations.update({
 	# if the client is just asking for an updated copy of the game
@@ -37,7 +39,7 @@ Operations.update({
 	'@S': lambda game, Info: game.TimeToStart(),
 
 	# if the client is telling us how many tricks they are going to bid in this round.
-	'Bid': lambda game, Info: game.PlayerMakesBid(Info['playerindex'], Info['Message']),
+	'Bid': lambda game, Info: game.PlayerMakesBid(Info['Message'], playerindex=Info['playerindex']),
 
 	# If the client is telling us whether they want an instant rematch after the game has ended.
 	'@1': lambda game, Info: game.RepeatQuestionAnswer(),
@@ -145,7 +147,10 @@ while True:
 		pg.time.delay(60)
 
 	try:
-		game.PlayGame()
+		GamesPlayed = 0
+		while True:
+			game.PlayGame(GamesPlayed)
+			GamesPlayed += 1
 	finally:
 		try:
 			Server.CloseDown()
