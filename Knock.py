@@ -40,7 +40,7 @@ class Window(object):
 	__slots__ = 'GameUpdatesNeeded', 'lock', 'Triggers', 'fonts', 'gameplayers', 'Attributes', 'player', 'ToBlit', \
 	            'InputText', 'Client', 'game', 'Window', 'CardImages', 'MessagesFromServer', 'Surfaces', 'PlayStarted', \
 	            'ScoreboardAttributes', 'CoverRects',  'clock', 'PlayerTextPositions', 'name', 'Dimensions', 'Errors', \
-	            'GameUpdateInProgress', 'ThreadedCommsComplete', 'ThreadedCommsThread'
+	            'ThreadedCommsThread'
 
 	DefaultFont = 'Times New Roman'
 
@@ -68,7 +68,6 @@ class Window(object):
 		self.ScoreboardAttributes = {}
 		self.InputText = ''
 		self.GameUpdatesNeeded = False
-		self.GameUpdateInProgress = False
 		self.PlayStarted = False
 		self.gameplayers = []
 		self.ToBlit = []		
@@ -312,7 +311,6 @@ class Window(object):
 			self.UpdateWindow(self.BlitInputText())
 
 		self.GameUpdatesNeeded = True
-		self.ThreadedCommsComplete = False
 		self.ThreadedCommsThread = None
 		PlayerNo = self.Attributes.Tournament['PlayerNumber']
 
@@ -351,9 +349,7 @@ class Window(object):
 
 		while True:
 			if self.GameUpdatesNeeded:
-				self.GameUpdateInProgress = True
 				self.GetGame(CheckForExit=False)
-				self.GameUpdateInProgress = False
 
 	def Fill(self, SurfaceObject, colour):
 		if isinstance(SurfaceObject, str):
@@ -390,12 +386,6 @@ class Window(object):
 		self.Triggers['Server'] = self.game.Triggers
 
 	def GetGame(self, arg='GetGame', CheckForExit=True, UpdateAfter=False):
-		self.GameUpdatesNeeded = False
-		self.ThreadedCommsComplete = False
-
-		while self.GameUpdateInProgress:
-			pass
-
 		with self.lock:
 			self.game = self.Client.ClientSimpleSend(arg)
 
@@ -407,20 +397,11 @@ class Window(object):
 		if UpdateAfter:
 			self.UpdateGameSurface(UpdateWindow=True)
 
-		self.ThreadedCommsComplete = True
-
 	def SendToServer(self, MessageType, Message):
-		self.GameUpdatesNeeded = False
-		self.ThreadedCommsComplete = False
-
-		while self.GameUpdateInProgress:
-			pass
-
 		with self.lock:
 			self.game = self.Client.send(MessageType, Message)
 
 		self.UpdateGameAttributes()
-		self.ThreadedCommsComplete = True
 
 	def UpdateWindow(self, List=None):
 		if List:
