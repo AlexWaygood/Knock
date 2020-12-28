@@ -5,7 +5,7 @@ class Player(object):
 	"""Class object for representing a single player in the game."""
 
 	__slots__ = 'name', 'playerindex', 'Hand', 'Bid', 'Points', 'GamesWon', 'PointsThisRound', 'Tricks', 'RoundLeader', \
-	            'HandIteration', 'ActionComplete'
+	            'HandIteration', 'ActionComplete', 'PointsLastRound'
 
 	AllPlayers = []
 
@@ -94,8 +94,7 @@ class Player(object):
 		return self
 
 	def PlayCard(self, card, TrumpSuit):
-		Hand = self.Hand
-		SuitTuple = (Hand[0].ActualSuit, Hand[-1].ActualSuit)
+		SuitTuple = ((Hand := self.Hand)[0].ActualSuit, Hand[-1].ActualSuit)
 		Hand.remove(card)
 		Suit = card.ActualSuit
 
@@ -117,10 +116,10 @@ class Player(object):
 		self.GamesWon += 1
 		return self
 
-	def GetPointsThisRound(self):
+	def GetPointsLastRound(self):
 		"""Function for use on the client side"""
 
-		return self.PointsThisRound
+		return self.PointsLastRound
 
 	def GetPoints(self):
 		return self.Points
@@ -133,6 +132,7 @@ class Player(object):
 	def EndOfRound(self):
 		self.PointsThisRound += (10 if self.Bid == self.PointsThisRound else 0)
 		self.Points += self.PointsThisRound
+		self.PointsLastRound = self.PointsThisRound
 		self.PointsThisRound = 0
 		self.Bid = -1
 		self.Tricks = 0

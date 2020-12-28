@@ -1,5 +1,6 @@
 from random import shuffle
 from itertools import chain, cycle
+from collections import defaultdict
 
 from Card import Card
 from ClientClasses import *
@@ -16,8 +17,8 @@ class Game(object):
 	            'StartPlay'
 
 	def __init__(self, PlayerNumber):
-		self.StartCardPositions = [i for i in range(PlayerNumber)]
-		self.CardPositions = self.StartCardPositions
+		self.StartCardPositions = list(range(PlayerNumber))
+		self.CardPositions = self.StartCardPositions.copy()
 		self.StartPlay = False
 		self.RepeatGame = True
 		self.Attributes = AttributeTracker(True, PlayerNumber)
@@ -45,13 +46,11 @@ class Game(object):
 		player.MakeBid(int(bid))
 		self.Triggers.Surfaces['CurrentBoard'] += 1
 
-	def ExecutePlay(self, cardID='', playerindex=-1, card=None, player=None):
+	def ExecutePlay(self, cardID, playerindex):
 		"""This method is designed to be used by the server or the client"""
 
-		if not player:
-			player = Player.AllPlayers[playerindex]
-			card = next(card for card in player.Hand if card.ID == cardID)
-
+		player = self.Attributes.Tournament['gameplayers'][playerindex]
+		card = next(card for card in player.Hand if card.ID == cardID)
 		player.PlayCard(card, self.Attributes.Round['trumpsuit'])
 		card.SetPos(self.CardPositions[len(self.Attributes.Trick['PlayedCards'])])
 		self.Attributes.Trick['PlayedCards'].append(card)
@@ -79,21 +78,27 @@ class Game(object):
 		WhoLeads = cycle(self.Attributes.Tournament['gameplayers'])
 		return WhichRound, HowManyCards, WhoLeads
 
-	def TrickCleanUp(self, PlayedCards):
+	def TrickCleanUp(self):
 		"""This is to be used on the client side as well as the server side."""
+		PlayedCards = self.Attributes.Trick['PlayedCards']
+
+		PlayedCards = [
+			card.DetermineWinValue(PlayedCards[0].ActualSuit, self.Attributes.Round['trumpsuit'])
+			for card in PlayedCards
+		]
 
 		self.Attributes.Trick.update({
 			'WhoseTurnPlayerIndex': -1,
 			'TrickInProgress': False,
-
-			'Winner': (
-				max((card.DetermineWinValue(PlayedCards[0].ActualSuit, self.Attributes.Round['trumpsuit'])
-				     for card in PlayedCards), key=Card.GetWinValue)).PlayedBy,
-
 			'FirstPlayerIndex': -1
 		})
 
-		self.Attributes.Trick['Winner'].WinsTrick()
+		for card in PlayedCards:
+			print(card, card.winvalue)
+
+		(Winner := (max((card for card in PlayedCards), key=Card.GetWinValue)).PlayedBy).WinsTrick()
+
+		return Winner
 
 	def RoundCleanUp(self):
 		"""Can be used on either the client or the server side"""
@@ -163,8 +168,6 @@ class Game(object):
 		self.WaitForPlayers('NewGameReset')
 
 	def PlayRound(self, cardnumber, FirstPlayerIndex):
-		self.Triggers.Surfaces['Scoreboard'] += 1
-
 		# Make a new pack of cards, set the trumpsuit.
 		Pack = [Card(value, suit) for value in range(2, 15) for suit in ('D', 'S', 'C', 'H')]
 		shuffle(Pack)
@@ -173,10 +176,13 @@ class Game(object):
 			'TrumpCard': (TrumpCard := Pack.pop()),
 			'trumpsuit': (trumpsuit := TrumpCard.ActualSuit),
 			'PackOfCards': Pack,
+			'CardNumberThisRound': cardnumber,
+			'RoundLeaderIndex': FirstPlayerIndex
 
 		})
 
 		self.Triggers.Surfaces['TrumpCard'] += 1
+		self.Triggers.Surfaces['Scoreboard'] += 1
 		self.Triggers.Events['NewPack'] += 1
 
 		# Deal cards
@@ -213,12 +219,13 @@ class Game(object):
 			while len(self.Attributes.Trick['PlayedCards']) == CardNumberOnBoard:
 				delay(1)
 
-		self.TrickCleanUp(self.Attributes.Trick['PlayedCards'])
+		Winner = self.TrickCleanUp()
 
 		# This can happen immediately on the server side, but happens after a delay on the client side.
 		# The TrickCleanUp method is to be used on both sides.
+		delay(500)
 		self.Attributes.Trick['PlayedCards'].clear()
 
 		self.Triggers.Surfaces['CurrentBoard'] += 1
 		self.WaitForPlayers('TrickEnd')
-		return self.Attributes.Trick['Winner'].playerindex
+		return Winner.playerindex

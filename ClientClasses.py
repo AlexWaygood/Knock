@@ -60,12 +60,12 @@ class AttributeTracker(object):
 			'TrumpCard': None,
 			'trumpsuit': '',
 			'CardNumberThisRound': 0,
-			'RoundNumber': 1
+			'RoundNumber': 1,
+			'RoundLeaderIndex': -1
 		}
 
 		self.Trick = {
 			'PlayedCards': [],
-			'Winner': None,
 			'TrickInProgress': False,
 			'TrickNumber': 0,
 			'WhoseTurnPlayerIndex': -1

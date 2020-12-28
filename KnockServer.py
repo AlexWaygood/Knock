@@ -20,6 +20,9 @@ import pygame as pg
 
 print('Welcome to Knock!')
 
+# This dictionary in some ways belongs as part of the Game class, but cannot be pickled.
+# The Game class must be pickleable.
+
 # Default operation is if the client is telling us which card they want to play
 Operations = defaultdict(
 	lambda: lambda game, Info: game.ExecutePlay(cardID=Info['Message'], playerindex=Info['playerindex'])
