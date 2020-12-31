@@ -10,7 +10,7 @@ class Card(object):
 	ActualSuit: str
 
 	__slots__ = 'ActualValue', 'ActualSuit', 'value', 'suit', 'PlayedBy', 'winvalue', 'ID', 'rect', 'colliderect', \
-	            'PosIndex', 'CurrentTrumpSuit', 'Suits'
+	            'CurrentTrumpSuit', 'Suits'
 
 	OriginalSuits = ['C', 'D', 'S', 'H']
 
@@ -26,19 +26,20 @@ class Card(object):
 		self.PlayedBy = 'Undetermined'
 		self.winvalue = 0
 		self.ID = f'{self.ActualValue if self.ActualValue <= 10 else self.value[0]}{self.ActualSuit}'
-		self.PosIndex = -1
 		self.rect = Rect(0, 0, 79, 121)
 		self.colliderect = Rect(0, 0, 79, 121)
 		self.CurrentTrumpSuit = ''
-		self.Suits = self.OriginalSuits
+		self.Suits = self.OriginalSuits.copy()
 
-	def AddToHand(self, player, CardPos):
-		self.PlayedBy = player
-		self.SetPos(CardPos)
+	def AddToHand(self, playerindex):
+		self.PlayedBy = playerindex
 		return self
 
-	def SetPos(self, Index):
-		self.PosIndex = Index
+	def UpdateOnArrival(self, index, Surface, PlayerOrder, Surfaces):
+		"""To be used on the client-side only"""
+		index = PlayerOrder[index] if Surface == 'Board' else index
+		self.rect = Surfaces[Surface].RectList[index]
+		self.colliderect = self.rect.move(*Surfaces[Surface].pos)
 		return self
 
 	def DetermineWinValue(self, playedsuit, trump):
@@ -129,16 +130,16 @@ class Card(object):
 
 		return SuitDict[self.ActualSuit], self.ActualValue
 
-	def Click(self, game, MousePos):
+	def Click(self, PlayedCards, PlayedByHand, MousePos):
 		if not self.colliderect.collidepoint(*MousePos):
 			return 'Not clicked'
 
-		if game.Attributes.Trick['PlayedCards']:
-			SuitLed = game.Attributes.Trick['PlayedCards'][0].ActualSuit
+		if PlayedCards:
+			SuitLed = PlayedCards[0].ActualSuit
 
 			Condition = any(
 				UnplayedCard.ActualSuit == SuitLed
-				for UnplayedCard in game.Attributes.Tournament['gameplayers'][self.PlayedBy.playerindex].Hand
+				for UnplayedCard in PlayedByHand
 			)
 
 			if self.ActualSuit != SuitLed and Condition:

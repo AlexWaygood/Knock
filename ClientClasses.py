@@ -1,6 +1,5 @@
 """A smattering of short classes and functions to make the Client script cleaner."""
 
-from Player import Player
 from ipaddress import ip_address
 import socket
 from itertools import groupby
@@ -36,40 +35,20 @@ class Triggers(object):
 			'Scoreboard': 0,
 			'TrumpCard': 0,
 			'Hand': 0,
-			'CurrentBoard': 0,
+			'Board': 0,
 		}
 
 
 class AttributeTracker(object):
 	"""This class holds information about the current state of play"""
 
-	__slots__ = 'Tournament', 'StartCardNumber', 'Round', 'Trick', 'Errors'
+	__slots__ = 'StartCardNumber', 'PlayedCards', 'TrumpCard', 'trumpsuit'
 
-	def __init__(self, server=False, PlayerNumber=0):
-		self.Tournament = {
-			'GamesPlayed': 0,
-			'PlayerNumber': PlayerNumber,
-			'MaxCardNumber': (51 // PlayerNumber) if server else 0,
-			'gameplayers': Player.AllPlayers if server else []
-		}
-
+	def __init__(self):
 		self.StartCardNumber = 0
-
-		self.Round = {
-			'PackOfCards': [],
-			'TrumpCard': None,
-			'trumpsuit': '',
-			'CardNumberThisRound': 0,
-			'RoundNumber': 1,
-			'RoundLeaderIndex': -1
-		}
-
-		self.Trick = {
-			'PlayedCards': [],
-			'TrickInProgress': False,
-			'TrickNumber': 0,
-			'WhoseTurnPlayerIndex': -1
-		}
+		self.TrumpCard = None
+		self.trumpsuit = ''
+		self.PlayedCards = []
 
 
 class SurfaceAndPosition(object):

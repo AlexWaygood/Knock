@@ -59,7 +59,7 @@ def CommsWithClient(Server, player, conn, addr, Operations=Operations):
 	global game
 
 	Broken = False
-	playerindex = Player.AllPlayers.index(player)
+	playerindex = game.gameplayers.index(player)
 	data = Server.receive(conn)
 
 	if not data:
@@ -82,11 +82,14 @@ def CommsWithClient(Server, player, conn, addr, Operations=Operations):
 		print(f'Connection with {addr} was broken at {GetTime()}.\n')
 
 		try:
-			Player.AllPlayers.remove(player)
+			game.gameplayers.remove(player)
 			conn.shutdown(socket.SHUT_RDWR)
 			conn.close()
 		finally:
 			raise Exception('Connection was terminated.')
+
+	while not game.Sendable:
+		pass
 
 	Server.send(game, conn=conn)
 	return True
@@ -146,13 +149,13 @@ while True:
 	Server = Network('', 5555, ManuallyVerify, ThreadedClient, True, NumberOfPlayers,
 	                 AccessToken=AccessToken, password=password)
 
-	while len(Player.AllPlayers) < NumberOfPlayers or any(not player.name for player in Player.AllPlayers):
+	while len(game.gameplayers) < NumberOfPlayers or any(not player.name for player in game.gameplayers):
 		pg.time.delay(60)
 
 	try:
 		GamesPlayed = 0
 		while True:
-			game.PlayGame(GamesPlayed)
+			game.PlayGame()
 			GamesPlayed += 1
 	finally:
 		try:
