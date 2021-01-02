@@ -1,7 +1,11 @@
 """The code in this file was adapted from code by Adam Binks (https://github.com/adam-binks/Fireworks)"""
 
+import random, math
+from Firework import Firework, ShimmerFirework
 
-from Firework import *
+from os import environ
+environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
+import pygame as pg
 
 
 class Sparker:

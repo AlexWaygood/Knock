@@ -1,15 +1,13 @@
 """One class and two functions to allow for a password to be transmitted securely from client to server."""
 
-
+from HelperFunctions import PrintableCharacters
 from Crypto.Cipher import AES
 from Crypto.Util.number import getPrime
 from Crypto.Util.Padding import pad, unpad
-from string import ascii_letters, digits, punctuation
 from secrets import choice
 
 
 PasswordLength = 32
-PrintableCharacters = ''.join((digits, ascii_letters, punctuation))
 
 
 class PasswordChecker(object):

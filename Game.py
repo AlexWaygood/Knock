@@ -1,9 +1,9 @@
 from random import shuffle
-from itertools import cycle
+from itertools import cycle, product
 
 from Card import Card
 from Player import Player
-from ClientClasses import *
+from ServerUpdaters import AttributeTracker, Triggers
 
 from os import environ
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
@@ -107,6 +107,11 @@ class Game(object):
 
 	def PlayGame(self):
 		# Wait until the opening sequence is complete
+
+		while not self.Attributes.StartCardNumber:
+			delay(1)
+
+		self.gameplayers.NextStage()
 		self.WaitForPlayers('GameInitialisation')
 		self.Triggers.Events['StartNumberSet'] += 1
 
@@ -125,7 +130,7 @@ class Game(object):
 
 	def PlayRound(self, cardnumber):
 		# Make a new pack of cards, set the trumpsuit.
-		Pack = [Card(value, suit) for value in range(2, 15) for suit in ('D', 'S', 'C', 'H')]
+		Pack = [Card(*prod) for prod in product(range(2, 15), ('D', 'S', 'C', 'H'))]
 		shuffle(Pack)
 		self.Sendable = False
 		self.Attributes.TrumpCard = (TrumpCard := Pack.pop())
@@ -155,8 +160,8 @@ class Game(object):
 			while len(self.Attributes.PlayedCards) == i:
 				delay(1)
 
-		# This can happen immediately on the server side, but happens after a delay on the client side.
-		delay(500)
+		self.gameplayers.NextStage()
+		self.WaitForPlayers('TrickWinnerLogged')
 		self.Attributes.PlayedCards.clear()
 		self.IncrementTriggers('Board')
 		self.WaitForPlayers('TrickEnd')

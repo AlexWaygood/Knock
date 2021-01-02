@@ -1,8 +1,8 @@
 """This code adapted from a project by Adam Binks -- see his repo here: https://github.com/adam-binks/Fireworks"""
 
 
-import math
-from FireworkParticle import *
+import math, random
+from FireworkParticle import Particle
 
 
 class Firework:

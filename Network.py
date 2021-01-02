@@ -8,19 +8,13 @@ Two classes that have to do with communications between the server and clients..
 import socket, pickle
 
 from PasswordChecker import PasswordChecker
+from HelperFunctions import GetTime
 
 from threading import Thread
 from pyinputplus import inputYesNo
-from datetime import datetime
 
 
 AccessToken = '62e82f844db51d'
-
-
-def GetTime():
-	"""Function to get the time in a fixed format"""
-
-	return datetime.now().strftime("%H:%M:%S")
 
 
 class Network(object):

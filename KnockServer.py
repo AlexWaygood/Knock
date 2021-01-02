@@ -3,14 +3,14 @@
 """This script must be run by exactly one machine for a game to take place."""
 
 
-import traceback
+import traceback, socket
 
-from Network import *
-from PasswordChecker import *
+from Network import Network, AccessToken
 from Game import Game
 from Player import Player
+from HelperFunctions import GetTime
 
-from pyinputplus import inputInt, inputMenu, inputCustom
+from pyinputplus import inputInt, inputMenu, inputCustom, inputYesNo
 from collections import defaultdict
 
 from os import environ
@@ -153,10 +153,8 @@ while True:
 		pg.time.delay(60)
 
 	try:
-		GamesPlayed = 0
 		while True:
 			game.PlayGame()
-			GamesPlayed += 1
 	finally:
 		try:
 			Server.CloseDown()

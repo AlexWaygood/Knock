@@ -1,7 +1,6 @@
-from Card import Card
+from PlayerHandSort import SortHand
 from collections import UserList
-from ClientClasses import AllEqual
-from itertools import chain
+from HelperFunctions import AllEqual
 from pygame.time import delay
 
 
@@ -26,11 +25,14 @@ class Gameplayers(UserList):
 	def __iter__(self):
 		return iter(self.players)
 
+	def NextStage(self):
+		self.players = [player.NextStage() for player in self.players]
+
 	def WaitForPlayers(self):
 		while any(not player.ActionComplete for player in self.players):
 			delay(1)
 
-		self.players = [player.NextStage() for player in self.players]
+		self.NextStage()
 
 	def RoundCleanUp(self, server=False):
 		self.players = [player.EndOfRound(server) for player in self.players]
@@ -39,9 +41,9 @@ class Gameplayers(UserList):
 		return sorted(self.players, key=Player.GetPoints, reverse=True)
 
 	def MostGamesWonFirst(self):
-		return sorted(self.players, reverse=True, key=Player.GetGamesWon)
+		return sorted(self.players, reverse=True, key=lambda player: player.GamesWon)
 
-	def AllPlayersJoinedGame(self):
+	def AllPlayersHaveJoinedTheGame(self):
 		return all(isinstance(player.name, str) for player in self.players) and len(self.players) == self.PlayerNo
 
 	def UpdateFromServer(self, ServerPlayers):
@@ -104,7 +106,7 @@ class Gameplayers(UserList):
 
 		return f'Waiting for {WaitingText} to bid'
 
-	def BidText(self, RoundLeaderIndex):
+	def BidText(self):
 		yield f'{"All" if self.PlayerNo != 2 else "Both"} players have now bid.'
 
 		if AllEqual(player.Bid for player in self.players):
@@ -112,8 +114,9 @@ class Gameplayers(UserList):
 			FirstWord = 'Both' if self.PlayerNo == 2 else 'All'
 			yield f'{FirstWord} players bid {BidNumber}.'
 		else:
-			for player in chain(self.players[RoundLeaderIndex:], self.players[:RoundLeaderIndex]):
-				yield f'{player} bids {player.Bid}.'
+			SortedPlayers = sorted(self.players, key=lambda player: player.Bid, reverse=True)
+			for i, player in enumerate(SortedPlayers):
+				yield f'{player}{" also" if i and player.Bid == SortedPlayers[i - 1].Bid else ""} bids {player.Bid}.'
 
 	def EndRoundText(self, FinalRound: bool):
 		yield 'Round has ended.'
@@ -125,7 +128,7 @@ class Gameplayers(UserList):
 			      f'{Points} point{"s" if Points != 1 else ""}.'
 
 		else:
-			for player in sorted(self.players, key=Player.GetPointsLastRound, reverse=True):
+			for player in sorted(self.players, key=lambda player: player.PointsLastRound, reverse=True):
 				yield f'{player} won {(Points := player.PointsLastRound)} point{"s" if Points != 1 else ""}.'
 
 		if FinalRound:
@@ -141,7 +144,7 @@ class Gameplayers(UserList):
 				else:
 					Verb = 'has'
 
-				AlsoNeeded = (Points == SortedPlayers[i - 1].Points)
+				AlsoNeeded = (bool(i) and Points == SortedPlayers[i - 1].Points)
 				Ending = "s" if Points != 1 else ""
 				yield f'{player} {"also " if AlsoNeeded else ""}{Verb} {Points} point{Ending}.'
 
@@ -166,30 +169,31 @@ class Gameplayers(UserList):
 		Leaders = [player for player in self.players if player.GamesWon == MaxGamesWon]
 
 		for p, player in enumerate(SortedPlayers := self.MostGamesWonFirst()):
-			Part1 = {"In this tournament, " if not p else ""}
-			Part2 = {"also " if p and player.GamesWon == SortedPlayers[p - 1].GamesWon else ""}
-			Plural = {"s" if player.GamesWon != 1 else ""}
+			Part1 = "In this tournament, " if not p else ""
+			Part2 = "also " if p and player.GamesWon == SortedPlayers[p - 1].GamesWon else ""
+			Plural = "s" if player.GamesWon != 1 else ""
 			yield f'{Part1}{player} has {Part2}won {player.GamesWon} game{Plural} so far.'
 
-		GamesWonText = f'having won {MaxGamesWon} game{"s" if MaxGamesWon > 1 else ""}'
+		if len(Leaders) != self.PlayerNo:
+			GamesWonText = f'having won {MaxGamesWon} game{"s" if MaxGamesWon > 1 else ""}'
 
-		if (WinnerNumber := len(Leaders)) == 1:
-			yield f'{Leaders[0]} leads so far in this tournament, {GamesWonText}!'
+			if (WinnerNumber := len(Leaders)) == 1:
+				yield f'{Leaders[0]} leads so far in this tournament, {GamesWonText}!'
 
-		elif WinnerNumber == 2:
-			yield f'{Leaders[0]} and {Leaders[1]} lead so far in this tournament, {GamesWonText} each!'
+			elif WinnerNumber == 2:
+				yield f'{Leaders[0]} and {Leaders[1]} lead so far in this tournament, {GamesWonText} each!'
 
-		else:
-			JoinedList = ", ".join(leader.name for leader in Leaders[:-1])
-			Last = Leaders[-1]
-			yield f'{JoinedList} and {Last} lead so far in this tournament, {GamesWonText} each!'
+			else:
+				JoinedList = ", ".join(leader.name for leader in Leaders[:-1])
+				Last = Leaders[-1]
+				yield f'{JoinedList} and {Last} lead so far in this tournament, {GamesWonText} each!'
 
 
 class Player(object):
 	"""Class object for representing a single player in the game."""
 
 	__slots__ = 'name', 'playerindex', 'Hand', 'Bid', 'Points', 'GamesWon', 'PointsThisRound', 'Tricks', 'RoundLeader', \
-	            'HandIteration', 'ActionComplete', 'PointsLastRound'
+	            'HandIteration', 'ActionComplete', 'PointsLastRound', 'PosInTrick'
 
 	AllPlayers = Gameplayers()
 
@@ -207,65 +211,15 @@ class Player(object):
 		self.RoundLeader = False
 		self.ActionComplete = False
 		self.HandIteration = 1
+		self.PosInTrick = -1
 
 	def NextStage(self):
 		self.ActionComplete = False
 		return self
 
-	@staticmethod
-	def CardSortHelper(Hand, Suits):
-		"""Helper method for the SortHand method below"""
-
-		return all(any(card.ActualSuit == Suit for card in Hand) for Suit in Suits)
-
-	@staticmethod
-	def MidRoundSortHelper(Hand, SuitPlayed, SuitTuple):
-		"""Helper method for the SortHand method below"""
-
-		return all((SuitPlayed, any((any(SuitPlayed == card.ActualSuit for card in Hand), (SuitPlayed in SuitTuple)))))
-
-	def SortHand(self, Hand, TrumpSuit, SuitPlayed='', SuitTuple=('', '')):
-		"""Method to ensure the Hand is ordered black-red-black-red wherever possible"""
-
-		if SuitPlayed and not Hand:
-			return Hand
-
-		Hand = [card.SetTrumpSuit(TrumpSuit) for card in Hand]
-
-		if self.CardSortHelper(Hand, 'C'):
-			if self.CardSortHelper(Hand, 'D'):
-				if self.CardSortHelper(Hand, 'S'):
-					if self.CardSortHelper(Hand, 'H'):
-						if SuitPlayed:
-							return Hand
-						return sorted(Hand, key=Card.SuitAndValue, reverse=True)
-					elif self.MidRoundSortHelper(Hand, SuitPlayed, SuitTuple):
-						return Hand
-					return sorted(Hand, key=Card.SuitAndValueWithoutHearts, reverse=True)
-				elif self.CardSortHelper(Hand, 'H'):
-					if self.MidRoundSortHelper(Hand, SuitPlayed, SuitTuple):
-						return Hand
-					return sorted(Hand, key=Card.SuitAndValueWithoutSpades, reverse=True)
-				elif SuitPlayed:
-					return Hand
-			elif self.CardSortHelper(Hand, ('S', 'H')):
-				if self.MidRoundSortHelper(Hand, SuitPlayed, SuitTuple):
-					return Hand
-				return sorted(Hand, key=Card.SuitAndValueWithoutDiamonds, reverse=True)
-			elif SuitPlayed:
-				return Hand
-		elif self.CardSortHelper(Hand, ('D', 'S', 'H')):
-			if self.MidRoundSortHelper(Hand, SuitPlayed, SuitTuple):
-				return Hand
-			return sorted(Hand, key=Card.SuitAndValueWithoutClubs, reverse=True)
-		elif SuitPlayed:
-			return Hand
-
-		return sorted(Hand, key=Card.SuitAndValue, reverse=True)
-
 	def ReceiveCards(self, cards, TrumpSuit):
 		# Must receive an argument in the form of a list
-		self.Hand = [card.AddToHand(self.playerindex) for card in self.SortHand(cards, TrumpSuit)]
+		self.Hand = [card.AddToHand(self.name) for card in SortHand(cards, TrumpSuit)]
 		self.HandIteration += 1
 		return self
 
@@ -278,7 +232,7 @@ class Player(object):
 		SuitTuple = ((Hand := self.Hand)[0].ActualSuit, Hand[-1].ActualSuit)
 		Hand.remove(card)
 		Suit = card.ActualSuit
-		self.Hand = self.SortHand(Hand, TrumpSuit, SuitPlayed=Suit, SuitTuple=SuitTuple)
+		self.Hand = SortHand(Hand, TrumpSuit, PlayedSuit=Suit, SuitTuple=SuitTuple)
 		self.HandIteration += 1
 
 	def WinsTrick(self):
@@ -290,34 +244,27 @@ class Player(object):
 		self.GamesWon += 1
 		return self
 
-	def GetPointsLastRound(self):
-		"""Function for use on the client side"""
-
-		return self.PointsLastRound
-
 	def GetPoints(self):
 		return self.Points
-
-	def GetGamesWon(self):
-		"""Function for use on the client side"""
-
-		return self.GamesWon
 
 	def EndOfRound(self, server=False):
 		"""To be used on both client and server sides"""
 
-		self.PointsLastRound = 0
 		self.HandIteration += 1
-		self.Tricks = 0
-		self.PointsThisRound += (10 if self.Bid == self.PointsThisRound else 0)
-		self.Bid = -1
 
 		if server:
+			self.Bid = -1
 			return self
 
+		# Have to redefine PointsThisRound variable in order to redefine PointsLastRound correctly.
+		self.PointsThisRound += (10 if self.Bid == self.PointsThisRound else 0)
 		self.Points += self.PointsThisRound
+		self.Bid = -1
+
+		# Have to redefine PointsLastRound variable for some of the text-generator methods in the Gameplayers class.
 		self.PointsLastRound = self.PointsThisRound
 		self.PointsThisRound = 0
+		self.Tricks = 0
 		return self
 
 	def ResetPlayer(self, PlayerNo):
@@ -333,7 +280,6 @@ class Player(object):
 
 		self.Hand = other.Hand
 		self.HandIteration = other.HandIteration
-
 		return self
 
 	def __repr__(self):
