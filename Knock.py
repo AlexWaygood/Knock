@@ -96,12 +96,15 @@ class Window(object):
 			'WhoseTurnPlayerIndex': -1,
 			'CardPositions': [],
 			'PlayerOrder': [],
+			'ScrollStart': 0,
+			'WindowMods': [0, 0]
 		}
 
 		WindowX, WindowY = WindowDimensions
 		CardX, CardY = CardDimensions
 		
 		self.Dimensions = {
+			'ScreenSize': WindowDimensions,
 			'Window': WindowDimensions,
 			'WindowMargin': WindowMargin,
 			'Card': CardDimensions,
@@ -121,7 +124,6 @@ class Window(object):
 		}
 
 		pg.init()
-
 		self.clock = pg.time.Clock()
 
 		x = 10
@@ -253,8 +255,9 @@ class Window(object):
 		self.StartCardPositions = list(range(self.PlayerNumber))
 
 		Display.set_icon(pg.image.load(path.join('CardImages', 'PygameIcon.png')))
-		self.Window = Display.set_mode(WindowDimensions, pg.FULLSCREEN)
+		self.Window = Display.set_mode(WindowDimensions, flags=pg.FULLSCREEN)
 		Display.set_caption('Knock (made by Alex Waygood)')
+		pg.key.set_repeat(100, 100)
 
 		self.CardImages = {
 			ID: pg.image.fromstring(image.tobytes(), image.size, image.mode).convert()
@@ -729,27 +732,40 @@ class Window(object):
 		BidNeeded = (self.player.Bid == -1)
 
 		for event in pg.event.get():
-			if (EventType := event.type) == pg.QUIT or (len(self.gameplayers) != PlayerNo and self.game.StartPlay):
+			if (EvType := event.type) == pg.QUIT or (len(self.gameplayers) != PlayerNo and self.game.StartPlay):
 				self.QuitGame()
 
-			elif EventType == pg.KEYDOWN and event.key == pg.K_TAB:
-				Flags = 0 if pg.FULLSCREEN and self.Window.get_flags() else pg.FULLSCREEN
-				self.Window = Display.set_mode(self.Dimensions['Window'], flags=Flags)
+			elif EvType == pg.KEYDOWN and event.key == pg.K_TAB:
+				self.Dimensions['Window'] = self.Dimensions['ScreenSize']
+				Flags = pg.RESIZABLE if (self.Window.get_flags() & pg.FULLSCREEN) else pg.FULLSCREEN
+				self.Window = Display.set_mode(self.Dimensions['ScreenSize'], flags=Flags)
 
-			elif event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE and self.Window.get_flags() and pg.FULLSCREEN:
-				self.Window = Display.set_mode(self.Dimensions['Window'])
+			elif EvType == pg.KEYDOWN and event.key == pg.K_ESCAPE and (self.Window.get_flags() & pg.FULLSCREEN):
+				self.Dimensions['Window'] = self.Dimensions['ScreenSize']
+				self.Window = Display.set_mode(self.Dimensions['ScreenSize'], flags=pg.RESIZABLE)
+
+			elif EvType == pg.MOUSEBUTTONDOWN and (4 <= (Button := event.button) <= 5) and pg.KMOD_CTRL:
+				for i in range(2):
+					self.ClientSideAttributes['WindowMods'][i] += (20 if Button == 4 else (-20))
+
+				if not self.ClientSideAttributes['ScrollStart']:
+					self.ClientSideAttributes['ScrollStart'] = GetTicks()
+
+			elif EvType == pg.VIDEORESIZE and self.Dimensions['Window'] != self.Dimensions['ScreenSize']:
+				self.Window = Display.set_mode((NewSize := event.size), flags=pg.RESIZABLE)
+				self.Dimensions['Window'] = NewSize
 
 			if ClicksNeeded:
-				if EventType == pg.MOUSEBUTTONDOWN:
+				if EvType == pg.MOUSEBUTTONDOWN and event.button == 1:
 					click = True
 					MousePos = pg.mouse.get_pos()
-				elif EventType == pg.MOUSEBUTTONUP:
+				elif EvType == pg.MOUSEBUTTONUP and event.button == 1:
 					click = False
 
-			elif EventType == pg.KEYDOWN:
-				EventKey = event.key
+			elif EvType == pg.KEYDOWN:
+				EvKey = event.key
 
-				if GameReset and EventKey in (pg.K_SPACE, pg.K_RETURN):
+				if GameReset and EvKey in (pg.K_SPACE, pg.K_RETURN):
 					self.game.RepeatGame = True
 					self.ServerCommsQueue.put('1')
 				elif TypingNeeded:
@@ -759,10 +775,31 @@ class Window(object):
 						except:
 							pass
 					elif self.InputText:
-						if EventKey == pg.K_RETURN:
+						if EvKey == pg.K_RETURN:
 							SendInputText = True
-						elif EventKey == pg.K_BACKSPACE:
+						elif EvKey == pg.K_BACKSPACE:
 							self.InputText = self.InputText[:-1]
+
+		Condition = (
+				GetTicks() > self.ClientSideAttributes['ScrollStart'] + 100
+				and any(self.ClientSideAttributes['WindowMods'][i] != 0 for i in range(2))
+		)
+
+		if Condition:
+			WinX, WinY, X, Y = *self.Dimensions['Window'], *self.ClientSideAttributes['WindowMods']
+			ScreenX, ScreenY = self.Dimensions['ScreenSize']
+
+			if X > 0:
+				NewDimensions = (min(ScreenX, (WinX + X)), min(ScreenY, (WinY + Y)))
+			else:
+				NewDimensions = (max(0, (WinX + X)), max(0, WinY + Y))
+
+			if NewDimensions != self.Dimensions['Window']:
+				self.Window = Display.set_mode(NewDimensions, flags=pg.RESIZABLE)
+				self.Dimensions['Window'] = NewDimensions
+
+			self.ClientSideAttributes['ScrollStart'] = 0
+			self.ClientSideAttributes['WindowMods'] = [0, 0]
 
 		if click:
 			if ClickToStart:
@@ -991,17 +1028,53 @@ class Window(object):
 		"""Shorter event loop for when no mouse/keyboard input is needed"""
 
 		PlayerNo = self.PlayerNumber
+		WindowResizeRequest = False
+		DimX, DimY = self.Dimensions['Window']
 
 		for event in pg.event.get():
-			if event.type == pg.QUIT or (len(self.gameplayers) != PlayerNo and self.game.StartPlay):
+			if (EvType := event.type) == pg.QUIT or (len(self.gameplayers) != PlayerNo and self.game.StartPlay):
 				self.QuitGame()
 
-			elif event.type == pg.KEYDOWN and event.key == pg.K_TAB:
-				Flags = 0 if pg.FULLSCREEN and self.Window.get_flags() else pg.FULLSCREEN
-				self.Window = Display.set_mode(self.Dimensions['Window'], flags=Flags)
+			elif EvType == pg.KEYDOWN and event.key == pg.K_TAB:
+				Flags = pg.RESIZABLE if pg.FULLSCREEN and self.Window.get_flags() else pg.FULLSCREEN
+				self.Window = Display.set_mode(self.Dimensions['ScreenSize'], flags=Flags)
+				self.Dimensions['Window'] = self.Dimensions['ScreenSize']
 
-			elif event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE and self.Window.get_flags() and pg.FULLSCREEN:
-				self.Window = Display.set_mode(self.Dimensions['Window'])
+			elif EvType == pg.KEYDOWN and event.key == pg.K_ESCAPE and self.Window.get_flags() and pg.FULLSCREEN:
+				self.Window = Display.set_mode(self.Dimensions['ScreenSize'], flags=pg.RESIZABLE)
+				self.Dimensions['Window'] = self.Dimensions['ScreenSize']
+
+			elif EvType == pg.MOUSEBUTTONDOWN and (4 <= event.button <= 5) and pg.KMOD_CTRL:
+				self.ClientSideAttributes['WindowMods'][0] += (20 if event.button == 4 else (-20))
+				self.ClientSideAttributes['WindowMods'][1] += (20 if event.button == 4 else (-20))
+
+				if not self.ClientSideAttributes['ScrollStart']:
+					self.ClientSideAttributes['ScrollStart'] = GetTicks()
+
+			elif EvType == pg.VIDEORESIZE and self.Dimensions['Window'] != self.Dimensions['ScrenSize']:
+				self.Window = Display.set_mode((NewSize := event.size), flags=pg.RESIZABLE)
+				self.Dimensions['Window'] = NewSize
+
+		Condition = (
+				GetTicks() > self.ClientSideAttributes['ScrollStart'] + 100
+				and any(self.ClientSideAttributes['WindowMods'][i] != 0 for i in range(2))
+		)
+
+		if Condition:
+			WinX, WinY, X, Y = *self.Dimensions['Window'], *self.ClientSideAttributes['WindowMods']
+			ScreenX, ScreenY = self.Dimensions['ScreenSize']
+
+			if X > 0:
+				NewDimensions = (min(ScreenX, (WinX + X)), min(ScreenY, (WinY + Y)))
+			else:
+				NewDimensions = (max(0, (WinX + X)), max(0, WinY + Y))
+
+			if NewDimensions != self.Dimensions['Window']:
+				self.Window = Display.set_mode(NewDimensions, flags=pg.RESIZABLE)
+				self.Dimensions['Window'] = NewDimensions
+
+			self.ClientSideAttributes['ScrollStart'] = 0
+			self.ClientSideAttributes['WindowMods'] = [0, 0]
 
 		UpdateDisplay()
 
