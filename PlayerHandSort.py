@@ -11,8 +11,12 @@ def OtherOfColour(Suit, Blacks=Blacks):
 	return 'D' if Suit == 'H' else 'H'
 
 
+def ListOfCardValues(Grouped, Suit):
+	return [card.ActualValue for card in Grouped[Suit]]
+
+
 def MaxOfColour(Colour, Grouped):
-	return max((Suit for Suit in Grouped if Suit in Colour), key=lambda Suit: Grouped[Suit][0].ActualValue)
+	return max((Suit for Suit in Grouped if Suit in Colour), key=lambda Suit: ListOfCardValues(Grouped, Suit))
 
 
 def WhicheverSuitPresent(Colour, Grouped):
@@ -20,7 +24,7 @@ def WhicheverSuitPresent(Colour, Grouped):
 
 
 def MaxSuit(Grouped):
-	return max(Grouped, key=lambda Suit: Grouped[Suit][0].ActualValue)
+	return max(Grouped, key=lambda Suit: ListOfCardValues(Grouped, Suit))
 
 
 def SortHand(Hand, trumpsuit, PlayedSuit='', SuitTuple=('', ''), Blacks=Blacks, Reds=Reds):
@@ -65,7 +69,7 @@ def SortHand(Hand, trumpsuit, PlayedSuit='', SuitTuple=('', ''), Blacks=Blacks, 
 		elif BlackSuitsPresent:
 			if trumpsuit in Grouped:
 				Suit1 = trumpsuit
-				Suit2 = WhicheverSuitPresent(Reds, Grouped)
+				Suit2 = WhicheverSuitPresent((Reds if TrumpIsBlack else Blacks), Grouped)
 			else:
 				Suit1 = MaxSuit(Grouped)
 				Suit2 = next(suit for suit in Grouped if suit != Suit1)
@@ -83,4 +87,10 @@ def SortHand(Hand, trumpsuit, PlayedSuit='', SuitTuple=('', ''), Blacks=Blacks, 
 		OtherOfColour(Suit2): 1
 	}
 
-	return sorted(Hand, key=lambda card: (SuitDict[card.ActualSuit], card.ActualValue), reverse=True)
+	try:
+		return sorted(Hand, key=lambda card: (SuitDict[card.ActualSuit], card.ActualValue), reverse=True)
+	except Exception as e:
+		print(f'SuitDict was {SuitDict}')
+		print(f'Trumpsuit was {trumpsuit}')
+		print(f'Hand was {Hand}')
+		raise e

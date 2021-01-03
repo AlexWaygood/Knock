@@ -5,12 +5,12 @@ Two classes that have to do with communications between the server and clients..
 
 """
 
-import socket, pickle
+import socket, pickle, select
 
 from PasswordChecker import PasswordChecker
 from HelperFunctions import GetTime
 
-from threading import Thread
+from queue import Queue
 from pyinputplus import inputYesNo
 
 
@@ -20,19 +20,19 @@ AccessToken = '62e82f844db51d'
 class Network(object):
 	"""Class object for encoding communication protocols between the server and client."""
 
-	__slots__ = 'conn', 'ClientThreads', 'IP', 'port', 'addr', 'InfoDict', 'server', 'ManuallyVerify', 'cipher',\
+	__slots__ = 'conn', 'ConnectionInfo', 'IP', 'port', 'addr', 'InfoDict', 'server', 'ManuallyVerify', 'cipher',\
 	            'PasswordChecker'
 
-	def __init__(self, IP, port, ManuallyVerify=False, ThreadedFunction=None, server=False,
-	             NumberOfPlayers=0, AccessToken='', password=''):
+	def __init__(self, IP, port, ManuallyVerify=False, ClientConnectFunction=None, server=False,
+	             NumberOfPlayers=0, AccessToken='', password='', CommsFunction=None):
 
 		self.server = server
 		self.conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 		if server:
-			self.ClientThreads = {}
+			self.ConnectionInfo = {}
 			self.conn.bind((IP, port))
-			self.conn.listen(NumberOfPlayers)
+			self.conn.listen()
 
 			NumberOfClients = 0
 
@@ -43,17 +43,52 @@ class Network(object):
 
 			print(f'Ready to accept connections to the server (time {GetTime()}).\n')
 
-			while NumberOfClients < NumberOfPlayers:
-				NumberOfClients += self.ServerConnect(ThreadedFunction, handler, NumberOfClients,
-				                                      password, ManuallyVerify)
+			Inputs = Exceptions = [self.conn]
+			Outputs = []
 
-			print('Maximum number of connections received; no longer open for connections.')
+			while True:
+				readable, writable, exceptional = select.select(Inputs, Outputs, Exceptions)
+				for s in readable:
+					if s is self.conn and NumberOfClients < NumberOfPlayers:
+
+						# if the server itself is appearing in the 'readable' list,
+						# that means the server is ready to accept a new connection
+
+						# Append the new connection to the 'inputs' list after the connection is established,
+						# so we'll know to look for incoming data from that connection.
+
+						# Append it also to the 'outputs' list after the connection is established,
+						# so the server will know to check if that connection is ready to have data sent to it.
+
+						NewConn = self.ServerConnect(
+							ClientConnectFunction,
+							handler,
+							NumberOfClients,
+							password,
+							ManuallyVerify
+						)
+
+						Inputs.append(NewConn)
+						Outputs.append(NewConn)
+						NumberOfClients += 1
+
+						if NumberOfClients == NumberOfPlayers:
+							print('Maximum number of connections received; no longer open for connections.')
+					else:
+						CommsFunction(self, self.ConnectionInfo[s]['player'], s, self.ConnectionInfo[s]['addr'])
+
+				for s in writable:
+					if not (Q := self.ConnectionInfo[s]['SendQueue']).empty():
+						self.send(Q.get(), conn=s)
+
+				if exceptional:
+					raise Exception('Exception in one of the client threads!')
 
 		else:
 			self.addr = (IP, port)
 			self.InfoDict = self.ClientConnect(password)
 
-	def ServerConnect(self, ThreadedFunction, handler, NumberOfClients, password, ManuallyVerify):
+	def ServerConnect(self, ClientConnectFunction, handler, NumberOfClients, password, ManuallyVerify):
 		conn, addr = self.conn.accept()
 
 		if handler:
@@ -72,9 +107,13 @@ class Network(object):
 				self.CloseConnection(conn)
 				return 0
 
-		self.ClientThreads[conn] = Thread(target=ThreadedFunction, args=(self, NumberOfClients, conn, addr))
-		self.ClientThreads[conn].start()
-		return 1
+		self.ConnectionInfo[conn] = {
+			'SendQueue': Queue(),
+			'addr': addr
+		}
+
+		ClientConnectFunction(self, NumberOfClients, conn, addr)
+		return conn
 
 	def ClientConnect(self, password):
 		self.conn.connect(self.addr)
@@ -153,7 +192,7 @@ class Network(object):
 
 	def CloseDown(self):
 		if self.server:
-			self.ClientThreads = [self.CloseConnection(conn) for conn in self.ClientThreads]
+			self.ConnectionInfo = [self.CloseConnection(conn) for conn in self.ConnectionInfo]
 		else:
 			self.ClientSimpleSend('Terminate')
 			self.CloseConnection(self.conn)

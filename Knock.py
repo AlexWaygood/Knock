@@ -18,7 +18,7 @@ from time import time
 from PIL import Image
 from os import chdir, environ, path
 from itertools import chain, accumulate, product
-from threading import Thread, Lock
+from threading import Thread
 from pyinputplus import inputCustom, inputYesNo
 from fractions import Fraction
 from string import whitespace
@@ -78,7 +78,6 @@ class Window(object):
 	DefaultFillColour = Colours['Maroon']
 
 	def __init__(self, WindowDimensions, WindowMargin, CardDimensions, CardImages, IP, Port, password):
-		self.lock = Lock()
 		self.ServerCommsQueue = Queue()
 		self.ScoreboardAttributes = {}
 		self.InputText = ''
@@ -442,7 +441,8 @@ class Window(object):
 
 		self.ClientSideAttributes.update({
 			'CardNumberThisRound': cardnumber,
-			'RoundLeaderIndex': RoundLeader.playerindex
+			'RoundLeaderIndex': RoundLeader.playerindex,
+			'RoundNumber': RoundNumber
 		})
 
 		Message = f'ROUND {RoundNumber} starting! This round has {cardnumber} card{"s" if cardnumber != 1 else ""}.'
@@ -630,6 +630,7 @@ class Window(object):
 		self.Surfaces['BaseScoreboard'] = None
 		self.ServerCommsQueue.put('AC')
 		self.Surfaces['Hand'].ClearRectList()
+		self.ClientSideAttributes['RoundNumber'] = 1
 
 	def ThreadedGameUpdate(self):
 		"""This method runs throughout gameplay on a separate thread."""
@@ -689,9 +690,6 @@ class Window(object):
 			self.UpdateGameSurface(UpdateWindow=True, ToUpdate=('Board',))
 
 	def GetGame(self, arg='GetGame', CheckForExit=True, UpdateAfter=False):
-		# with self.lock:
-		# 	self.game = self.Client.ClientSimpleSend(arg)
-
 		self.game = self.Client.ClientSimpleSend(arg)
 
 		if self.ServerCommsQueue.empty():
@@ -704,9 +702,6 @@ class Window(object):
 			self.UpdateGameSurface(UpdateWindow=True)
 
 	def SendToServer(self, MessageType, Message):
-		# with self.lock:
-		# 	self.game = self.Client.send(MessageType, Message)
-
 		self.game = self.Client.send(MessageType, Message)
 
 		if self.ServerCommsQueue.empty():

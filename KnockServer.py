@@ -3,15 +3,17 @@
 """This script must be run by exactly one machine for a game to take place."""
 
 
-import traceback, socket
+import socket
 
 from Network import Network, AccessToken
 from Game import Game
 from Player import Player
 from HelperFunctions import GetTime
+from PasswordChecker import GeneratePassword, PasswordInput
 
 from pyinputplus import inputInt, inputMenu, inputCustom, inputYesNo
 from collections import defaultdict
+from threading import Thread
 
 from os import environ
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
@@ -91,66 +93,26 @@ def CommsWithClient(Server, player, conn, addr, Operations=Operations):
 	while not game.Sendable:
 		pass
 
-	Server.send(game, conn=conn)
-	return True
+	Server.ConnectionInfo[conn]['SendQueue'].put(game)
 
 
-def ThreadedClient(Server, playerindex, conn, addr):
+def ClientConnect(Server, playerindex, conn, addr):
 	global game
 
 	# We want the whole server script to fail if a single thread goes down,
 	# since there's no point continuing a game if one of the players has left
 
-	Server.send({'game': game, 'player': (player := Player(playerindex))}, conn=conn)
+	player = Player(playerindex)
+	Server.ConnectionInfo[conn]['SendQueue'].put({'game': game, 'player': player})
 	print(f'Game sent to client {addr} at {GetTime()}.\n')
-
-	while True:
-		try:
-			if not CommsWithClient(Server, player, conn, addr):
-				break
-		except:
-			print(traceback.format_exc())
-			print(f'Exception occurred at {GetTime()}')
-			break
+	Server.ConnectionInfo[conn]['player'] = player
 
 
-PasswordChoices = [
-	"I want a new, randomly generated password for this game",
-	"I've already got a password for this game",
-	"I don't want a password for this game"
-]
-
-while True:
-	NumberOfPlayers = inputInt('How many players will be playing? ', min=2, max=6)
-	game = Game(NumberOfPlayers)
-	print()
-
-	if Choice := inputMenu(choices=PasswordChoices, prompt='Select whether you want to set a password for this game:\n\n',
-	                       numbered=True, blank=True) == PasswordChoices[0]:
-
-		password = GeneratePassword()
-		print(f'\nYour randomly generated password for this session is {password}')
-	elif Choice == PasswordChoices[1]:
-		password = inputCustom(PasswordInput, '\nPlease enter the password for this session: ')
-	else:
-		password = ''
-
-	ManuallyVerify = inputYesNo('\nDo you want to manually authorise each connection? '
-	                            '(If "no", new connections will be accepted automatically '
-	                            'if they have entered the correct password.) ', blank=True) == 'yes'
-
-	print('Initialising server...')
-
-	# The server will accept new connections until the expected number of players have connected to the server.
-	# Remember - this part of the code will fail if the server's network router does not have port forwarding set up.
-	# (Warning does not apply if you are playing within one local area network.)
-	# Remember to take the port out when publishing this code online.
-
-	Server = Network('', 5555, ManuallyVerify, ThreadedClient, True, NumberOfPlayers,
-	                 AccessToken=AccessToken, password=password)
+def EternalGameLoop():
+	global game
 
 	while len(game.gameplayers) < NumberOfPlayers or any(not player.name for player in game.gameplayers):
-		pg.time.delay(60)
+		pg.time.delay(1000)
 
 	try:
 		while True:
@@ -161,6 +123,51 @@ while True:
 		except:
 			pass
 
-	if inputYesNo('The server has closed down. Would you like to reinitialise and play again? ') == 'no':
-		pg.quit()
-		quit()
+
+PasswordChoices = [
+	"I want a new, randomly generated password for this game",
+	"I've already got a password for this game",
+	"I don't want a password for this game"
+]
+
+
+NumberOfPlayers = inputInt('How many players will be playing? ', min=2, max=6)
+game = Game(NumberOfPlayers)
+print()
+
+if Choice := inputMenu(choices=PasswordChoices, prompt='Select whether you want to set a password for this game:\n\n',
+                       numbered=True, blank=True) == PasswordChoices[0]:
+
+	password = GeneratePassword()
+	print(f'\nYour randomly generated password for this session is {password}')
+elif Choice == PasswordChoices[1]:
+	password = inputCustom(PasswordInput, '\nPlease enter the password for this session: ')
+else:
+	password = ''
+
+ManuallyVerify = inputYesNo('\nDo you want to manually authorise each connection? '
+                            '(If "no", new connections will be accepted automatically '
+                            'if they have entered the correct password.) ', blank=True) == 'yes'
+
+print('Initialising server...')
+
+# The server will accept new connections until the expected number of players have connected to the server.
+# Remember - this part of the code will fail if the server's network router does not have port forwarding set up.
+# (Warning does not apply if you are playing within one local area network.)
+# Remember to take the port out when publishing this code online.
+
+(thread := Thread(target=EternalGameLoop)).start()
+
+Server = Network(
+	IP='',
+	port=5555,
+	ManuallyVerify=ManuallyVerify,
+	ClientConnectFunction=ClientConnect,
+	server=True,
+	NumberOfPlayers=NumberOfPlayers,
+	AccessToken=AccessToken,
+	password=password,
+	CommsFunction=CommsWithClient
+)
+
+thread.join()

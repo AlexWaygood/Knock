@@ -1,6 +1,9 @@
 from PlayerHandSort import SortHand
 from collections import UserList
 from HelperFunctions import AllEqual
+from os import environ
+
+environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 from pygame.time import delay
 
 

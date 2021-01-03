@@ -31,7 +31,7 @@ class PasswordChecker(object):
 
 		self.conn = conn
 		self.server = server
-		self.cipher,  = None
+		self.cipher = None
 		self.ServerPartialKey = None
 		self.ClientPartialKey = None
 		self.FullKey = None
