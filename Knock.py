@@ -1485,10 +1485,5 @@ while True:
 		print(traceback.format_exc())
 		pg.quit()
 
-	Condition = (
-			inputYesNo('Game has ended. Would you like to try to connect again and start a new game? ', blank=True)
-			in ('no', '')
-	)
-
-	if Condition:
+	if inputYesNo('Game has ended. Press enter to try to connect again and start a new game.', blank=True) == 'no':
 		break
