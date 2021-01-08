@@ -10,7 +10,7 @@ from pygame import Surface, Rect
 class SurfaceAndPosition(object):
 	"""Class for holding data about various surfaces that will be used frequently in the game"""
 
-	__slots__ = 'surf', 'pos', 'surfandpos', 'RectList', 'midpoint', 'CoverRects'
+	__slots__ = 'surf', 'pos', 'surfandpos', 'RectList', 'midpoint', 'CoverRects', 'Dimensions'
 
 	CardDimensions = None
 	DefaultFillColour = None
@@ -24,13 +24,13 @@ class SurfaceAndPosition(object):
 		if SurfaceDimensions:
 			self.AddSurf(SurfaceDimensions, position, OpacityRequired, FillColour)
 
-		if RectList:
-			self.AddRectList(RectList)
+		self.AddRectList(RectList)
 
 		if Dimensions:
 			self.midpoint = Dimensions[0] // 2
 
 	def AddSurf(self, SurfaceDimensions, pos=None, OpacityRequired=False, FillColour=None):
+		self.Dimensions = SurfaceDimensions
 		self.surf = Surface(SurfaceDimensions)
 
 		if OpacityRequired:
@@ -43,19 +43,28 @@ class SurfaceAndPosition(object):
 
 		self.surfandpos = (self.surf, self.pos)
 
+	def ShiftPos(self, PosIndex, Shift):
+		self.pos[PosIndex] += Shift
+		self.surfandpos = (self.surf, self.pos)
+
+	def ResetPos(self):
+		self.pos = [0, 0]
+		self.surfandpos = (self.surf, self.pos)
+
 	def AddRectList(self, Positions):
 		"""Only really used for the Hand surface"""
-		self.RectList = [Rect(*Position, *self.CardDimensions) for Position in Positions]
-		CoverRects = [CoverRect(self.CardDimensions, self.pos, RectOnSurface) for RectOnSurface in self.RectList]
-		self.CoverRects = CoverRectList(CoverRects)
+
+		if Positions:
+			self.RectList = [Rect(*Position, *self.CardDimensions) for Position in Positions]
+			CoverRects = [CoverRect(self.CardDimensions, self.pos, RectOnSurface) for RectOnSurface in self.RectList]
+			self.CoverRects = CoverRectList(CoverRects)
+		else:
+			self.RectList = []
 
 	@classmethod
-	def AddCardDimensions(cls, CardDimensions):
+	def AddDefaults(cls, CardDimensions, DefaultFill):
 		cls.CardDimensions = CardDimensions
-
-	@classmethod
-	def AddDefaultFillColour(cls, Colour):
-		cls.DefaultFillColour = Colour
+		cls.DefaultFillColour = DefaultFill
 
 	def ClearRectList(self):
 		self.RectList.clear()

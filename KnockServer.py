@@ -3,7 +3,7 @@
 """This script must be run by exactly one machine for a game to take place."""
 
 
-import socket
+import socket, pickle
 
 from Network import Network, AccessToken
 from Game import Game

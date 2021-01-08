@@ -87,10 +87,4 @@ def SortHand(Hand, trumpsuit, PlayedSuit='', SuitTuple=('', ''), Blacks=Blacks, 
 		OtherOfColour(Suit2): 1
 	}
 
-	try:
-		return sorted(Hand, key=lambda card: (SuitDict[card.ActualSuit], card.ActualValue), reverse=True)
-	except Exception as e:
-		print(f'SuitDict was {SuitDict}')
-		print(f'Trumpsuit was {trumpsuit}')
-		print(f'Hand was {Hand}')
-		raise e
+	return sorted(Hand, key=lambda card: (SuitDict[card.ActualSuit], card.ActualValue), reverse=True)

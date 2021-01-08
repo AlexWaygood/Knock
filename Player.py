@@ -191,6 +191,9 @@ class Gameplayers(UserList):
 				Last = Leaders[-1]
 				yield f'{JoinedList} and {Last} lead so far in this tournament, {GamesWonText} each!'
 
+	def __eq__(self, other):
+		return self.players == other.players
+
 
 class Player(object):
 	"""Class object for representing a single player in the game."""
@@ -287,3 +290,6 @@ class Player(object):
 
 	def __repr__(self):
 		return self.name if isinstance(self.name, str) else f'Player with index {self.playerindex}, as yet unnamed'
+
+	def __eq__(self, other):
+		return self.name == other.name and self.HandIteration == other.HandIteration

@@ -165,3 +165,13 @@ class Game(object):
 		self.Attributes.PlayedCards.clear()
 		self.IncrementTriggers('Board')
 		self.WaitForPlayers('TrickEnd')
+
+	def __eq__(self, other):
+		return all((
+			self.Triggers == other.Triggers,
+			self.gameplayers == other.gameplayers,
+			self.StartPlay == other.StartPlay,
+			self.RepeatGame == other.RepeatGame,
+			self.GamesPlayed == other.GamesPlayed,
+			self.PlayerNumber == other.PlayerNumber
+		))

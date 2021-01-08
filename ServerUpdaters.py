@@ -35,6 +35,9 @@ class Triggers(object):
 			'Board': 0,
 		}
 
+	def __eq__(self, other):
+		return self.Events == other.Events and self.Surfaces == other.Surfaces
+
 
 class AttributeTracker(object):
 	"""This class holds information about the current state of play"""

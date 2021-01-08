@@ -43,11 +43,10 @@ class Network(object):
 
 			print(f'Ready to accept connections to the server (time {GetTime()}).\n')
 
-			Inputs = Exceptions = [self.conn]
-			Outputs = []
+			Inputs, Outputs = [self.conn], []
 
 			while True:
-				readable, writable, exceptional = select.select(Inputs, Outputs, Exceptions)
+				readable, writable, exceptional = select.select(Inputs, Outputs, Inputs)
 				for s in readable:
 					if s is self.conn and NumberOfClients < NumberOfPlayers:
 
@@ -107,11 +106,7 @@ class Network(object):
 				self.CloseConnection(conn)
 				return 0
 
-		self.ConnectionInfo[conn] = {
-			'SendQueue': Queue(),
-			'addr': addr
-		}
-
+		self.ConnectionInfo[conn] = {'SendQueue': Queue(), 'addr': addr}
 		ClientConnectFunction(self, NumberOfClients, conn, addr)
 		return conn
 
@@ -130,46 +125,29 @@ class Network(object):
 		return self.receive()
 
 	def send(self, messagetype='', data='', conn=None):
-		if not conn:
-			conn = self.conn
+		conn = conn if conn else self.conn
+		message = messagetype if self.server else {'MessageType': messagetype, 'Message': data}
 
-		if self.server:
-			message = messagetype
-		else:
-			message = {
-				'MessageType'   : messagetype,
-				'Message'       : data
-			}
-
-		# Convert the data we want to send into binary.
+		# Convert the data we want to send into binary by pickling it.
 		# Create a header telling the other computer the size of the data we want to send.
-		# Turn the header into a fixed-length message, encode it.
-		PickledMessage = pickle.dumps(message)
-		Header = str(len(PickledMessage))
-		Header = f'{Header}{"".join(("-" for i in range(10 - len(Header))))}'.encode()
+		# Turn the header into a fixed-length message using f-string left-alignment, encode it, send it.
+		# Then send the main message itself.
 
-		# Send the header, then the data.
-		conn.sendall(Header)
-		conn.recv(1)
+		PickledMessage = pickle.dumps(message)
+		conn.sendall(f'{str(len(PickledMessage)):-<10}'.encode())
 		conn.sendall(PickledMessage)
 
 		if not self.server:
 			return self.receive()
 
 	def receive(self, conn=None):
-		if not conn:
-			conn = self.conn
+		conn = conn if conn else self.conn
+		Message = self.SubReceive(10, conn).decode().split('-')[0]
 
-		InitialMessage = self.SubReceive(10, conn).decode()
-		InitialMessage = ''.join((character for character in InitialMessage if character != '-'))
+		if Message.startswith('@') or not Message[:2].isdigit():
+			return Message[:2]
 
-		if InitialMessage.startswith('@') or not InitialMessage[:2].isdigit():
-			return InitialMessage[:2]
-
-		AmountToReceive = int(InitialMessage)
-		conn.sendall('1'.encode())
-
-		return pickle.loads(self.SubReceive(AmountToReceive, conn))
+		return pickle.loads(self.SubReceive(int(Message), conn))
 
 	def SubReceive(self, AmountToReceive, conn=None):
 		if not conn:

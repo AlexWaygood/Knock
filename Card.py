@@ -47,19 +47,12 @@ class Card(object):
 
 		if PlayedCards:
 			SuitLed = PlayedCards[0].ActualSuit
-
-			Condition = any(
-				UnplayedCard.ActualSuit == SuitLed
-				for UnplayedCard in PlayedByHand
-			)
+			Condition = any(UnplayedCard.ActualSuit == SuitLed for UnplayedCard in PlayedByHand)
 
 			if self.ActualSuit != SuitLed and Condition:
 				return 'You tried to play an illegal move! Maybe try again?'
 
 		return None
-
-	def __eq__(self, other):
-		return self.ID == other.ID
 
 	def __repr__(self):
 		return f'{self.WrittenValue} of {self.WrittenSuit}'
