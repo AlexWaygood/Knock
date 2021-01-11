@@ -9,7 +9,7 @@ from FireworkParticle import Particle
 from FireworkSparker import Sparker
 from Network import Network
 from PasswordChecker import PasswordInput
-from HelperFunctions import GameStarted, AllBid, GetTime, PrintableCharacters
+from HelperFunctions import GameStarted, AllBid, GetTime, PrintableCharactersPlusSpace, CalculateDimensions1
 from ServerUpdaters import Triggers, AttributeTracker
 from PygameWrappers import SurfaceAndPosition, CoverRect, CoverRectList, FontAndLinesize
 from Card import Card
@@ -21,7 +21,6 @@ from itertools import chain, accumulate, product
 from threading import Thread
 from pyinputplus import inputCustom, inputYesNo
 from fractions import Fraction
-from string import whitespace
 from queue import Queue
 
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
@@ -50,7 +49,7 @@ class Window(object):
 	            'InputText', 'Client', 'game', 'Window', 'CardImages', 'Surfaces', 'PlayStarted', \
 	            'ScoreboardAttributes', 'clock', 'PlayerTextPositions', 'name', 'Dimensions', 'Errors', \
 	            'ServerCommsQueue', 'ClientSideAttributes', 'PlayerNumber', 'MaxCardNumber', 'StartCardPositions', \
-	            'BaseCardImages', 'CurrentColours', 'WindowResizeInProgress'
+	            'BaseCardImages', 'CurrentColours', 'DeactivateVideoResize'
 
 	DefaultFont = 'Times New Roman'
 
@@ -80,7 +79,7 @@ class Window(object):
 		self.InputText = ''
 		self.GameUpdatesNeeded = False
 		self.PlayStarted = False
-		self.WindowResizeInProgress = False
+		self.DeactivateVideoResize = False
 		self.ToBlit = []
 		self.Attributes = AttributeTracker()
 
@@ -170,9 +169,9 @@ class Window(object):
 		self.StartCardPositions = list(range(self.PlayerNumber))
 
 		Display.set_icon(pg.image.load(path.join('CardImages', 'PygameIcon.png')))
-		self.Window = Display.set_mode(WindowDimensions, flags=pg.FULLSCREEN)
+		self.Window = Display.set_mode(WindowDimensions, flags=pg.RESIZABLE)
 		Display.set_caption('Knock (made by Alex Waygood)')
-		pg.key.set_repeat(100, 100)
+		pg.key.set_repeat(1000, 300)
 
 		self.BaseCardImages = {
 			ID: pg.image.fromstring(image.tobytes(), image.size, image.mode).convert()
@@ -180,7 +179,7 @@ class Window(object):
 		}
 
 		self.Surfaces = {'BaseScoreboard': None}
-		self.CalculateDimensions(WindowDimensions)
+		self.CalculateDimensions2(WindowDimensions)
 		self.Fill('Cursor', 'Black')
 		self.UpdateGameAttributes()
 
@@ -201,7 +200,6 @@ class Window(object):
 
 		delay(100)
 		self.GameUpdatesNeeded = True
-
 
 		while not self.gameplayers.AllPlayersHaveJoinedTheGame():
 			self.gameplayers = self.game.gameplayers
@@ -559,10 +557,12 @@ class Window(object):
 		self.ReceiveGame(self.Client.send(MessageType, Message))
 
 	def NewWindowSize(self, Fullscreen=False, NewDimensions=None):
-		self.WindowResizeInProgress = True
+		if Fullscreen:
+			self.Surfaces['Game'].ResetPos()
 
 		if not NewDimensions:
 			WinX, WinY, X, Y = *self.Dimensions['Window'], *self.ClientSideAttributes['WindowMods']
+			print(WinX, WinY, X, Y)
 			self.ClientSideAttributes['WindowMods'] = [0, 0]
 			ScreenX, ScreenY = self.Dimensions['ScreenSize']
 
@@ -571,30 +571,28 @@ class Window(object):
 			else:
 				NewDimensions = (max(0, (WinX + X)), max(0, WinY + Y))
 
+			print(NewDimensions)
+
 		if NewDimensions != self.Dimensions['Window']:
-			Flags = pg.FULLSCREEN if Fullscreen else pg.RESIZABLE
-			self.Window = Display.set_mode(NewDimensions, flags=Flags)
+			self.Dimensions['Window'] = NewDimensions
+			print(self.Dimensions['Window'])
+			self.Window = Display.set_mode(NewDimensions, flags=(pg.FULLSCREEN if Fullscreen else pg.RESIZABLE))
 			self.Window.fill(self.CurrentColours['GameSurface'])
 			UpdateDisplay()
-			self.Dimensions['Window'] = NewDimensions
-			self.CalculateDimensions(NewDimensions)
+			self.CalculateDimensions2(NewDimensions)
 
 			if self.Surfaces['Hand'].RectList:
 				self.CalculateHandRects()
 
-		self.ClientSideAttributes['ScrollStart'] = 0
-		self.WindowResizeInProgress = False
+		print()
 
-	def CalculateDimensions(self, NewWindowDimensions):
-		MinX, MinY, NewX, NewY = 1186, 588, *NewWindowDimensions
+	def CalculateDimensions2(self, NewWindowDimensions):
+		WindowDimensions, WindowMargin, NewCardDimensions, RequiredResizeRatio = CalculateDimensions1(
+			NewWindowDimensions=NewWindowDimensions,
+			CurrentCardDimensions=self.Dimensions['OriginalCard']
+		)
 
-		WindowDimensions = (WindowX, WindowY) = ((NewX if NewX >= MinX else MinX), (NewY if NewY >= MinY else MinY))
-		WindowMargin = int(WindowDimensions[0] * Fraction(15, 683))
-		OriginalCardDimensions = (691, 1056)
-		ImpliedCardHeight = min(((WindowY // Fraction(768, 150)) - WindowMargin), (WindowY // 5.5))
-		ImpliedCardWidth = ImpliedCardHeight * Fraction(*OriginalCardDimensions)
-		NewCardDimensions = (CardX, CardY) = (ImpliedCardWidth.__ceil__(), ImpliedCardHeight.__ceil__())
-		RequiredResizeRatio = ImpliedCardHeight / self.Dimensions['OriginalCard'][1]
+		WindowX, WindowY, CardX, CardY = *WindowDimensions, *NewCardDimensions
 
 		Dimensions = {
 			'Window': WindowDimensions,
@@ -792,16 +790,20 @@ class Window(object):
 			elif EvType == pg.KEYDOWN:
 				if (EvKey := event.key) == pg.K_TAB:
 					if self.Window.get_flags() & pg.FULLSCREEN:
-						self.Window = Display.set_mode(ScreenSize, flags=pg.RESIZABLE)
+						Dimensions = ((ScreenSize[0] - 20), (ScreenSize[1] - 20))
+						self.NewWindowSize(Fullscreen=False, NewDimensions=Dimensions)
 					else:
-						self.Surfaces['Game'].ResetPos()
-						print('1')
 						self.NewWindowSize(Fullscreen=True, NewDimensions=ScreenSize)
-						self.WindowResizeInProgress = True
+					self.DeactivateVideoResize = True
 
 				elif EvKey == pg.K_ESCAPE and (self.Window.get_flags() & pg.FULLSCREEN):
-					self.Dimensions['Window'] = ScreenSize
-					self.Window = Display.set_mode(ScreenSize, flags=pg.RESIZABLE)
+					Dimensions = ((ScreenSize[0] - 20), (ScreenSize[1] - 20))
+					self.NewWindowSize(Fullscreen=False, NewDimensions=Dimensions)
+
+				elif EvKey == pg.K_q and (pg.key.get_mods() & pg.KMOD_CTRL):
+					pg.quit()
+					self.Client.CloseDown()
+					raise Exception('The game has ended.')
 
 				elif EvKey == pg.K_RIGHT and (P := self.StuffIsOffScreen(0)):
 					GameSurface.ShiftPos(0, -min(20, P))
@@ -820,7 +822,7 @@ class Window(object):
 						self.ServerCommsQueue.put('1')
 
 				elif TypingNeeded:
-					if event.unicode in PrintableCharacters:
+					if event.unicode in PrintableCharactersPlusSpace:
 						try:
 							self.InputText += event.unicode
 						except:
@@ -836,9 +838,9 @@ class Window(object):
 					click = True
 					MousePos = pg.mouse.get_pos()
 
-				elif (4 <= Button <= 5) and pg.KMOD_CTRL:
-					for i in range(2):
-						self.ClientSideAttributes['WindowMods'][i] += (20 if Button == 4 else (-20))
+				elif Button in (4, 5) and (pg.key.get_mods() & pg.KMOD_CTRL):
+					Zoom = self.ClientSideAttributes['WindowMods']
+					self.ClientSideAttributes['WindowMods'] = [z + (20 if Button == 4 else (-20)) for z in Zoom]
 
 					if not self.ClientSideAttributes['ScrollStart']:
 						self.ClientSideAttributes['ScrollStart'] = GetTicks()
@@ -846,19 +848,26 @@ class Window(object):
 			elif EvType == pg.MOUSEBUTTONUP and ClicksNeeded and event.button == 1:
 				click = False
 
-			elif EvType == pg.VIDEORESIZE and self.Dimensions['Window'] != ScreenSize and not self.WindowResizeInProgress:
-				print('2')
-				self.NewWindowSize(NewDimensions=event.size)
+			elif EvType == pg.VIDEORESIZE:
+				# This event is triggered on manual resize and on entering/exiting fullscreen,
+				# but not when using the scroll wheel to adjust the size of the window.
+
+				# We want it to do something on manual resize,
+				# but we don't want it to do anything when entering/exiting fullscreen.
+
+				if self.DeactivateVideoResize:
+					self.DeactivateVideoResize = False
+				else:
+					self.NewWindowSize(NewDimensions=event.size)
 
 		Condition = (
 				GetTicks() > self.ClientSideAttributes['ScrollStart'] + 100
-				and any(self.ClientSideAttributes['WindowMods'][i] != 0 for i in range(2))
+				and any(mod != 0 for mod in self.ClientSideAttributes['WindowMods'])
 		)
 
 		if Condition:
-			print('3')
+			self.ClientSideAttributes['ScrollStart'] = 0
 			self.NewWindowSize()
-			self.WindowResizeInProgress = True
 
 		if click:
 			if ClickToStart:
@@ -884,12 +893,13 @@ class Window(object):
 			if isinstance(self.name, int):
 				try:
 					assert len(self.InputText) < 30
-					assert all(any((letter in PrintableCharacters, letter in whitespace)) for letter in self.InputText)
+					# Don't need to check that letters are ASCII-compliant;
+					# wouldn't have been able to type them if they weren't.
 					self.name = self.InputText
 					self.ServerCommsQueue.put(('player', self.InputText))
 				except:
 					Errs = self.Errors['ThisPass']
-					Errs.append('Name must be <30 characters, and ASCII-compliant; please try again.')
+					Errs.append('Name must be <30 characters; please try again.')
 
 			elif not (self.Attributes.StartCardNumber or self.player.playerindex):
 				Max = self.MaxCardNumber
@@ -1453,29 +1463,8 @@ password = inputCustom(
 )
 
 print('Initialising...')
-
-# Calculate the size of the window on the client's screen.
-
-try:
-	from screeninfo import get_monitors
-	Monitor = get_monitors()[0]
-	WindowDimensions = (Monitor.width, Monitor.height)
-except:
-	WindowDimensions = (1300, 680)
-
-# Calculate the required size of the card images, based on various ratios of surfaces that will appear on the screen.
-# Lots of "magic numbers" here, based purely on the principle of "keep the proportions that look good on my laptop".
-
-WindowMargin = int(WindowDimensions[0] * Fraction(15, 683))
-OriginalCardDimensions = (691, 1056)
-WindowY = WindowDimensions[1]
-ImpliedCardHeight = min(((WindowY // Fraction(768, 150)) - WindowMargin), (WindowY // 5.5))
-ImpliedCardWidth = ImpliedCardHeight * Fraction(*OriginalCardDimensions)
-NewCardDimensions = (ImpliedCardWidth.__ceil__(), ImpliedCardHeight.__ceil__())
-RequiredResizeRatio = OriginalCardDimensions[1] / ImpliedCardHeight
-
+WindowDimensions, _, NewCardDimensions, RequiredResizeRatio = CalculateDimensions1()
 CardIDs = [f'{p[0]}{p[1]}' for p in product(chain(range(2, 11), ('J', 'Q', 'K', 'A')), ('D', 'S', 'C', 'H'))]
-
 CardImages = {CardID: Image.open(path.join('CardImages', f'{CardID}.jpg')).convert("RGB") for CardID in CardIDs}
 
 CardImages = {
