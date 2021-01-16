@@ -13,6 +13,8 @@ from HelperFunctions import GameStarted, AllBid, GetTime, PrintableCharactersPlu
 from ServerUpdaters import Triggers, AttributeTracker
 from PygameWrappers import SurfaceAndPosition, CoverRect, CoverRectList, FontAndLinesize
 from Card import Card
+from GameSurface import GameSurface
+from Arrows import UpArrow, DownArrow, RightArrow, LeftArrow, NWArrow, NEArrow, SWArrow, SEArrow
 
 from time import time
 from PIL import Image
@@ -178,7 +180,11 @@ class Window(object):
 			for ID, image in CardImages.items()
 		}
 
-		self.Surfaces = {'BaseScoreboard': None}
+		self.Surfaces = {
+			'BaseScoreboard': None,
+			'Game': GameSurface(*WindowDimensions)
+		}
+
 		self.CalculateDimensions2(WindowDimensions)
 		self.Fill('Cursor', 'Black')
 		self.UpdateGameAttributes()
@@ -557,25 +563,10 @@ class Window(object):
 		self.ReceiveGame(self.Client.send(MessageType, Message))
 
 	def NewWindowSize(self, Fullscreen=False, NewDimensions=None):
-		if Fullscreen:
-			self.Surfaces['Game'].ResetPos()
-
-		if not NewDimensions:
-			WinX, WinY, X, Y = *self.Dimensions['Window'], *self.ClientSideAttributes['WindowMods']
-			print(WinX, WinY, X, Y)
-			self.ClientSideAttributes['WindowMods'] = [0, 0]
-			ScreenX, ScreenY = self.Dimensions['ScreenSize']
-
-			if X > 0:
-				NewDimensions = (min(ScreenX, (WinX + X)), min(ScreenY, (WinY + Y)))
-			else:
-				NewDimensions = (max(0, (WinX + X)), max(0, WinY + Y))
-
-			print(NewDimensions)
+		# change screen size based on event inputs
 
 		if NewDimensions != self.Dimensions['Window']:
 			self.Dimensions['Window'] = NewDimensions
-			print(self.Dimensions['Window'])
 			self.Window = Display.set_mode(NewDimensions, flags=(pg.FULLSCREEN if Fullscreen else pg.RESIZABLE))
 			self.Window.fill(self.CurrentColours['GameSurface'])
 			UpdateDisplay()
@@ -583,8 +574,6 @@ class Window(object):
 
 			if self.Surfaces['Hand'].RectList:
 				self.CalculateHandRects()
-
-		print()
 
 	def CalculateDimensions2(self, NewWindowDimensions):
 		WindowDimensions, WindowMargin, NewCardDimensions, RequiredResizeRatio = CalculateDimensions1(
@@ -691,6 +680,7 @@ class Window(object):
 		TrumpCardSurfaceDimensions = ((CardX + 2), (CardY + int(NormalLinesize * 2.5) + 10))
 		TrumpCardPos = (1, int(NormalLinesize * 2.5))
 		SurfaceAndPosition.AddDefaults(NewCardDimensions, self.DefaultFillColour)
+		GameSurface.AddDefaults()
 
 		Surfs = {
 			'Cursor': pg.Surface((3, NormalLinesize)),
@@ -699,12 +689,6 @@ class Window(object):
 				SurfaceDimensions=None,
 				position=[WindowMargin, WindowMargin],
 				FillColour=self.CurrentColours['Scoreboard']
-			),
-
-			'Game': SurfaceAndPosition(
-				SurfaceDimensions=WindowDimensions,
-				position=[0, 0],
-				FillColour=self.CurrentColours['GameSurface']
 			),
 
 			'TrumpCard': SurfaceAndPosition(
@@ -738,6 +722,7 @@ class Window(object):
 		self.Dimensions['BoardCentre'] = BoardCentre
 		self.fonts = fonts
 		self.Surfaces.update(Surfs)
+		self.Surfaces['Game'].NewWindowSize(NewWindowDimensions, self.CurrentColours['GameSurface'])
 
 		if self.Surfaces['BaseScoreboard']:
 			self.BuildBaseScoreboard()
@@ -764,12 +749,7 @@ class Window(object):
 		if List:
 			self.BlitSurface('Game', List)
 		self.BlitSurface(self.Window, 'Game')
-		UpdateDisplay()		
-
-	def StuffIsOffScreen(self, i):
-		"""Only for testing if stuff is off screen to the bottom or the right"""
-
-		return self.Surfaces['Game'].pos[i] - (self.Dimensions['Window'][i] - self.Surfaces['Game'].Dimensions[i])
+		UpdateDisplay()
 
 	def HandleEvents(self, ClicksNeeded, TypingNeeded, ClickToStart=False, GameReset=False):
 		""" Main pygame event loop """
