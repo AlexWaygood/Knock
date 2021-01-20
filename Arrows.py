@@ -1,7 +1,7 @@
 from os import environ
 
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
-from pygame import cursors
+from pygame.cursors import compile, diamond
 
 
 LeftArrow = [
@@ -15,7 +15,7 @@ LeftArrow = [
     '                                                                                                                                ',
     ]
 
-LeftArrow = ((128, 8), (17, 4), *cursors.compile(LeftArrow))
+LeftArrow = ((128, 8), (17, 4), *compile(LeftArrow))
 
 RightArrow = [
     '                                                                                                                                ',
@@ -28,7 +28,7 @@ RightArrow = [
     '                                                                                                                                ',
     ]
 
-RightArrow = ((128, 8), (111, 4), *cursors.compile(RightArrow))
+RightArrow = ((128, 8), (111, 4), *compile(RightArrow))
 
 UpArrow = [
     '                                                                                                                                ',
@@ -73,7 +73,7 @@ UpArrow = [
     '                                                                                                                                '
     ]
 
-UpArrow = ((128, 40), (64, 0), *cursors.compile(UpArrow))
+UpArrow = ((128, 40), (64, 0), *compile(UpArrow))
 
 DownArrow = [
     '                                                                                                                                ',
@@ -118,7 +118,7 @@ DownArrow = [
     '                                                                                                                                ',
     ]
 
-DownArrow = ((128, 40), (64, 39), *cursors.compile(DownArrow))
+DownArrow = ((128, 40), (64, 39), *compile(DownArrow))
 
 
 SWArrow = [
@@ -165,7 +165,7 @@ SWArrow = [
     ]
 
 
-SWArrow = ((128, 40), (31, 35), *cursors.compile(SWArrow))
+SWArrow = ((128, 40), (31, 35), *compile(SWArrow))
 
 SEArrow = [
     '                                                                                                                                ',
@@ -211,7 +211,7 @@ SEArrow = [
     ]
 
 
-SEArrow = ((128, 40), (99, 36), *cursors.compile(SEArrow))
+SEArrow = ((128, 40), (99, 36), *compile(SEArrow))
 
 NEArrow = [
     '                                                                                                                                ',
@@ -256,7 +256,7 @@ NEArrow = [
     '                                                                                                                                '
     ]
 
-NEArrow = ((128, 40), (97, 8), *cursors.compile(NEArrow))
+NEArrow = ((128, 40), (97, 8), *compile(NEArrow))
 
 NWArrow = [
     '                                                                                                                                ',
@@ -301,4 +301,16 @@ NWArrow = [
     '                                                                                                                                '
     ]
 
-NWArrow = ((128, 40), (32, 6), *cursors.compile(NWArrow))
+NWArrow = ((128, 40), (32, 6), *compile(NWArrow))
+
+Arrows = {
+    'N': UpArrow,
+    'NE': NEArrow,
+    'E': RightArrow,
+    'SE': SEArrow,
+    'S': DownArrow,
+    'SW': SWArrow,
+    'W': LeftArrow,
+    'NW': NWArrow,
+    'Diamond': diamond
+}

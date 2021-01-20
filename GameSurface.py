@@ -13,13 +13,12 @@ class GameSurface(object):
 	"""
 
 	__slots__ = 'x', 'y', 'RectWidth', 'RectHeight', 'surf', 'rect', 'surfandpos', 'WindowWidth', 'WindowHeight', \
-	            'MovementLookup'
+	            'MovementLookup', 'centre'
 
-	MinRectWidth = ()
-	MinRectHeight = ()
-	DefaultFillColour = ()
+	MinRectWidth = 0
+	MinRectHeight = 0
 
-	def __init__(self, WindowWidth, WindowHeight):
+	def __init__(self, WindowWidth, WindowHeight, FillColour):
 
 		self.x = 0
 		self.y = 0
@@ -27,7 +26,7 @@ class GameSurface(object):
 		self.RectHeight = WindowHeight
 		self.WindowWidth = WindowWidth
 		self.WindowHeight = WindowHeight
-		self.SurfAndRect(self.DefaultFillColour)
+		self.SurfAndRect(FillColour)
 
 		self.MovementLookup = {
 			pg.K_LEFT: lambda foo: foo.XShift(20, ArrowShift=True),
@@ -41,6 +40,7 @@ class GameSurface(object):
 		self.surf.fill(FillColour)
 		self.rect = pg.Rect(self.x, self.y, self.RectWidth, self.RectHeight)
 		self.surfandpos = (self.surf, self.rect)
+		self.centre = ((self.RectWidth / 2), (self.RectHeight / 2))
 
 	def ArrowKeyMove(self, EvKey):
 		with self:
@@ -85,18 +85,17 @@ class GameSurface(object):
 
 		return self
 
-	def NewWindowSize(self, NewWindowDimensions, FillColour):
-		NewWindowWidth, NewWindowHeight = NewWindowDimensions
-		NewRectWidth, NewRectHeight = (NewWindowWidth / 2), (NewWindowHeight / 2)
+	def NewWindowSize(self, NewWindowDimensions, FillColour, ResetPos=False):
+		NewWidth, NewHeight = NewWindowDimensions
 
-		self.RectWidth = (NewRectWidth if NewRectWidth >= self.MinRectWidth else self.MinRectWidth)
-		self.RectHeight = (NewRectHeight if NewRectHeight >= self.MinRectHeight else self.MinRectHeight)
+		self.RectWidth = (NewWidth if NewWidth >= self.MinRectWidth else self.MinRectWidth)
+		self.RectHeight = (NewHeight if NewHeight >= self.MinRectHeight else self.MinRectHeight)
 
-		self.x = NewWindowWidth * (self.x / self.WindowWidth)
-		self.y = NewWindowHeight * (self.y / self.WindowHeight)
+		self.x = 0 if ResetPos or self.RectWidth == NewWidth else (NewWidth * (self.x / self.WindowWidth))
+		self.y = 0 if ResetPos or self.RectHeight == NewHeight else (NewHeight * (self.y / self.WindowHeight))
 
-		self.WindowWidth = NewWindowWidth
-		self.WindowHeight = NewWindowHeight
+		self.WindowWidth = NewWidth
+		self.WindowHeight = NewHeight
 
 		self.SurfAndRect(FillColour)
 		return self
@@ -108,10 +107,9 @@ class GameSurface(object):
 		return True if not exc_type or exc_type is KeyError else False
 
 	@classmethod
-	def AddDefaults(cls, MinRectWidth, MinRectHeight, DefaultFill):
+	def AddDefaults(cls, MinRectWidth, MinRectHeight):
 		cls.MinRectWidth = MinRectWidth
 		cls.MinRectHeight = MinRectHeight
-		cls.DefaultFillColour = DefaultFill
 
 	def fill(self, *args):
 		self.surf.fill(*args)

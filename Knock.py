@@ -14,7 +14,7 @@ from ServerUpdaters import Triggers, AttributeTracker
 from PygameWrappers import SurfaceAndPosition, CoverRect, CoverRectList, FontAndLinesize
 from Card import Card
 from GameSurface import GameSurface
-from Arrows import UpArrow, DownArrow, RightArrow, LeftArrow, NWArrow, NEArrow, SWArrow, SEArrow
+from Arrows import Arrows
 
 from time import time
 from PIL import Image
@@ -51,7 +51,8 @@ class Window(object):
 	            'InputText', 'Client', 'game', 'Window', 'CardImages', 'Surfaces', 'PlayStarted', \
 	            'ScoreboardAttributes', 'clock', 'PlayerTextPositions', 'name', 'Dimensions', 'Errors', \
 	            'ServerCommsQueue', 'ClientSideAttributes', 'PlayerNumber', 'MaxCardNumber', 'StartCardPositions', \
-	            'BaseCardImages', 'CurrentColours', 'DeactivateVideoResize'
+	            'BaseCardImages', 'CurrentColours', 'DeactivateVideoResize', 'ScrollwheelDown', 'Fullscreen', \
+	            'ScrollwheelDownPos', 'ScrollwheelDownTime', 'OriginalScrollwheelDownTime', 'WindowIcon'
 
 	DefaultFont = 'Times New Roman'
 
@@ -75,6 +76,8 @@ class Window(object):
 	DefaultTextColour = (0, 0, 0)
 	DefaultFillColour = Colours['Maroon']
 
+	Arrows = Arrows
+
 	def __init__(self, WindowDimensions, StartCardDimensions, CardImages, IP, Port, password):
 		self.ServerCommsQueue = Queue()
 		self.ScoreboardAttributes = {}
@@ -82,8 +85,15 @@ class Window(object):
 		self.GameUpdatesNeeded = False
 		self.PlayStarted = False
 		self.DeactivateVideoResize = False
+		self.ScrollwheelDown = False
+		self.ScrollwheelDownPos = ()
+		self.ScrollwheelDownTime = 0
+		self.OriginalScrollwheelDownTime = 0
+		self.Fullscreen = True
 		self.ToBlit = []
 		self.Attributes = AttributeTracker()
+
+		GameSurface.AddDefaults(1186, 588)
 
 		self.ClientSideAttributes = {
 			'GamesPlayed': 0,
@@ -116,7 +126,7 @@ class Window(object):
 		}
 
 		self.CurrentColours = {
-			'GameSurface': self.Colours['LightGrey'],
+			'Game': self.Colours['LightGrey'],
 			'Scoreboard': self.Colours['Maroon']
 		}
 
@@ -169,23 +179,26 @@ class Window(object):
 		self.MaxCardNumber = 51 // self.PlayerNumber
 		self.gameplayers = self.game.gameplayers
 		self.StartCardPositions = list(range(self.PlayerNumber))
-
-		Display.set_icon(pg.image.load(path.join('CardImages', 'PygameIcon.png')))
+		self.WindowIcon = pg.image.load(path.join('CardImages', 'PygameIcon.png'))
+		Display.set_icon(self.WindowIcon)
 		self.Window = Display.set_mode(WindowDimensions, flags=pg.RESIZABLE)
-		Display.set_caption('Knock (made by Alex Waygood)')
-		pg.key.set_repeat(1000, 300)
+
+		self.Surfaces = {
+			'BaseScoreboard': None,
+			'Game': GameSurface(*WindowDimensions, self.Colours['LightGrey'])
+		}
+
+		Display.quit()
+		Display.init()
+		self.RedrawWindow(WindowDimensions=WindowDimensions)
+		pg.key.set_repeat(1000, 50)
 
 		self.BaseCardImages = {
 			ID: pg.image.fromstring(image.tobytes(), image.size, image.mode).convert()
 			for ID, image in CardImages.items()
 		}
 
-		self.Surfaces = {
-			'BaseScoreboard': None,
-			'Game': GameSurface(*WindowDimensions)
-		}
-
-		self.CalculateDimensions2(WindowDimensions)
+		self.CalculateDimensions2()
 		self.Fill('Cursor', 'Black')
 		self.UpdateGameAttributes()
 
@@ -196,10 +209,9 @@ class Window(object):
 		# Menu sequence
 
 		while isinstance(self.name, int):
-			self.Fill('Game', 'LightGrey')
 			# Have to render the text within the while loop in case the user changes the window size mid-loop
 			self.ToBlit = [self.GetText('Please enter your name', font='Massive')]
-			self.UpdateWindow(self.BlitInputText())
+			self.HandleEvents(ClicksNeeded=False, TypingNeeded=True, ToBlit=self.BlitInputText())
 
 		while not self.ServerCommsQueue.empty():
 			delay(1)
@@ -209,15 +221,13 @@ class Window(object):
 
 		while not self.gameplayers.AllPlayersHaveJoinedTheGame():
 			self.gameplayers = self.game.gameplayers
-			self.HandleEvents(ClicksNeeded=False, TypingNeeded=False)
-			self.Fill('Game', 'LightGrey')
 
 			if self.gameplayers.AllPlayersHaveJoinedTheGame():
 				break
 
 			# Have to render the text within the while loop in case the user changes the window size mid-loop
 			text = self.GetText('Waiting for all players to connect and enter their names.', font='Massive')
-			self.UpdateWindow([text])
+			self.HandleEvents(ClicksNeeded=False, TypingNeeded=False, InputNeeded=False, ToBlit=[text])
 
 		while True:
 			self.PlayGame(self.ClientSideAttributes['GamesPlayed'])
@@ -240,13 +250,11 @@ class Window(object):
 
 	def GameInitialisation(self, GamesPlayed):
 		self.GameUpdatesNeeded = False
-		BoardColour = 'Maroon' if GamesPlayed else 'LightGrey'
-
-		self.Fill('Game', BoardColour)
+		self.CurrentColours['Game'] = 'Maroon' if GamesPlayed else 'LightGrey'
 
 		if GamesPlayed:
 			Message = 'NEW GAME STARTING:'
-			self.TypeWriterText(Message, WaitAfterwards=1000, WipeClean=True, PreGame=True, BoardColour=BoardColour)
+			self.TypeWriterText(Message, WaitAfterwards=1000, WipeClean=True, PreGame=True)
 
 		if self.player.playerindex and GamesPlayed:
 			text = f"Waiting for {self.gameplayers[0]} to decide how many cards the game will start with."
@@ -257,29 +265,40 @@ class Window(object):
 
 		elif GamesPlayed:
 			Message2 = 'Your turn to decide the starting card number!'
-			self.TypeWriterText(Message2, WipeClean=True, PreGame=True, BoardColour=BoardColour)
+			self.TypeWriterText(Message2, WipeClean=True, PreGame=True)
 			text = "Please enter how many cards you wish the game to start with:"
 
 		else:
 			text = "As the first player to join this game, it is your turn to decide " \
 			       "how many cards you wish the game to start with:"
 
-		self.TypeWriterText(text, WaitAfterwards=0)
+		FullText = self.TypeWriterText(text, WaitAfterwards=0)
 		self.GameUpdatesNeeded = True
+		TypingNeeded = not self.player.playerindex
 
 		while not self.Attributes.StartCardNumber:
-			self.ToBlit = [self.Surfaces['Game'].surfandpos]
-			self.UpdateWindow(self.BlitInputText(CardNumberInput=True))
+			self.ToBlit.clear()
+
+			self.HandleEvents(
+				ClicksNeeded=False,
+				TypingNeeded=TypingNeeded,
+				ToBlit=chain(self.BlitInputText(CardNumberInput=True, TypingNeeded=TypingNeeded), (FullText,))
+			)
 
 		self.GameUpdatesNeeded = False
 
 		# Do some maths w.r.t. board dimensions, now that we know how many cards the game is going to start with.
 		self.CalculateHandRects()
+		text = self.TypeWriterText('Click to start the game for all players!', WaitAfterwards=0)
 
-		self.Fill('Game', BoardColour)
-		self.TypeWriterText('Click to start the game for all players!', WaitAfterwards=0)
-
-		self.Wait(function=GameStarted, FunctionOfGame=True, ClicksNeeded=True, OutsideRound=True, ClickToStart=True)
+		self.Wait(
+			function=GameStarted,
+			FunctionOfGame=True,
+			ClicksNeeded=True,
+			OutsideRound=True,
+			ClickToStart=True,
+			ToBlit=text
+		)
 
 		if not GamesPlayed:
 			self.Fade(colour1='LightGrey', colour2='Maroon', TextFade=False, BoardColour=True)
@@ -370,7 +389,7 @@ class Window(object):
 
 		self.player.PosInTrick = Pos = PlayerOrder.index(self.player.playerindex)
 		self.ServerCommsQueue.put('AC')
-		self.UpdateGameSurface(UpdateWindow=True)
+		self.UpdateGameSurface()
 		Text = f'{f"TRICK {TrickNumber} starting" if CardNumberThisRound != 1 else "TRICK STARTING"}:'
 		self.TypeWriterText(Text, WipeClean=True)
 
@@ -385,11 +404,7 @@ class Window(object):
 		for i in range(PlayerNo):
 			self.ClientSideAttributes['WhoseTurnPlayerIndex'] = PlayerOrder[i]
 			while (CardsOnBoard := len(self.Attributes.PlayedCards)) == i:
-				if CardsOnBoard != Pos:
-					self.HandleEvents(ClicksNeeded=False, TypingNeeded=False)
-				else:
-					self.HandleEvents(ClicksNeeded=True, TypingNeeded=False)
-				self.UpdateGameSurface(UpdateWindow=True, ToUpdate=('Board',))
+				self.UpdateGameSurface(ClicksNeeded=(CardsOnBoard == Pos), TypingNeeded=False, ToUpdate=('Board',))
 
 		self.Wait(FunctionOfGame=True, Attribute='TrickWinnerLogged')
 		PlayedCards, trumpsuit = self.Attributes.PlayedCards, self.Attributes.trumpsuit
@@ -413,7 +428,7 @@ class Window(object):
 		self.TypeWriterText(Text, WipeClean=True)
 		self.Fade(CVs=self.Surfaces['Board'].CoverRects, FadeIn=False, TextFade=False, CardFade=True, TimeToTake=300)
 		self.Attributes.PlayedCards.clear()
-		self.UpdateGameSurface(UpdateWindow=True, ToUpdate=('Board',))
+		self.UpdateGameSurface(ToUpdate=('Board',))
 
 		if TrickNumber != CardNumberThisRound:
 			self.ServerCommsQueue.put('AC')
@@ -511,11 +526,20 @@ class Window(object):
 		if UpdateWindowAfter:
 			self.UpdateGameAttributes(UpdateWindowAfter=True)
 
-	def Fill(self, SurfaceObject, colour):
+	def Fill(self, SurfaceObject, colour=None, CurrentColour=False):
+		if CurrentColour:
+			return self.Fill(
+				SurfaceObject,
+				self.CurrentColours['Scoreboard' if SurfaceObject == 'Scoreboard' else 'Game']
+			)
+		
 		if isinstance(SurfaceObject, str):
 			SurfaceObject = self.Surfaces[SurfaceObject]
 
-		SurfaceObject.fill(self.Colours[colour])
+		if colour and isinstance(colour, str):
+			colour = self.Colours[colour]
+
+		SurfaceObject.fill(colour)
 		return SurfaceObject
 
 	def GetPlayer(self):
@@ -541,8 +565,10 @@ class Window(object):
 		self.Attributes = self.game.Attributes
 		self.Triggers['Server'] = self.game.Triggers
 
+		# This option should only be used if this method is being used by the main thread.
+		# Pygame doesn't take well to being used in multiple threads simultaneously.
 		if UpdateWindowAfter:
-			self.UpdateGameSurface(UpdateWindow=True, ToUpdate=('Board',))
+			self.UpdateGameSurface(ToUpdate=('Board',))
 
 	def ReceiveGame(self, GameFromServer):
 		if GameFromServer != self.game:
@@ -550,44 +576,51 @@ class Window(object):
 			if self.ServerCommsQueue.empty():
 				self.UpdateGameAttributes()
 
-	def GetGame(self, arg='GetGame', CheckForExit=True, UpdateAfter=False):
+	def GetGame(self, arg='GetGame', CheckForExit=True):
 		self.ReceiveGame(self.Client.ClientSimpleSend(arg))
 
 		if CheckForExit:
-			self.HandleEvents(ClicksNeeded=False, TypingNeeded=False)
-
-		if UpdateAfter:
-			self.UpdateGameSurface(UpdateWindow=True)
+			self.HandleEvents(ClicksNeeded=False, TypingNeeded=False, InputNeeded=False)
 
 	def SendToServer(self, MessageType, Message):
 		self.ReceiveGame(self.Client.send(MessageType, Message))
 
-	def NewWindowSize(self, Fullscreen=False, NewDimensions=None):
-		# change screen size based on event inputs
+	def RedrawWindow(self, WindowDimensions=None, FromFullScreen=False, ToFullScreen=False):
+		x, y = self.Dimensions['ScreenSize']
 
-		if NewDimensions != self.Dimensions['Window']:
-			self.Dimensions['Window'] = NewDimensions
-			self.Window = Display.set_mode(NewDimensions, flags=(pg.FULLSCREEN if Fullscreen else pg.RESIZABLE))
-			self.Window.fill(self.CurrentColours['GameSurface'])
-			UpdateDisplay()
-			self.CalculateDimensions2(NewDimensions)
+		if FromFullScreen:
+			x, y = (x - 100), (y - 100)
+			Display.quit()
+			Display.init()
+		elif not ToFullScreen:
+			x, y = WindowDimensions
+
+		Display.set_caption('Knock (made by Alex Waygood)')
+		Display.set_icon(self.WindowIcon)
+		self.Window = Display.set_mode((x, y), flags=(pg.FULLSCREEN if ToFullScreen else pg.RESIZABLE))
+		self.Window.fill(self.CurrentColours['Game'])
+		GameSurf, GameSurfColour = self.Surfaces['Game'], self.CurrentColours['Game']
+
+		if ToFullScreen or FromFullScreen or (x, y) != (GameSurf.RectWidth, GameSurf.RectHeight):
+			self.Surfaces['Game'] = GameSurf.NewWindowSize((x, y), GameSurfColour, (ToFullScreen or FromFullScreen))
+			self.CalculateDimensions2()
 
 			if self.Surfaces['Hand'].RectList:
 				self.CalculateHandRects()
 
-	def CalculateDimensions2(self, NewWindowDimensions):
-		WindowDimensions, WindowMargin, NewCardDimensions, RequiredResizeRatio = CalculateDimensions1(
-			NewWindowDimensions=NewWindowDimensions,
+			self.Dimensions['Window'] = (x, y)
+
+	def CalculateDimensions2(self):
+		WindowMargin, NewCardDimensions, RequiredResizeRatio = CalculateDimensions1(
+			NewGameSurfaceDimensions=(self.Surfaces['Game'].RectWidth, self.Surfaces['Game'].RectHeight),
 			CurrentCardDimensions=self.Dimensions['OriginalCard']
 		)
 
-		WindowX, WindowY, CardX, CardY = *WindowDimensions, *NewCardDimensions
+		GameX, GameY, CardX, CardY = *WindowDimensions, *NewCardDimensions
 
 		Dimensions = {
-			'Window': WindowDimensions,
 			'WindowMargin': WindowMargin,
-			'Card': NewCardDimensions,
-			'GameSurfaceCentre': ((WindowX // 2), (WindowY // 2))
+			'Card': NewCardDimensions
 		}
 
 		CardImages = {
@@ -595,7 +628,7 @@ class Window(object):
 			for ID, cardimage in self.BaseCardImages.items()
 		}
 
-		ErrorPos = (int(WindowX * Fraction(550, 683)), int(WindowY * Fraction(125, 192)))
+		ErrorPos = (int(GameX * Fraction(550, 683)), int(GameY * Fraction(125, 192)))
 
 		x = 10
 		NormalFont = SysFont(self.DefaultFont, x, bold=True)
@@ -623,10 +656,10 @@ class Window(object):
 			'Massive': FontAndLinesize(SysFont(self.DefaultFont, 40, bold=True))
 		}
 
-		BoardWidth = WindowX // 2
+		BoardWidth = GameX // 2
 		BoardMid = BoardWidth // 2
-		BoardPos = [(WindowX // 4), WindowMargin]
-		BoardHeight = min(BoardWidth, (WindowY - BoardPos[1] - (NewCardDimensions[1] + 40)))
+		BoardPos = [(GameX // 4), WindowMargin]
+		BoardHeight = min(BoardWidth, (GameY - BoardPos[1] - (NewCardDimensions[1] + 40)))
 		BoardFifth = BoardHeight // 5
 
 		BoardCentre = (BoardWidth, ((BoardHeight // 2) + WindowMargin))
@@ -680,7 +713,6 @@ class Window(object):
 		TrumpCardSurfaceDimensions = ((CardX + 2), (CardY + int(NormalLinesize * 2.5) + 10))
 		TrumpCardPos = (1, int(NormalLinesize * 2.5))
 		SurfaceAndPosition.AddDefaults(NewCardDimensions, self.DefaultFillColour)
-		GameSurface.AddDefaults()
 
 		Surfs = {
 			'Cursor': pg.Surface((3, NormalLinesize)),
@@ -722,7 +754,6 @@ class Window(object):
 		self.Dimensions['BoardCentre'] = BoardCentre
 		self.fonts = fonts
 		self.Surfaces.update(Surfs)
-		self.Surfaces['Game'].NewWindowSize(NewWindowDimensions, self.CurrentColours['GameSurface'])
 
 		if self.Surfaces['BaseScoreboard']:
 			self.BuildBaseScoreboard()
@@ -747,59 +778,81 @@ class Window(object):
 
 	def UpdateWindow(self, List=None):
 		if List:
+			self.Fill('Game', CurrentColour=True)
 			self.BlitSurface('Game', List)
 		self.BlitSurface(self.Window, 'Game')
 		UpdateDisplay()
 
-	def HandleEvents(self, ClicksNeeded, TypingNeeded, ClickToStart=False, GameReset=False):
+	def QuitGame(self):
+		pg.quit()
+		self.Client.CloseDown()
+		raise Exception('Game has ended.')
+
+	def HandleEvents(self, ClicksNeeded, TypingNeeded, InputNeeded=True, ClickToStart=False, GameReset=False,
+	                 ToBlit=None):
+
 		""" Main pygame event loop """
+
+		self.Fill(self.Window, CurrentColour=True)
+		self.Fill('Game', CurrentColour=True)
+
+		if ToBlit:
+			self.BlitSurface('Game', ToBlit)
+
+		self.BlitSurface(self.Window, 'Game')
+		UpdateDisplay()
 
 		self.Errors['ThisPass'].clear()
 		click, SendInputText = False, False
 		PlayerNo = self.PlayerNumber
 		BidNeeded = (self.player.Bid == -1)
-		GameSurface = self.Surfaces['Game']
+		GameSurf = self.Surfaces['Game']
 		ScreenSize = self.Dimensions['ScreenSize']
+
+		if self.ScrollwheelDown:
+			DownX, DownY, MouseX, MouseY = *self.ScrollwheelDownPos, *pg.mouse.get_pos()
+			if MouseX < (DownX - 50):
+				if MouseY < (DownY - 50):
+					cur = 'NW'
+				elif MouseY > (DownY + 50):
+					cur = 'SW'
+				else:
+					cur = 'W'
+			elif MouseX > (DownX + 50):
+				if MouseY < (DownY - 50):
+					cur = 'NE'
+				elif MouseY > (DownY + 50):
+					cur = 'SE'
+				else:
+					cur = 'E'
+			elif MouseY > (DownY + 50):
+				cur = 'S'
+			elif MouseY < (DownY - 50):
+				cur = 'N'
+			else:
+				cur = 'Diamond'
+
+			pg.mouse.set_cursor(*self.Arrows[cur])
 
 		for event in pg.event.get():
 			if (EvType := event.type) == pg.QUIT or (len(self.gameplayers) != PlayerNo and self.game.StartPlay):
-				pg.quit()
-				self.Client.CloseDown()
-				raise Exception('The game has ended.')
+				self.QuitGame()
 
 			elif EvType == pg.KEYDOWN:
-				if (EvKey := event.key) == pg.K_TAB:
-					if self.Window.get_flags() & pg.FULLSCREEN:
-						Dimensions = ((ScreenSize[0] - 20), (ScreenSize[1] - 20))
-						self.NewWindowSize(Fullscreen=False, NewDimensions=Dimensions)
-					else:
-						self.NewWindowSize(Fullscreen=True, NewDimensions=ScreenSize)
+				if (EvKey := event.key) == pg.K_TAB or (EvKey == pg.K_ESCAPE and self.Fullscreen):
 					self.DeactivateVideoResize = True
-
-				elif EvKey == pg.K_ESCAPE and (self.Window.get_flags() & pg.FULLSCREEN):
-					Dimensions = ((ScreenSize[0] - 20), (ScreenSize[1] - 20))
-					self.NewWindowSize(Fullscreen=False, NewDimensions=Dimensions)
+					self.RedrawWindow(GameSurf, FromFullScreen=self.Fullscreen, ToFullScreen=(not self.Fullscreen))
+					self.Fullscreen = not self.Fullscreen
 
 				elif EvKey == pg.K_q and (pg.key.get_mods() & pg.KMOD_CTRL):
-					pg.quit()
-					self.Client.CloseDown()
-					raise Exception('The game has ended.')
-
-				elif EvKey == pg.K_RIGHT and (P := self.StuffIsOffScreen(0)):
-					GameSurface.ShiftPos(0, -min(20, P))
-
-				elif EvKey == pg.K_LEFT and (P := GameSurface.pos[0]):
-					GameSurface.ShiftPos(0, max(20, P))
-
-				elif EvKey == pg.K_DOWN and (P := self.StuffIsOffScreen(1)):
-					GameSurface.ShiftPos(1, -min(20, P))
-
-				elif EvKey == pg.K_UP and (P := GameSurface.pos[1]):
-					GameSurface.ShiftPos(1, max(20, P))
+					self.QuitGame()
 
 				elif GameReset and EvKey in (pg.K_SPACE, pg.K_RETURN):
-						self.game.RepeatGame = True
-						self.ServerCommsQueue.put('1')
+					self.game.RepeatGame = True
+					self.ServerCommsQueue.put('1')
+
+				elif EvKey in (pg.K_UP, pg.K_DOWN, pg.K_RIGHT, pg.K_LEFT):
+					GameSurf = GameSurf.ArrowKeyMove(EvKey)
 
 				elif TypingNeeded:
 					if event.unicode in PrintableCharactersPlusSpace:
@@ -813,41 +866,83 @@ class Window(object):
 						elif EvKey == pg.K_BACKSPACE:
 							self.InputText = self.InputText[:-1]
 
+			elif EvType == pg.VIDEORESIZE:
+				# Videoresize events are triggered on exiting/entering fullscreen as well as manual resizing; we only want it to be triggered after a manual resize.
+
+				if self.DeactivateVideoResize:
+					self.DeactivateVideoResize = False
+				else:
+					self.RedrawWindow(WindowDimensions=event.size)
+
 			elif EvType == pg.MOUSEBUTTONDOWN:
 				if (Button := event.button) == 1 and ClicksNeeded:
 					click = True
 					MousePos = pg.mouse.get_pos()
 
-				elif Button in (4, 5) and (pg.key.get_mods() & pg.KMOD_CTRL):
-					Zoom = self.ClientSideAttributes['WindowMods']
-					self.ClientSideAttributes['WindowMods'] = [z + (20 if Button == 4 else (-20)) for z in Zoom]
+				elif Button == 2:
+					if self.ScrollwheelDown:
+						self.ScrollwheelDown = False
+					else:
+						self.ScrollwheelDown = True
+						self.ScrollwheelDownPos = pg.mouse.get_pos()
+						self.ScrollwheelDownTime = self.OriginalScrollwheelDownTime = pg.time.get_ticks()
 
-					if not self.ClientSideAttributes['ScrollStart']:
-						self.ClientSideAttributes['ScrollStart'] = GetTicks()
+				elif Button in (4, 5):
+					if pg.key.get_mods() & pg.KMOD_CTRL:
+						if self.Fullscreen:
+							if Button == 4:
+								continue
+							Display.quit()
+							Display.init()
 
-			elif EvType == pg.MOUSEBUTTONUP and ClicksNeeded and event.button == 1:
+						x, y = self.Dimensions['Window']
+
+						a, b = ((x + 20), (y + 20)) if Button == 4 else ((x - 20), (y - 20))
+
+						if a >= ScreenSize[0] and b >= ScreenSize[1]:
+							self.Fullscreen = True
+							self.RedrawWindow(ToFullScreen=True)
+							continue
+
+						self.Fullscreen, ResizeNeeded = False, False
+
+						a = ScreenSize[0] if a > ScreenSize[0] else a
+						b = ScreenSize[1] if b > ScreenSize[1] else b
+
+						if a and x != a:
+							x = a
+							ResizeNeeded = True
+
+						if b and y != b:
+							y = b
+							ResizeNeeded = True
+
+						if ResizeNeeded:
+							self.RedrawWindow(WindowDimensions=(x, y))
+
+					else:
+						GameSurf = GameSurf.ArrowKeyMove((pg.K_UP if Button == 4 else pg.K_DOWN))
+
+			elif (
+					EvType == pg.MOUSEBUTTONUP and (
+						event.button != 2
+						or (event.button == 2 and pg.time.get_ticks() > self.OriginalScrollwheelDownTime + 1000))
+			):
+
+				self.ScrollwheelDown = False
+				pg.mouse.set_cursor(pg.SYSTEM_CURSOR_ARROW)
 				click = False
 
-			elif EvType == pg.VIDEORESIZE:
-				# This event is triggered on manual resize and on entering/exiting fullscreen,
-				# but not when using the scroll wheel to adjust the size of the window.
+			elif EvType == pg.MOUSEMOTION and pg.mouse.get_pressed(5)[0] and pg.mouse.get_pressed(5)[2]:
+				pg.mouse.set_cursor(pg.SYSTEM_CURSOR_HAND)
+				GameSurf = GameSurf.MouseMove(event.rel)
 
-				# We want it to do something on manual resize,
-				# but we don't want it to do anything when entering/exiting fullscreen.
-
-				if self.DeactivateVideoResize:
-					self.DeactivateVideoResize = False
-				else:
-					self.NewWindowSize(NewDimensions=event.size)
-
-		Condition = (
-				GetTicks() > self.ClientSideAttributes['ScrollStart'] + 100
-				and any(mod != 0 for mod in self.ClientSideAttributes['WindowMods'])
-		)
-
-		if Condition:
-			self.ClientSideAttributes['ScrollStart'] = 0
-			self.NewWindowSize()
+		if self.ScrollwheelDown and (Time := pg.time.get_ticks()) > (self.ScrollwheelDownTime + 20):
+			self.Surfaces['Game'] = GameSurf.ScrollwheelDownMove(self.ScrollwheelDownPos, pg.mouse.get_pos())
+			self.ScrollwheelDownTime = Time
+			
+		if not InputNeeded:
+			return None
 
 		if click:
 			if ClickToStart:
@@ -940,16 +1035,16 @@ class Window(object):
 			return x < y
 
 	def WaitHelperFunction(self, FunctionOfGame, ClicksNeeded, TypingNeeded,
-	                       Bidding, UpdateWindow, OutsideRound, ClickToStart, GameReset):
+	                       Bidding, UpdateWindow, OutsideRound, ClickToStart, GameReset, ToBlit):
 
-		Args = (ClicksNeeded, TypingNeeded, ClickToStart, GameReset)
+		Args = (ClicksNeeded, TypingNeeded, (ClicksNeeded or TypingNeeded), ClickToStart, GameReset, ToBlit)
 
 		if any((FunctionOfGame, TypingNeeded, GameReset)):
 			if OutsideRound:
 				self.HandleEvents(*Args)
 				self.UpdateWindow()
 				return None
-			self.UpdateGameSurface(Bidding=Bidding, UpdateWindow=False)
+			self.UpdateGameSurface(Bidding=Bidding)
 
 		self.HandleEvents(*Args)
 
@@ -958,7 +1053,8 @@ class Window(object):
 
 	def Wait(self, function=None, y=None, TimeToWait=0,  FunctionOfGame=False, ClicksNeeded=False,
 	         TypingNeeded=False, Attribute='', Bidding=False, SwitchUpdatesOnBefore=True,
-	         SwitchUpdatesOffAfter=True, UpdateWindow=True, OutsideRound=False, ClickToStart=False, GameReset=False):
+	         SwitchUpdatesOffAfter=True, UpdateWindow=True, OutsideRound=False, ClickToStart=False,
+	         GameReset=False, ToBlit=None):
 
 		assert any((function, (FunctionOfGame and Attribute), (TimeToWait and not FunctionOfGame))), 'Incorrect arguments entered.'
 
@@ -975,7 +1071,8 @@ class Window(object):
 			UpdateWindow,
 			OutsideRound,
 			ClickToStart,
-			GameReset
+			GameReset,
+			ToBlit
 		)
 
 		if function and not FunctionOfGame:
@@ -1040,38 +1137,45 @@ class Window(object):
 			arg1.blit(*self.Surfaces[arg2].surfandpos)
 
 		return arg1
+
+	def TypeWriterTopLeft(self, rect):
+		rect.center = self.Dimensions['BoardCentre'] if self.PlayStarted else self.Surfaces['Game'].centre
+		return rect.topleft
 	
 	def TypeWriterText(self, text, WaitAfterwards=1200, WipeClean=False,
-	                   MidRound=True, PreGame=False, BoardColour='Maroon',
-	                   UpdateGameSurfaceAfter=False, TalkToServerDuring=False):
+	                   MidRound=True, PreGame=False, UpdateGameSurfaceAfter=False):
 
 		"""Method for creating a 'typewriter effect' of text incrementally being blitted on the screen."""
 
 		rect = pg.Rect((0, 0), self.fonts['Title'].size(text))
-		rect.center = self.Dimensions['BoardCentre'] if self.PlayStarted else self.Dimensions['GameSurfaceCentre']
-		TopLeft = rect.topleft
-
 		RenderedSteps = [self.fonts['Title'].render(step, False, (0, 0, 0)) for step in accumulate(text)]
 
 		for step in RenderedSteps:
-			self.BlitSurface('Game', (step, TopLeft))
 			if step != RenderedSteps[-1]:
-				self.Wait(TimeToWait=30, SwitchUpdatesOnBefore=TalkToServerDuring)
+				self.Wait(TimeToWait=30, SwitchUpdatesOnBefore=False, ToBlit=[(step, self.TypeWriterTopLeft(rect))])
 
 		if WaitAfterwards:
-			self.Wait(TimeToWait=WaitAfterwards, SwitchUpdatesOnBefore=TalkToServerDuring)
+			self.Wait(
+				TimeToWait=WaitAfterwards,
+				SwitchUpdatesOnBefore=False,
+				ToBlit=[(RenderedSteps[-1], self.TypeWriterTopLeft(rect))]
+			)
 
 		if WipeClean:
+			ToBlit = [(RenderedSteps[-1], self.TypeWriterTopLeft(rect))]
+
 			if MidRound and not PreGame:
-				self.UpdateGameSurface(UpdateWindow=True)
+				self.UpdateGameSurface()
 			else:
-				self.Fill('Game', BoardColour)
 				if not PreGame:
+					ToBlit.append(self.Surfaces['Scoreboard'])
 					self.BlitSurface('Game', 'Scoreboard')
-			self.Wait(TimeToWait=300, SwitchUpdatesOnBefore=TalkToServerDuring)
+			self.Wait(TimeToWait=300, SwitchUpdatesOnBefore=False, ToBlit=ToBlit)
 
 		if UpdateGameSurfaceAfter and not MidRound:
 			self.UpdateGameSurface(RoundOpening=True)
+
+		return RenderedSteps[-1], self.TypeWriterTopLeft(rect)
 
 	def GetText(self, text, font='', colour=(0, 0, 0), pos=None, leftAlign=False, rightAlign=False):
 		"""Function to generate rendered text and a pygame Rect object"""
@@ -1079,7 +1183,7 @@ class Window(object):
 		if pos:
 			pos = (int(pos[0]), int(pos[1]))
 		else:
-			pos = self.Dimensions['BoardCentre'] if self.PlayStarted else self.Dimensions['GameSurfaceCentre']
+			pos = self.Dimensions['BoardCentre'] if self.PlayStarted else self.Surfaces['Game'].centre
 
 		text = (self.fonts[font if font else 'Normal']).render(text, False, colour)
 
@@ -1231,22 +1335,22 @@ class Window(object):
 
 		return self.ToBlit
 
-	def UpdateGameSurface(self, RoundOpening=False, Bidding=False, UpdateWindow=False, ToUpdate=tuple()):
-		self.Fill('Game', 'Maroon')
+	def UpdateGameSurface(self, RoundOpening=False, Bidding=False, ToUpdate=tuple(), ClicksNeeded=False,
+	                      TypingNeeded=False):
 
 		if RoundOpening:
-			self.HandleEvents(ClicksNeeded=False, TypingNeeded=False)
-			self.BlitSurface('Game', 'Scoreboard')
-			self.UpdateWindow()
+			self.HandleEvents(
+				ClicksNeeded=ClicksNeeded,
+				TypingNeeded=False,
+				InputNeeded=ClicksNeeded,
+				ToBlit=['Scoreboard']
+			)
+
 			return None
 
 		Surfs = self.Triggers['Client'].Surfaces
 		Condition = any((any(self.SurfaceUpdateRequired(attribute) for attribute in Surfs), ToUpdate))
-
-		if Condition:
-			self.RoundInProgressBlits(ToUpdate=ToUpdate)
-
-		self.BlitSurface('Game', self.ToBlit)
+		ToBlit = self.RoundInProgressBlits(ToUpdate=ToUpdate) if Condition else []
 
 		if Bidding:
 			if self.player.Bid == -1:
@@ -1260,13 +1364,18 @@ class Window(object):
 				Message = False
 
 			if Message:
-				self.BlitSurface('Game', chain([Message], self.BlitInputText(Bidding=True)))
+				ToBlit.append(Message)
+				ToBlit += self.BlitInputText(Bidding=True)
 
-		if self.Errors['Messages']:
-			self.BlitSurface('Game', self.Errors['Messages'])
+		if not Bidding and self.Errors['Messages']:
+			ToBlit += self.Errors['Messages']
 
-		if UpdateWindow:
-			self.UpdateWindow()
+		self.HandleEvents(
+			ClicksNeeded=ClicksNeeded,
+			TypingNeeded=TypingNeeded,
+			InputNeeded=(TypingNeeded or ClicksNeeded),
+			ToBlit=ToBlit
+		)
 
 	def GetCursor(self, List, Pos):
 		if time() % 1 > 0.5:
@@ -1275,13 +1384,14 @@ class Window(object):
 
 	def GetInputTextPos(self):
 		BoardX, BoardY = self.Dimensions['BoardCentre']
-		GameX, GameY = self.Dimensions['GameSurfaceCentre']
+		GameX, GameY = self.Surfaces['Game'].centre
 		return (BoardX, (BoardY + 50)) if self.PlayStarted else (GameX, (GameY + 100))
 
-	def BlitInputText(self, CardNumberInput=False, Bidding=False):
-		TypingNeeded = not self.player.playerindex if CardNumberInput else (self.player.Bid < 0 if Bidding else True)
+	def BlitInputText(self, CardNumberInput=False, Bidding=False, TypingNeeded=True):
+		if Bidding:
+			TypingNeeded = (self.player.Bid < 0)
+
 		ToBlit = []
-		self.HandleEvents(ClicksNeeded=False, TypingNeeded=TypingNeeded)
 
 		if TypingNeeded:
 			if self.InputText:
@@ -1316,7 +1426,7 @@ class Window(object):
 		Range = range(1) if OpacityTransition else range(3)
 
 		while (CurrentTime := GetTicks()) < EndTime:
-			self.HandleEvents(ClicksNeeded=False, TypingNeeded=False)
+			self.HandleEvents(ClicksNeeded=False, TypingNeeded=False, InputNeeded=False)
 			Elapsed = CurrentTime - PreviousTime
 			ColourStep = [(((colour2[i] - colour1[i]) / TimeToTake) * Elapsed) for i in Range]
 			CurrentColour = [CurrentColour[i] + ColourStep[i] for i in Range]
@@ -1345,11 +1455,14 @@ class Window(object):
 			colour2 = 0 if FadeIn else 255
 
 		for step in self.ColourTransition(colour1, colour2, OpacityTransition=CardFade, TimeToTake=TimeToTake):
-			self.Surfaces['Game'].fill(step if BoardColour else self.Colours['Maroon'])
+			colour = step if BoardColour else 'Maroon'
+			self.Fill(self.Window, colour)
+			self.Fill('Game', colour)
 
 			if ScoreboardFade:
 				self.BuildScoreboard(step)
 				self.BlitSurface('Game', 'Scoreboard')
+				self.CurrentColours['Scoreboard'] = step
 			elif TextFade:
 				self.BlitSurface('Game', self.RoundInProgressBlits(BoardTextColour=step, BoardFade=True))
 				self.BlitSurface('Game', (ToBlit2 if FadeIn else self.Surfaces['TrumpCard'].CoverRects))
@@ -1357,12 +1470,14 @@ class Window(object):
 				CVs.SetOpacity(step)
 				self.BlitSurface('Game', self.ToBlit)
 				self.BlitSurface('Game', CVs)
+			else:
+				self.CurrentColours['Game'] = step
 
 			self.BlitSurface(self.Window, 'Game')
 			UpdateDisplay()
 
 		if UpdateGameSurfaceAfter:
-			self.UpdateGameSurface(UpdateWindow=False)
+			self.UpdateGameSurface()
 
 		return ToBlit2
 
@@ -1383,7 +1498,7 @@ class Window(object):
 			dt = self.clock.tick(self.FireworkSettings['FPS']) / 60.0
 			self.BlitSurface('Game', 'blackSurf')
 			self.BlitSurface(self.Window, 'Game')
-			self.HandleEvents(ClicksNeeded=False, TypingNeeded=False)
+			self.HandleEvents(ClicksNeeded=False, TypingNeeded=False, InputNeeded=False)
 
 			if (LastFirework + RandomAmount) < Time < (EndTime - 6000):
 				Choice = random.choice((True, False))
@@ -1443,7 +1558,17 @@ password = inputCustom(
 )
 
 print('Initialising...')
-WindowDimensions, _, NewCardDimensions, RequiredResizeRatio = CalculateDimensions1()
+
+try:
+	# Try to calculate the size of the client's computer screen
+	from screeninfo import get_monitors
+	Monitor = get_monitors()[0]
+	WindowDimensions = (WindowX, WindowY) = (Monitor.width, Monitor.height)
+except:
+	WindowDimensions = (WindowX, WindowY) = (1300, 680)
+
+_, NewCardDimensions, RequiredResizeRatio = CalculateDimensions1(WindowDimensions)
+
 CardIDs = [f'{p[0]}{p[1]}' for p in product(chain(range(2, 11), ('J', 'Q', 'K', 'A')), ('D', 'S', 'C', 'H'))]
 CardImages = {CardID: Image.open(path.join('CardImages', f'{CardID}.jpg')).convert("RGB") for CardID in CardIDs}
 
