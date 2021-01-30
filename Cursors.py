@@ -2,6 +2,7 @@ from os import environ
 
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 from pygame.cursors import compile, diamond
+from pygame.locals import SYSTEM_CURSOR_HAND, SYSTEM_CURSOR_NO, SYSTEM_CURSOR_WAIT, SYSTEM_CURSOR_ARROW
 
 
 LeftArrow = [
@@ -303,7 +304,7 @@ NWArrow = [
 
 NWArrow = ((128, 40), (32, 6), *compile(NWArrow))
 
-Arrows = {
+CursorDict = {
     'N': UpArrow,
     'NE': NEArrow,
     'E': RightArrow,
@@ -312,5 +313,9 @@ Arrows = {
     'SW': SWArrow,
     'W': LeftArrow,
     'NW': NWArrow,
-    'Diamond': diamond
+    'Diamond': diamond,
+    'Hand': (SYSTEM_CURSOR_HAND,),
+    'default': (SYSTEM_CURSOR_ARROW,),
+    'IllegalMove': (SYSTEM_CURSOR_NO,),
+    'Wait': (SYSTEM_CURSOR_WAIT,)
 }

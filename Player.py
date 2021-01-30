@@ -8,13 +8,14 @@ from pygame.time import delay
 
 
 class Gameplayers(UserList):
-	__slots__ = 'data', 'players', 'PlayerNumber'
+	__slots__ = 'data', 'players', 'PlayerNumber', 'Scoreboard'
 
 	def __init__(self, *players):
 		super().__init__()
 		self.data = list(players)
 		self.players = self.data
 		self.PlayerNo = 0
+		self.Scoreboard = []
 
 	def __getitem__(self, key):
 		try:
@@ -37,8 +38,11 @@ class Gameplayers(UserList):
 
 		self.NextStage()
 
-	def RoundCleanUp(self, server=False):
-		self.players = [player.EndOfRound(server) for player in self.players]
+	def RoundCleanUp(self, StartNo=0, RoundNumber=0, server=False):
+		self.players = [player.EndOfRound(StartNo, RoundNumber, server) for player in self.players]
+
+		if not server:
+			self.Scoreboard.append(sum((player.Scoreboard for player in self.players), start=[]))
 
 	def HighestScoreFirst(self):
 		return sorted(self.players, key=Player.GetPoints, reverse=True)
@@ -199,7 +203,7 @@ class Player(object):
 	"""Class object for representing a single player in the game."""
 
 	__slots__ = 'name', 'playerindex', 'Hand', 'Bid', 'Points', 'GamesWon', 'PointsThisRound', 'Tricks', 'RoundLeader', \
-	            'HandIteration', 'ActionComplete', 'PointsLastRound', 'PosInTrick'
+	            'HandIteration', 'ActionComplete', 'PointsLastRound', 'PosInTrick', 'Scoreboard'
 
 	AllPlayers = Gameplayers()
 
@@ -218,6 +222,7 @@ class Player(object):
 		self.ActionComplete = False
 		self.HandIteration = 1
 		self.PosInTrick = -1
+		self.Scoreboard = []
 
 	def NextStage(self):
 		self.ActionComplete = False
@@ -253,7 +258,7 @@ class Player(object):
 	def GetPoints(self):
 		return self.Points
 
-	def EndOfRound(self, server=False):
+	def EndOfRound(self, StartNo, RoundNo, server=False):
 		"""To be used on both client and server sides"""
 
 		self.HandIteration += 1
@@ -262,9 +267,12 @@ class Player(object):
 			self.Bid = -1
 			return self
 
+		self.Scoreboard = [RoundNo, (StartNo - RoundNo + 1), self.Bid, self.Tricks]
+
 		# Have to redefine PointsThisRound variable in order to redefine PointsLastRound correctly.
 		self.PointsThisRound += (10 if self.Bid == self.PointsThisRound else 0)
 		self.Points += self.PointsThisRound
+		self.Scoreboard += [self.PointsThisRound, self.Points]
 		self.Bid = -1
 
 		# Have to redefine PointsLastRound variable for some of the text-generator methods in the Gameplayers class.

@@ -54,12 +54,9 @@ class SurfaceAndPosition(object):
 	def AddRectList(self, Positions):
 		"""Only really used for the Hand surface"""
 
-		if Positions:
-			self.RectList = [Rect(*Position, *self.CardDimensions) for Position in Positions]
-			CoverRects = [CoverRect(self.CardDimensions, self.pos, RectOnSurface) for RectOnSurface in self.RectList]
-			self.CoverRects = CoverRectList(CoverRects)
-		else:
-			self.RectList = []
+		self.RectList = [Rect(*Position, *self.CardDimensions) for Position in Positions] if Positions else []
+		CoverRects = [CoverRect(self.CardDimensions, self.pos, RectOnSurface) for RectOnSurface in self.RectList]
+		self.CoverRects = CoverRectList(CoverRects)
 
 	@classmethod
 	def AddDefaults(cls, CardDimensions, DefaultFill):
