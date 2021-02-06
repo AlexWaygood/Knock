@@ -6,6 +6,7 @@ from itertools import groupby
 from datetime import datetime
 from string import ascii_letters, digits, punctuation
 from fractions import Fraction
+from math import ceil
 
 
 PrintableCharacters = ''.join((digits, ascii_letters, punctuation))
@@ -48,17 +49,24 @@ def AllBid(x, y):
 	return not x.gameplayers.AllBid()
 
 
-def CalculateDimensions1(NewGameSurfaceDimensions, CurrentCardDimensions=(691, 1056)):
+def GetDimensions1(NewGameSurfDimensions, CurrentCardDimensions=(691, 1056)):
 	"""This function is designed to be used both at the beginning of the game and midway through the game"""
 
 	# Calculate the required size of the card images, based on various ratios of surfaces that will appear on the screen.
 	# Lots of "magic numbers" here, based purely on the principle of "keep the proportions that look good on my laptop".
 
-	GameX, GameY = NewGameSurfaceDimensions
+	GameX, GameY = NewGameSurfDimensions
 	WindowMargin = int(GameX * Fraction(15, 683))
 	ImpliedCardHeight = min(((GameY // Fraction(768, 150)) - WindowMargin), (GameY // 5.5))
 	ImpliedCardWidth = ImpliedCardHeight * Fraction(*CurrentCardDimensions)
-	NewCardDimensions = (ImpliedCardWidth.__ceil__(), ImpliedCardHeight.__ceil__())
+	NewCardDimensions = (ceil(ImpliedCardWidth), ceil(ImpliedCardHeight))
 	RequiredResizeRatio = CurrentCardDimensions[1] / ImpliedCardHeight
-
 	return WindowMargin, NewCardDimensions, RequiredResizeRatio
+
+
+def ResizeHelper(var1, var2, ScreenSize, i):
+	var1 = ScreenSize[i] if var1 > ScreenSize[i] else var1
+	var1 = 10 if var1 < 10 else var1
+	ResizeNeeded = (var1 != var2)
+	var2 = var1
+	return var2, ResizeNeeded

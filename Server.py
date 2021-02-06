@@ -159,7 +159,7 @@ print('Initialising server...')
 (thread := Thread(target=EternalGameLoop)).start()
 
 Server = Network(
-	IP='',
+	IP='127.0.0.1',
 	port=5555,
 	ManuallyVerify=ManuallyVerify,
 	ClientConnectFunction=ClientConnect,

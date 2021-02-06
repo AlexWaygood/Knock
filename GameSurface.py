@@ -13,7 +13,7 @@ class GameSurface(object):
 	"""
 
 	__slots__ = 'x', 'y', 'RectWidth', 'RectHeight', 'surf', 'rect', 'surfandpos', 'WindowWidth', 'WindowHeight', \
-	            'MovementLookup', 'centre'
+	            'MovementLookup', 'centre', 'Dimensions', 'topleft'
 
 	MinRectWidth = 0
 	MinRectHeight = 0
@@ -39,6 +39,8 @@ class GameSurface(object):
 		self.surf = pg.Surface((self.RectWidth, self.RectHeight))
 		self.surf.fill(FillColour)
 		self.rect = pg.Rect(self.x, self.y, self.RectWidth, self.RectHeight)
+		self.topleft = (self.x, self.y)
+		self.Dimensions = (self.RectWidth, self.RectHeight)
 		self.surfandpos = (self.surf, self.rect)
 		self.centre = ((self.RectWidth / 2), (self.RectHeight / 2))
 
@@ -60,8 +62,7 @@ class GameSurface(object):
 	def XShift(self, Amount, ArrowShift=False):
 		NewCoordinate = self.x + Amount
 		self.x = min(self.WindowWidth, NewCoordinate) if Amount > 0 else max(-self.RectWidth, NewCoordinate)
-		self.rect.topleft = (self.x, self.y)
-		self.surfandpos = (self.surf, self.rect)
+		self.TidyUp()
 
 		if ArrowShift:
 			if pg.key.get_pressed()[pg.K_UP]:
@@ -74,8 +75,7 @@ class GameSurface(object):
 	def YShift(self, Amount, ArrowShift=False):
 		NewCoordinate = self.y + Amount
 		self.y = min(self.WindowHeight, NewCoordinate) if Amount > 0 else max(-self.RectHeight, NewCoordinate)
-		self.rect.topleft = (self.x, self.y)
-		self.surfandpos = (self.surf, self.rect)
+		self.TidyUp()
 
 		if ArrowShift:
 			if pg.key.get_pressed()[pg.K_LEFT]:
@@ -85,11 +85,28 @@ class GameSurface(object):
 
 		return self
 
+	def MoveToCentre(self, WindowX, WindowY):
+		self.x = (WindowX / 2) - (self.RectWidth / 2)
+		self.y = (WindowY / 2) - (self.RectHeight / 2)
+		self.TidyUp()
+
+	def TidyUp(self):
+		self.topleft = (self.x, self.y)
+		self.rect.topleft = self.topleft
+		self.surfandpos = (self.surf, self.rect)
+
 	def NewWindowSize(self, NewWindowDimensions, FillColour, ResetPos=False):
 		NewWidth, NewHeight = NewWindowDimensions
 
-		self.RectWidth = (NewWidth if NewWidth >= self.MinRectWidth else self.MinRectWidth)
-		self.RectHeight = (NewHeight if NewHeight >= self.MinRectHeight else self.MinRectHeight)
+		RectWidth = (NewWidth if NewWidth >= self.MinRectWidth else self.MinRectWidth)
+		RectHeight = (NewHeight if NewHeight >= self.MinRectHeight else self.MinRectHeight)
+
+		if 1.7 > (RectWidth / RectHeight):
+			RectHeight = RectWidth / 1.7
+		elif 2.2 < (RectWidth / RectHeight):
+			RectWidth = RectHeight * 2.2
+
+		self.RectWidth, self.RectHeight = RectWidth, RectHeight
 
 		self.x = 0 if ResetPos or self.RectWidth == NewWidth else (NewWidth * (self.x / self.WindowWidth))
 		self.y = 0 if ResetPos or self.RectHeight == NewHeight else (NewHeight * (self.y / self.WindowHeight))
@@ -104,7 +121,7 @@ class GameSurface(object):
 		return self
 
 	def __exit__(self, exc_type, exc_value, traceback):
-		return True if not exc_type or exc_type is KeyError else False
+		return bool(not exc_type or exc_type is KeyError)
 
 	@classmethod
 	def AddDefaults(cls, MinRectWidth, MinRectHeight):

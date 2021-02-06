@@ -5,6 +5,12 @@ from os import environ
 
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 from pygame import Surface, Rect
+import pygame.display as display
+
+
+def RestartDisplay():
+	display.quit()
+	display.init()
 
 
 class SurfaceAndPosition(object):

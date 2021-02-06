@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="KnockServer" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
+  <configuration default="false" name="Server" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
     <module name="Final version - Local copy" />
     <option name="INTERPRETER_OPTIONS" value="" />
     <option name="PARENT_ENVS" value="true" />
@@ -11,7 +11,7 @@
     <option name="IS_MODULE_SDK" value="true" />
     <option name="ADD_CONTENT_ROOTS" value="true" />
     <option name="ADD_SOURCE_ROOTS" value="true" />
-    <option name="SCRIPT_NAME" value="$PROJECT_DIR$/KnockServer.py" />
+    <option name="SCRIPT_NAME" value="C:\Users\Alex\Desktop\Code dump\Knock model\Final version - Local copy\Server.py" />
     <option name="PARAMETERS" value="" />
     <option name="SHOW_COMMAND_LINE" value="false" />
     <option name="EMULATE_TERMINAL" value="false" />

@@ -39,7 +39,7 @@ class Card(object):
 
 		index = PlayerOrder[index] if Surface == 'Board' else index
 		self.rect = Surfaces[Surface].RectList[index]
-		self.colliderect = self.rect.move(*Surfaces[Surface].pos)
+		self.colliderect = self.rect.move(*Surfaces[Surface].pos).move(*Surfaces['Game'].topleft)
 		self.image = CardImages[self.ID]
 		self.surfandpos = (self.image, self.rect)
 		return self
