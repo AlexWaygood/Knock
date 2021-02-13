@@ -7,6 +7,7 @@ from datetime import datetime
 from string import ascii_letters, digits, punctuation
 from fractions import Fraction
 from math import ceil
+from collections import namedtuple
 
 
 PrintableCharacters = ''.join((digits, ascii_letters, punctuation))
@@ -38,17 +39,6 @@ def AllEqual(Iterable):
 	return next(g, True) and not next(g, False)
 
 
-def GameStarted(x, y):
-	"""y value is deliberately not used due to the specific use of this function"""
-
-	return not x.StartPlay
-
-
-def AllBid(x, y):
-	"""y value is deliberately not used due to the specific use of this function"""
-	return not x.gameplayers.AllBid()
-
-
 def GetDimensions1(NewGameSurfDimensions, CurrentCardDimensions=(691, 1056)):
 	"""This function is designed to be used both at the beginning of the game and midway through the game"""
 
@@ -70,3 +60,46 @@ def ResizeHelper(var1, var2, ScreenSize, i):
 	ResizeNeeded = (var1 != var2)
 	var2 = var1
 	return var2, ResizeNeeded
+
+
+Action = namedtuple('Action', ['Type', 'args'])
+
+
+class OpenableObject(object):
+	__slots__ = 'value'
+
+	def __init__(self):
+		self.value = False
+
+	def __enter__(self):
+		self.value = True
+		return self
+
+	def __exit__(self, exc_type, exc_val, exc_tb):
+		self.value = False
+		return self
+
+	def __bool__(self):
+		return self.value
+
+
+class MessageHolder(object):
+	__slots__ = 'm', 'font'
+
+	def __init__(self):
+		self.m = ''
+
+	def __call__(self, m, font):
+		self.m = m
+		self.font = font
+		return self
+
+	def __enter__(self):
+		return self
+
+	def __exit__(self, exc_type, exc_val, exc_tb):
+		self.m = ''
+		return self
+
+	def __bool__(self):
+		return bool(self.m)

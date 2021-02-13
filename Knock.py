@@ -12,12 +12,14 @@ from FireworkParticle import Particle
 from FireworkSparker import Sparker
 from Network import Network
 from PasswordChecker import PasswordInput
-from HelperFunctions import GameStarted, AllBid, GetTime, PrintableCharactersPlusSpace, GetDimensions1, ResizeHelper
 from ServerUpdaters import Triggers, AttributeTracker
 from PygameWrappers import SurfaceAndPosition, CoverRect, CoverRectList, FontAndLinesize, RestartDisplay
 from Card import Card
 from GameSurface import GameSurface
 from Cursors import CursorDict
+
+from HelperFunctions import GetTime, PrintableCharactersPlusSpace, GetDimensions1, \
+	ResizeHelper, Action, OpenableObject, MessageHolder
 
 from time import time
 from PIL import Image
@@ -29,7 +31,6 @@ from fractions import Fraction
 from queue import Queue
 from PyQt5 import QtGui
 from warnings import filterwarnings
-from functools import partial
 from traceback_with_variables import printing_exc
 
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
@@ -64,7 +65,11 @@ class KnockTournament(object):
 	            'ServerCommsQueue', 'ClientSideAttributes', 'PlayerNumber', 'MaxCardNumber', 'StartCardPositions', \
 	            'BaseCardImages', 'CurrentColours', 'DeactivateVideoResize', 'ScrollwheelDown', 'Fullscreen', \
 	            'ScrollwheelDownPos', 'ScrollwheelDownTime', 'OriginalScrollwheelDownTime', 'WindowIcon', \
-	            'TopLeftPartial', 'InteractiveScoreboardRequest', 'SurfacesOnScreen', 'lock'
+	            'TopLeftPartial', 'InteractiveScoreboardRequest', 'SurfacesOnScreen', 'lock', 'CardFadesInProgress',\
+	            'CoverRectOpacities', 'FireworksInProgress', 'ClicksNeeded', 'TypingNeeded', 'GameReset', \
+	            'ClickToStart', 'UserInputQ', 'InputTextBlits', 'PreviousInputText', 'MessagesOnScreen', \
+	            'FunctionDict', 'GameSurfMovementDict', 'cur', 'CardHoverID', 'TypewriterEvents', \
+	            'RenderedTypewriterSteps', 'TypewrittenText', 'TypewriterRect'
 
 	DefaultFont = 'Times New Roman'
 
@@ -93,8 +98,9 @@ class KnockTournament(object):
 	def __init__(self, WindowDimensions, StartCardDimensions, CardImages, IP, Port, password):
 		self.ServerCommsQueue = Queue()
 		self.ScoreboardAttributes = {}
+		self.PreviousInputText = ''
 		self.InputText = ''
-		self.GameUpdatesNeeded = False
+		self.GameUpdatesNeeded = OpenableObject()
 		self.PlayStarted = False
 		self.DeactivateVideoResize = False
 		self.ScrollwheelDown = False
@@ -102,11 +108,24 @@ class KnockTournament(object):
 		self.ScrollwheelDownTime = 0
 		self.OriginalScrollwheelDownTime = 0
 		self.Fullscreen = True
-		self.ToBlit = []
+		self.InputTextBlits = []
 		self.lock = Lock()
 		self.SurfacesOnScreen = []
 		self.Attributes = AttributeTracker()
 		self.InteractiveScoreboardRequest = False
+		self.FireworksInProgress = False
+		self.ClicksNeeded = OpenableObject()
+		self.TypingNeeded = OpenableObject()
+		self.GameReset = OpenableObject()
+		self.ClickToStart = OpenableObject()
+		self.MessagesOnScreen = MessageHolder()
+		self.UserInputQ = Queue()
+		self.TypewriterEvents = Queue()
+		self.cur = ''
+		self.CardHoverID = ''
+		self.RenderedTypewriterSteps = []
+		self.TypewrittenText = -1
+		self.TypewriterRect = None
 
 		GameSurface.AddDefaults(1186, 588)
 
@@ -143,8 +162,19 @@ class KnockTournament(object):
 		self.CurrentColours = {
 			'Game': self.Colours['LightGrey'],
 			'Scoreboard': self.Colours['Maroon'],
-			'CoverRectOpacity': 255,
 			'Text': self.Colours['Black']
+		}
+
+		self.CoverRectOpacities = {
+			'Hand': 255,
+			'TrumpCard': 255,
+			'Board': 255
+		}
+
+		self.CardFadesInProgress = {
+			'Hand': OpenableObject(),
+			'TrumpCard': OpenableObject(),
+			'Board': OpenableObject
 		}
 
 		pg.init()
@@ -217,28 +247,50 @@ class KnockTournament(object):
 		self.Fill('Cursor', 'Black')
 		self.UpdateGameAttributes()
 
+		GameSurf = self.Surfaces['Game']
+
+		self.FunctionDict = {
+			'mouse': lambda x: self.MouseSetter(),
+			'quit': lambda x: 'quit',
+			'GameSurfMove': lambda x: self.GameSurfMove(*x),
+			'scrollwheelvars': lambda x: self.NewScrollwheelVars(),
+			'scrollwheelup': lambda x: self.ScrollwheelUp(),
+			'inputtext': lambda x: self.AddInputText(x),
+			'ExecutePlay': lambda x: self.ExecutePlay()
+		}
+
+		self.GameSurfMovementDict = {
+			'arrow': lambda x: GameSurf.ArrowKeyMove(x),
+			'mouse': lambda x: GameSurf.MouseMove(x),
+			'centre': lambda x: GameSurf.MoveToCentre(),
+			'scrollwheel': lambda x: GameSurf.ScrollwheelDownMove(x)
+		}
+
 		print(f'Game display now initialising at {GetTime()}...')
 		Thread(target=self.ThreadedGameUpdate).start()
+		Thread(target=self.EventHandler).start()
 		self.Errors['StartTime'] = GetTicks()
+		Thread(target=self.PlayTournament).start()
 
+		while True:
+			self.HandleEvents()
+
+	def PlayTournament(self):
 		# Menu sequence
 
-		while isinstance(self.name, int):
-			self.PrintAndWait('Please enter your name', 'Massive', TypingNeeded=True)
+		with self.TypingNeeded, self.MessagesOnScreen('Please enter your name', 'Massive'):
+			while isinstance(self.name, int):
+				pass
 
 		while not self.ServerCommsQueue.empty():
-			delay(1)
+			pass
 
 		delay(100)
-		self.GameUpdatesNeeded = True
 
-		while not self.gameplayers.AllPlayersHaveJoinedTheGame():
-			self.gameplayers = self.game.gameplayers
-
-			if self.gameplayers.AllPlayersHaveJoinedTheGame():
-				break
-
-			self.PrintAndWait('Waiting for all players to connect and enter their names', 'Massive')
+		Args = ('Waiting for all players to connect and enter their names', 'Massive')
+		with self.GameUpdatesNeeded, self.MessagesOnScreen(*Args):
+			while not self.gameplayers.AllPlayersHaveJoinedTheGame():
+				self.gameplayers = self.game.gameplayers
 
 		while True:
 			self.PlayGame(self.ClientSideAttributes['GamesPlayed'])
@@ -246,7 +298,7 @@ class KnockTournament(object):
 
 	def PlayGame(self, GamesPlayed):
 		self.GameInitialisation(GamesPlayed)
-		self.Wait(Attribute='StartNumberSet', FunctionOfGame=True, OutsideRound=True)
+		self.AttributeWait('StartNumberSet')
 
 		for roundnumber, cardnumber, RoundLeader in zip(*self.game.GetGameParameters()):
 			self.StartRound(roundnumber, cardnumber, RoundLeader, GamesPlayed)
@@ -260,12 +312,11 @@ class KnockTournament(object):
 		self.EndGame(GamesPlayed)
 
 	def GameInitialisation(self, GamesPlayed):
-		self.GameUpdatesNeeded = False
 		self.CurrentColours['Game'] = 'Maroon' if GamesPlayed else 'LightGrey'
 
 		if GamesPlayed:
 			Message = 'NEW GAME STARTING:'
-			self.TypeWriterText(Message, WaitAfterwards=1000, WipeClean=True, PreGame=True)
+			self.TypeWriterText(Message, WaitAfterwards=1000)
 
 		if self.player.playerindex and GamesPlayed:
 			text = f"Waiting for {self.gameplayers[0]} to decide how many cards the game will start with."
@@ -276,7 +327,7 @@ class KnockTournament(object):
 
 		elif GamesPlayed:
 			Message2 = 'Your turn to decide the starting card number!'
-			self.TypeWriterText(Message2, WipeClean=True, PreGame=True)
+			self.TypeWriterText(Message2)
 			text = "Please enter how many cards you wish the game to start with:"
 
 		else:
@@ -284,12 +335,12 @@ class KnockTournament(object):
 			       "how many cards you wish the game to start with:"
 
 		self.TypeWriterText(text, WaitAfterwards=0)
-		self.GameUpdatesNeeded = True
 
-		while not self.Attributes.StartCardNumber:
-			self.PrintAndWait(text, 'Title', TypingNeeded=(not self.player.playerindex))
-
-		self.GameUpdatesNeeded = False
+		with self.GameUpdatesNeeded, self.MessagesOnScreen(text, 'Title'):
+			self.TypingNeeded.value = not self.player.playerindex
+			while not self.Attributes.StartCardNumber:
+				pass
+			self.TypingNeeded.value = False
 
 		# Do some maths w.r.t. board dimensions, now that we know how many cards the game is going to start with.
 		self.CalculateHandRects(
@@ -298,21 +349,23 @@ class KnockTournament(object):
 			self.Dimensions['Card'][0]
 		)
 
-		self.ToBlit = [self.TypeWriterText('Click to start the game for all players!', WaitAfterwards=0)]
-		self.Wait(function=GameStarted, FunctionOfGame=True, ClicksNeeded=True, OutsideRound=True, ClickToStart=True)
-		self.ToBlit.clear()
+		self.TypeWriterText('Click to start the game for all players!', WaitAfterwards=0)
+		Clicks, GameUpdates, Click2Start = self.ClicksNeeded, self.GameUpdatesNeeded, self.ClickToStart
+		Messages = self.MessagesOnScreen
+
+		with Clicks, GameUpdates, Click2Start, Messages('Click to start the game for all players!', 'Title'):
+			while not self.game.StartPlay:
+				pass
 
 		if not GamesPlayed:
-			self.Fade(colour1='LightGrey', colour2='Maroon', TextFade=False)
+			self.Fade(colour1='LightGrey', colour2='Maroon')
 
-		self.SurfacesOnScreen = ['Scoreboard']
-		self.Fade(colour1='Maroon', colour2='LightGrey', TextFade=False, ScoreboardFade=True)
+		self.SurfacesOnScreen.append('Scoreboard')
+		self.Fade(colour1='Maroon', colour2='LightGrey', ScoreboardFade=True)
 		self.ServerCommsQueue.put('AC')
 		self.PlayStarted = True
 
 	def StartRound(self, RoundNumber, cardnumber, RoundLeader, GamesPlayed):
-		self.GameUpdatesNeeded = False
-
 		self.ClientSideAttributes.update({
 			'CardNumberThisRound': cardnumber,
 			'RoundLeaderIndex': RoundLeader.playerindex,
@@ -323,73 +376,65 @@ class KnockTournament(object):
 		Message2 = f'{RoundLeader.name} starts this round.'
 
 		for m in (Message, Message2):
-			self.TypeWriterText(m, MidRound=False, UpdateGameSurfaceAfter=True)
+			self.TypeWriterText(m)
 
 		if not GamesPlayed and RoundNumber == 1:
 			Message = "Over the course of the game, your name will be underlined if it's your turn to play."
 			Message2 = 'Press the Tab key at any time to toggle in and out of full-screen mode.'
 
-			self.TypeWriterText(Message, MidRound=False, WipeClean=True)
-			self.TypeWriterText(Message2, MidRound=False, UpdateGameSurfaceAfter=True)
+			self.TypeWriterText(Message)
+			self.TypeWriterText(Message2)
 
 		# Wait for the server to make a new pack of cards.
-		self.Wait(Attribute='NewPack', FunctionOfGame=True, OutsideRound=True)
-
+		self.AttributeWait('NewPack')
 		TrumpCard = self.Attributes.TrumpCard
-		Message = f'The trumpcard for this round is the {TrumpCard}, which has been removed from the pack.'
-		self.TypeWriterText(Message, MidRound=False, UpdateGameSurfaceAfter=True)
+		self.TypeWriterText(f'The trumpcard for this round is the {TrumpCard}, which has been removed from the pack.')
 
 		# Wait for the server to deal cards for this round.
-		self.Wait(Attribute='CardsDealt', FunctionOfGame=True, OutsideRound=True)
-
-		self.SurfacesOnScreen += ['Board', 'TrumpCard']
+		self.AttributeWait('CardsDealt')
 
 		# Fade in the *player text on the board only*, then the cards in your hand + the trumpcard.
-		self.Fade(
-			colour1='Maroon',
-			colour2=(0, 0, 0),
-			FadeIn=True,
-			TextFade=True,
-			UpdateGameSurfaceAfter=True
-		)
+		self.CurrentColours['Text'] = self.Colours['Maroon']
 
-		self.SurfacesOnScreen.append('Hand')
-		self.Fade(TextFade=False, CardFade=True, FadeIn=True)
-		self.Wait(TimeToWait=250, SwitchUpdatesOnBefore=False)
+		for string in ('TrumpCard', 'Hand'):
+			self.Surfaces[string].SetCoverRectOpacity(255)
+
+		with self.CardFadesInProgress['TrumpCard'], self.CardFadesInProgress['Hand']:
+			self.SurfacesOnScreen += ['Board', 'TrumpCard']
+			self.Fade(colour1='Maroon', colour2=(0, 0, 0), FadeIn=True, TextFade=True)
+			self.SurfacesOnScreen.append('Hand')
+			self.Fade(CardFade=True, FadeIn=True)
+
+		delay(250)
 
 		if RoundNumber == 1 and not GamesPlayed:
-			M = 'Cards for this round have been dealt; each player must decide what they will bid.'
-			self.TypeWriterText(M, WipeClean=True, MidRound=False, UpdateGameSurfaceAfter=True)
+			self.TypeWriterText('Cards for this round have been dealt; each player must decide what they will bid.')
 
 		# We need to enter our bid.
-		self.GameUpdatesNeeded = True
+		with self.GameUpdatesNeeded:
+			with self.TypingNeeded, self.MessagesOnScreen('Please enter your bid:', 'Title'):
+				while self.player.Bid == -1:
+					pass
 
-		while self.player.Bid == -1:
-			self.PrintAndWait('Please enter your bid:', 'Title', TypingNeeded=True)
-		# f = lambda x, y: x.gameplayers[self.player.playerindex].Bid == -1
-		# self.Wait(FunctionOfGame=True, TypingNeeded=True, function=f, Bidding=True, SwitchUpdatesOffAfter=False)
-		# self.BlockingMessageToServer(UpdateWindowAfter=True)
+			# We now need to wait until everybody else has bid.
+			i = self.player.playerindex
 
-		# We now need to wait until everybody else has bid.
-		if not self.gameplayers.AllBid():
 			while not self.gameplayers.AllBid():
-				self.PrintAndWait(self.gameplayers.BidWaitingText(self.player.playerindex), 'Title')
-			self.Wait(FunctionOfGame=True, function=AllBid, Bidding=True, SwitchUpdatesOffAfter=False)
+				self.MessagesOnScreen.m = self.gameplayers.BidWaitingText(i)
 
-		self.BlockingMessageToServer()
-		self.GameUpdatesNeeded = False
+			self.MessagesOnScreen.m = ''
+			self.BlockingMessageToServer()
 
 		# (Refresh the board.)
-		self.UpdateGameAttributes(UpdateWindowAfter=True)
+		self.UpdateAttributesWithLock()
 
+		# Announce what all the players are bidding this round.
 		for Message in self.gameplayers.BidText():
-			self.TypeWriterText(Message, WipeClean=True)
+			self.TypeWriterText(Message)
 
 		self.ServerCommsQueue.put('AC')
 
 	def PlayTrick(self, FirstPlayerIndex, TrickNumber, CardNumberThisRound):
-		self.GameUpdatesNeeded = False
-
 		self.ClientSideAttributes.update({
 			'TrickInProgress': True,
 			'TrickNumber': TrickNumber,
@@ -407,22 +452,26 @@ class KnockTournament(object):
 		self.ServerCommsQueue.put('AC')
 		self.UpdateGameSurface()
 		Text = f'{f"TRICK {TrickNumber} starting" if CardNumberThisRound != 1 else "TRICK STARTING"}:'
-		self.TypeWriterText(Text, WipeClean=True)
+		self.TypeWriterText(Text)
 
 		# Make sure the server is ready for the trick to start.
-		self.Wait(Attribute='TrickStart', FunctionOfGame=True)
+		self.AttributeWait('TrickStart')
 
 		# Tell the server we're ready to play the trick.
 		self.BlockingMessageToServer('AC', UpdateWindowAfter=True)
-		self.GameUpdatesNeeded = True
 
-		# Play the trick, wait for all players to play.
-		for i in range(PlayerNo):
-			self.ClientSideAttributes['WhoseTurnPlayerIndex'] = PlayerOrder[i]
-			while (CardsOnBoard := len(self.Attributes.PlayedCards)) == i:
-				self.UpdateGameSurface(ClicksNeeded=(CardsOnBoard == Pos), TypingNeeded=False, ToUpdate=('Board',))
+		with self.GameUpdatesNeeded:
+			# Play the trick, wait for all players to play.
+			for i in range(PlayerNo):
+				self.ClientSideAttributes['WhoseTurnPlayerIndex'] = PlayerOrder[i]
 
-		self.Wait(FunctionOfGame=True, Attribute='TrickWinnerLogged')
+				while (CardsOnBoard := len(self.Attributes.PlayedCards)) == i:
+					self.UpdateSurfaces(ToUpdate=('Board', 'Hand'))
+					self.ClicksNeeded.value = (CardsOnBoard == Pos)
+
+			self.ClicksNeeded.value = False
+			self.AttributeWait('TrickWinnerLogged')
+
 		PlayedCards, trumpsuit = self.Attributes.PlayedCards, self.Attributes.trumpsuit
 		WinningCard = max(PlayedCards, key=lambda card: card.GetWinValue(PlayedCards[0].ActualSuit, trumpsuit))
 		(Winner := self.gameplayers[WinningCard.PlayedBy]).WinsTrick()
@@ -439,11 +488,15 @@ class KnockTournament(object):
 
 			self.UpdateGameAttributes()
 
-		self.Wait(TimeToWait=500, SwitchUpdatesOnBefore=False)
+		delay(500)
 		Text = f'{Winner} won {f"trick {TrickNumber}" if CardNumberThisRound != 1 else "the trick"}!'
-		self.TypeWriterText(Text, WipeClean=True)
-		self.Fade(FadeIn=False, TextFade=False, CardFade=True, TimeToTake=300, EndOfTrickFade=True)
-		self.Attributes.PlayedCards.clear()
+		self.TypeWriterText(Text)
+
+		# Fade out the cards on the board
+		with self.CardFadesInProgress['Board']:
+			self.Fade(FadeIn=False, CardFade=True, TimeToTake=300, EndOfTrickFade=True)
+			self.Attributes.PlayedCards.clear()
+
 		self.UpdateGameSurface(ToUpdate=('Board',))
 
 		if TrickNumber != CardNumberThisRound:
@@ -451,23 +504,23 @@ class KnockTournament(object):
 
 		return Winner.playerindex
 
-	def EndRound(self, FinalRound):
-		self.GameUpdatesNeeded = False
+	def EndRound(self, FinalRound: bool):
 		self.BuildScoreboard('LightGrey')
 		self.BlitSurface('Game', 'Scoreboard')
 
+		# Fade out the trumpcard, then the text on the board
 		self.Surfaces['TrumpCard'].SetCoverRectOpacity(0)
-		self.Fade(FadeIn=False, TextFade=False, CardFade=True)
-		self.Fade(colour1=(0, 0, 0), colour2='Maroon', FadeIn=False, TextFade=True)
 
-		self.Fill('Game', 'Maroon')
-		self.BlitSurface('Game', 'Scoreboard')
+		with self.CardFadesInProgress['TrumpCard']:
+			self.Fade(FadeIn=False, CardFade=True)
+			self.Attributes.TrumpCard = None
+			self.Fade(colour1=(0, 0, 0), colour2='Maroon', FadeIn=False, TextFade=True)
 
-		self.ClientSideAttributes.update({
-			'WhoseTurnPlayerIndex': -1,
-			'TrickInProgress': False
-		})
+			for string in ('Board', 'TrumpCard'):
+				self.SurfacesOnScreen.remove(string)
 
+		self.CardFadesInProgress['TrumpCard'] = False
+		self.ClientSideAttributes.update({'WhoseTurnPlayerIndex': -1, 'TrickInProgress': False})
 		self.UpdateGameAttributes()
 
 		# Award points.
@@ -482,34 +535,45 @@ class KnockTournament(object):
 		self.BuildScoreboard()
 		self.ServerCommsQueue.put('AC')
 
-		self.Wait(SwitchUpdatesOnBefore=False, TimeToWait=500)
+		delay(500)
 
-		for message in self.gameplayers.EndRoundText(FinalRound):
-			self.TypeWriterText(message, WipeClean=True, MidRound=False)
+		for message in self.gameplayers.EndRoundText(FinalRound=FinalRound):
+			self.TypeWriterText(message)
 
 		self.ServerCommsQueue.put('AC')
 
 	def EndGame(self, GamesPlayed):
-		self.GameUpdatesNeeded = False
+		self.SurfacesOnScreen.remove('Hand')
 
+		# Announce the final scores + who won the game.
 		for text in self.gameplayers.GameCleanUp():
-			self.TypeWriterText(text, MidRound=False, WipeClean=True)
+			self.TypeWriterText(text)
 
 		self.PlayStarted = False
-		self.Wait(TimeToWait=500)
-		self.Fade(colour1='LightGrey', colour2='Maroon', TextFade=False, ScoreboardFade=True)
-		self.FireworksDisplay()
-		self.Wait(TimeToWait=1000, UpdateWindow=False, OutsideRound=True)
-		self.Fill('Game', 'Maroon')
+		delay(500)
 
+		# Fade the screen out incrementally to prepare for the fireworks display
+		self.Fade(colour1='LightGrey', colour2='Maroon', ScoreboardFade=True)
+		self.Fade(colour1='Maroon', colour2=(0, 0, 0), FadeIn=False)
+		self.SurfacesOnScreen.clear()
+
+		self.FireworksDisplay()
+
+		# Fade the screen back to maroon after the fireworks display.
+		self.Fade(colour1=(0, 0, 0), colour2='Maroon')
+		delay(1000)
+
+		# Announce who's currently won the most games in this tournament so far.
 		if GamesPlayed:
 			for text in self.gameplayers.TournamentLeaders():
-				self.TypeWriterText(text, PreGame=True, MidRound=False, WipeClean=True)
+				self.TypeWriterText(text)
 
 		Message = 'Press the spacebar to play again with the same players, or close the window to exit the game.'
-		self.TypeWriterText(Message, MidRound=False, WaitAfterwards=0)
+		self.TypeWriterText(Message, WaitAfterwards=0)
 
-		self.Wait(Attribute='NewGameReset', FunctionOfGame=True, OutsideRound=True, GameReset=True)
+		with self.GameReset, self.GameUpdatesNeeded, self.TypingNeeded:
+			self.AttributeWait('NewGameReset')
+
 		self.game.NewGameReset()
 		self.gameplayers.NewGame()
 		self.player.ResetPlayer(self.PlayerNumber)
@@ -518,17 +582,82 @@ class KnockTournament(object):
 		self.Surfaces['Hand'].ClearRectList()
 		self.ClientSideAttributes['RoundNumber'] = 1
 
+	def FireworksDisplay(self):
+		# This part of the code adapted from code by Adam Binks
+
+		# every frame blit a low alpha black surf so that all effects fade out slowly
+		Duration = self.FireworkSettings['SecondsDuration'] * 1000
+		StartTime = LastFirework = GetTicks()
+		EndTime = StartTime + Duration
+		RandomAmount = random.randint(*self.FireworkSettings['Bounds'])
+		x, y = self.Dimensions['Window']
+		self.FireworksInProgress = True
+
+		# FIREWORK LOOP (adapted from code by Adam Binks)
+		while (Time := GetTicks()) < EndTime or Particle.allParticles:
+			dt = self.clock.tick(self.FireworkSettings['FPS']) / 60.0
+			self.BlitSurface('Game', 'blackSurf')
+			self.BlitSurface(self.Window, 'Game')
+
+			if (LastFirework + RandomAmount) < Time < (EndTime - 6000):
+				Choice = random.choice((True, False))
+
+				if Choice:
+					Sparker(
+						pos=(random.randint(0, x), random.randint(0, y)),
+						colour=(random.uniform(0, 255), random.uniform(0, 255), random.uniform(0, 255)),
+						velocity=random.uniform(40, 60),
+						particleSize=random.uniform(10, 20),
+						sparsity=random.uniform(0.05, 0.15),
+						hasTrail=True,
+						lifetime=random.uniform(10, 20),
+						WindowDimensions=self.Dimensions['Window'],
+						isShimmer=False
+					)
+				else:
+					Sparker(
+						pos=(random.randint(0, x), random.randint(0, y)),
+						colour=(random.uniform(50, 255), random.uniform(50, 255), random.uniform(50, 255)),
+						velocity=random.uniform(1, 2),
+						particleSize=random.uniform(3, 8),
+						sparsity=random.uniform(0.05, 0.15),
+						hasTrail=False,
+						lifetime=random.uniform(20, 30),
+						isShimmer=True,
+						radius=random.uniform(40, 100),
+						proportion=0.6,
+						focusRad=random.choice((0, 0.4, 3, 6)),
+						WindowDimensions=self.Dimensions['Window'],
+						weight=random.uniform(0.001, 0.0015)
+					)
+
+				LastFirework = Time
+				RandomAmount = random.randint(*self.FireworkSettings['Bounds'])
+
+			for item in chain(Particle.allParticles, Sparker.allSparkers):
+				item.update(dt)
+				item.draw(self.Surfaces['Game'])
+
+		self.FireworksInProgress = False
+
 	def ThreadedGameUpdate(self):
 		"""This method runs throughout gameplay on a separate thread."""
 
 		while True:
 			while not self.ServerCommsQueue.empty():
 				if isinstance((message := self.ServerCommsQueue.get()), str):
-					self.GetGame(message, CheckForExit=False)
+					self.GetGame(message)
 				else:
 					self.SendToServer(*message)
 			if self.GameUpdatesNeeded:
-				self.GetGame(CheckForExit=False)
+				self.GetGame()
+
+	def EventHandler(self):
+		while True:
+			if not self.UserInputQ.empty():
+				i = self.UserInputQ.get()
+				if self.FunctionDict[i.Type](i.args) == 'quit':
+					break
 
 	def BlockingMessageToServer(self, message='', UpdateWindowAfter=False):
 		Q = self.ServerCommsQueue
@@ -595,11 +724,8 @@ class KnockTournament(object):
 			if self.ServerCommsQueue.empty():
 				self.UpdateAttributesWithLock()
 
-	def GetGame(self, arg='GetGame', CheckForExit=True):
+	def GetGame(self, arg='GetGame'):
 		self.ReceiveGame(self.Client.ClientSimpleSend(arg))
-
-		if CheckForExit:
-			self.HandleEvents(ClicksNeeded=False, TypingNeeded=False, InputNeeded=False)
 
 	def SendToServer(self, MessageType, Message):
 		self.ReceiveGame(self.Client.send(MessageType, Message))
@@ -613,7 +739,6 @@ class KnockTournament(object):
 		elif not ToFullScreen:
 			x, y = WindowDimensions
 
-		display.set_caption('Knock (made by Alex Waygood)')
 		self.InitialiseWindow((x, y), (pg.FULLSCREEN if ToFullScreen else pg.RESIZABLE))
 		self.Window.fill(self.CurrentColours['Game'])
 		GameSurf, GameSurfColour = self.Surfaces['Game'], self.CurrentColours['Game']
@@ -634,7 +759,7 @@ class KnockTournament(object):
 		}
 
 		CardImages = {
-			ID: pg.transform.rotozoom(cardimage, 0, (1 /ResizeRatio))
+			ID: pg.transform.rotozoom(cardimage, 0, (1 / ResizeRatio))
 			for ID, cardimage in self.BaseCardImages.items()
 		}
 
@@ -728,31 +853,39 @@ class KnockTournament(object):
 			'Cursor': pg.Surface((3, NormalLinesize)),
 
 			'Scoreboard': SurfaceAndPosition(
+				'Scoreboard',
 				SurfaceDimensions=None,
 				position=[WindowMargin, WindowMargin],
 				FillColour=self.CurrentColours['Scoreboard']
 			),
 
 			'TrumpCard': SurfaceAndPosition(
+				'TrumpCard',
 				SurfaceDimensions=TrumpCardSurfaceDimensions,
 				position=[(GameX - (CardX + 50)), WindowMargin],
 				RectList=(TrumpCardPos,),
-				Dimensions=TrumpCardSurfaceDimensions
+				Dimensions=TrumpCardSurfaceDimensions,
+				CoverRectOpacity=self.CoverRectOpacities['TrumpCard']
 			),
 
 			'Hand': SurfaceAndPosition(
+				'Hand',
 				SurfaceDimensions=(GameX, (CardY + WindowMargin)),
-				position=[0, (GameY - (CardY + WindowMargin))]
+				position=[0, (GameY - (CardY + WindowMargin))],
+				CoverRectOpacity=self.CoverRectOpacities['Hand']
 			),
 
 			'Board': SurfaceAndPosition(
+				'Board',
 				SurfaceDimensions=(GameX, GameX),
 				position=BoardPos.copy(),
-				RectList=CardRectsOnBoard
+				RectList=CardRectsOnBoard,
+				CoverRectOpacity=self.CoverRectOpacities['Board']
 			),
 
 			'blackSurf': SurfaceAndPosition(
-				SurfaceDimensions=WindowDimensions,
+				'blackSurf',
+				SurfaceDimensions=self.Dimensions['ScreenSize'],
 				position=[0, 0],
 				OpacityRequired=True,
 				FillColour=self.Colours['Black_fade']
@@ -774,12 +907,6 @@ class KnockTournament(object):
 			self.BuildBaseScoreboard()
 			self.BuildScoreboard(self.CurrentColours['Scoreboard'])
 
-		CVs = sum(
-			(self.Surfaces[string].CoverRects for string in ('Board', 'Hand', 'TrumpCard')),
-			start=CoverRectList([])
-		)
-
-		CVs.SetOpacity(self.CurrentColours['CoverRectOpacity'])
 		self.PlayerTextPositions = PlayerTextPositions
 		self.Dimensions.update(Dimensions)
 
@@ -788,6 +915,10 @@ class KnockTournament(object):
 			self.UpdateGameAttributes()
 
 		self.UpdateSurfaces(ToUpdate=('Scoreboard', 'Hand', 'TrumpCard', 'Board'))
+
+		for string in ('Hand', 'TrumpCard', 'Board'):
+			if self.CardFadesInProgress[string]:
+				self.BlitSurface(string, self.Surfaces[string].CoverRects)
 
 	def CalculateHandRects(self, GameSurfX, WindowMargin, CardX):
 		x = WindowMargin
@@ -800,7 +931,11 @@ class KnockTournament(object):
 		else:
 			CardBufferInHand = min(x, ((GameSurfX - DoubleWindowMargin - (CardX * StartNumber)) // (StartNumber - 1)))
 
-		self.Surfaces['Hand'].AddRectList([((x + (i * (CardX + CardBufferInHand))), 0) for i in range(StartNumber)])
+		self.Surfaces['Hand'].AddRectList(
+			[((x + (i * (CardX + CardBufferInHand))), 0) for i in range(StartNumber)],
+			self.CoverRectOpacities['Hand'],
+			self.CurrentColours['Game']
+		)
 
 	def UpdateWindow(self, List=None):
 		if List:
@@ -810,99 +945,70 @@ class KnockTournament(object):
 		UpdateDisplay()
 
 	def QuitGame(self):
+		self.UserInputQ.put(Action('quit', None))
 		pg.quit()
 		self.Client.CloseDown()
 		raise Exception('Game has ended.')
 
-	def PrintAndWait(self, text, font, TypingNeeded=False, ClicksNeeded=False):
+	def GameSurfMove(self, Type, arg):
+		if Type == 'scrollwheel':
+			self.ScrollwheelDownTime = GetTicks()
+			
+		with self.lock:
+			self.GameSurfMovementDict[Type](arg)
+			self.UpdateGameAttributes()
 
-		self.ToBlit = [self.GetText(text, font=font)]
-
-		if TypingNeeded:
-			self.BlitInputText()
-
-		self.HandleEvents(
-			ClicksNeeded=ClicksNeeded,
-			TypingNeeded=TypingNeeded,
-			InputNeeded=(TypingNeeded or ClicksNeeded)
-		)
-
-	def HandleEvents(self, ClicksNeeded, TypingNeeded, InputNeeded=True, ClickToStart=False, GameReset=False):
-
+	def HandleEvents(self):
 		""" Main pygame event loop """
 
-		Condition = any((
-			(len(self.gameplayers) != self.PlayerNumber and self.game.StartPlay),
-			not display.get_init(),
-			not display.get_surface()
-		))
+		Condition = (len(self.gameplayers) != self.PlayerNumber and self.game.StartPlay)
 
-		if Condition:
+		if Condition or not display.get_init() or not display.get_surface():
 			self.QuitGame()
 
-		self.clock.tick(600)
-		self.Fill(self.Window, CurrentColour=True)
-		self.Fill('Game', CurrentColour=True)
-		self.BlitSurface('Game', chain(self.SurfacesOnScreen, self.ToBlit))
-		self.BlitSurface(self.Window, 'Game')
-		UpdateDisplay()
+		if not self.FireworksInProgress:
+			self.clock.tick(600)
+			self.Fill(self.Window, CurrentColour=True)
+			self.Fill('Game', CurrentColour=True)
+			InputTextBlits = self.BuildInputText() if self.TypingNeeded else []
 
+			if not self.TypewriterEvents.empty():
+				text = self.TypewriterEvents.get()
+				self.TypewriterRect = pg.Rect((0, 0), self.fonts['Title'].size(text))
+
+				self.RenderedTypewriterSteps = [
+					self.fonts['Title'].render(step, False, (0, 0, 0)) for step in accumulate(text)
+				]
+
+			if self.TypewrittenText > -1:
+				TypewrittenText = self.RenderedTypewriterSteps[self.TypewrittenText]
+				self.TypewriterRect.center = self.Dimensions['BoardCentre'] if self.PlayStarted else self.Surfaces[
+					'Game'].centre
+				SubRect = TypewrittenText.get_rect()
+				SubRect.topleft = self.TypewriterRect.topleft
+				TypewrittenText = [(TypewrittenText, SubRect)]
+				self.GetCursor(TypewrittenText, SubRect.topright)
+			else:
+				TypewrittenText = []
+
+			if self.MessagesOnScreen:
+				Messages = [self.GetText(self.MessagesOnScreen.m, font=self.MessagesOnScreen.font)]
+			else:
+				Messages = []
+
+			self.BlitSurface(
+				'Game',
+				chain(self.SurfacesOnScreen, TypewrittenText, Messages, InputTextBlits, self.Errors['Messages'])
+			)
+
+			self.BlitSurface(self.Window, 'Game')
+			self.UserInputQ.put(Action('mouse', None))
+
+		UpdateDisplay()
 		self.Errors['ThisPass'].clear()
-		click, SendInputText = False, False
-		BidNeeded = (self.player.Bid == -1)
+		click = False
 		GameSurf = self.Surfaces['Game']
 		ScreenSize = self.Dimensions['ScreenSize']
-		MousePos = pg.mouse.get_pos()
-		Attrs = self.ClientSideAttributes
-
-		if self.ScrollwheelDown:
-			DownX, DownY, MouseX, MouseY = *self.ScrollwheelDownPos, *pg.mouse.get_pos()
-			if MouseX < (DownX - 50):
-				if MouseY < (DownY - 50):
-					cur = 'NW'
-				elif MouseY > (DownY + 50):
-					cur = 'SW'
-				else:
-					cur = 'W'
-			elif MouseX > (DownX + 50):
-				if MouseY < (DownY - 50):
-					cur = 'NE'
-				elif MouseY > (DownY + 50):
-					cur = 'SE'
-				else:
-					cur = 'E'
-			elif MouseY > (DownY + 50):
-				cur = 'S'
-			elif MouseY < (DownY - 50):
-				cur = 'N'
-			else:
-				cur = 'Diamond'
-
-		elif pg.mouse.get_pressed(5)[0] and pg.mouse.get_pressed(5)[2]:
-			cur = 'Hand'
-
-		elif (
-				(Hand := self.player.Hand)
-				and Attrs['TrickInProgress']
-				and Attrs['WhoseTurnPlayerIndex'] == self.player.playerindex
-		):
-
-			cur = 'default'
-			for card in Hand:
-				if card.colliderect.collidepoint(*MousePos):
-					CardHoverID = card.ID
-					cur = 'Hand'
-
-					if PlayedCards := self.Attributes.PlayedCards:
-						SuitLed = PlayedCards[0].ActualSuit
-						Condition = any(UnplayedCard.ActualSuit == SuitLed for UnplayedCard in Hand)
-
-						if card.ActualSuit != SuitLed and Condition:
-							cur = 'IllegalMove'
-		else:
-			cur = 'default'
-
-		pg.mouse.set_cursor(*self.Cursors[cur])
 
 		for event in pg.event.get():
 			if (EvType := event.type) == pg.QUIT:
@@ -921,35 +1027,24 @@ class KnockTournament(object):
 					if EvKey == pg.K_q:
 						self.QuitGame()
 
-					elif EvKey == pg.K_t and self.PlayStarted:
+					elif EvKey == pg.K_t and self.PlayStarted and not self.FireworksInProgress:
 						self.InteractiveScoreboard()
 
 					elif EvKey == pg.K_c:
-						GameSurf.MoveToCentre(*self.Dimensions['Window'])
-						self.UpdateAttributesWithLock()
+						self.UserInputQ.put(Action('GameSurfMove', ('centre', None)))
 
 					elif EvKey in (pg.K_PLUS, pg.K_MINUS):
 						self.ZoomWindow(EvKey, ScreenSize)
 
-				elif GameReset and EvKey in (pg.K_SPACE, pg.K_RETURN):
+				elif self.GameReset and EvKey in (pg.K_SPACE, pg.K_RETURN):
 					self.game.RepeatGame = True
 					self.ServerCommsQueue.put('1')
 
-				elif EvKey in (pg.K_UP, pg.K_DOWN, pg.K_RIGHT, pg.K_LEFT):
-					GameSurf.ArrowKeyMove(EvKey)
-					self.UpdateAttributesWithLock()
+				elif not self.FireworksInProgress and EvKey in (pg.K_UP, pg.K_DOWN, pg.K_RIGHT, pg.K_LEFT):
+					self.UserInputQ.put(Action('GameSurfMove', ('arrow', EvKey)))
 
-				elif TypingNeeded:
-					if event.unicode in PrintableCharactersPlusSpace:
-						try:
-							self.InputText += event.unicode
-						except:
-							pass
-					elif self.InputText:
-						if EvKey == pg.K_RETURN:
-							SendInputText = True
-						elif EvKey == pg.K_BACKSPACE:
-							self.InputText = self.InputText[:-1]
+				elif self.TypingNeeded:
+					self.UserInputQ.put(Action('inputtext', event))
 
 			elif EvType == pg.VIDEORESIZE:
 				# Videoresize events are triggered on exiting/entering fullscreen as well as manual resizing;
@@ -962,83 +1057,41 @@ class KnockTournament(object):
 						self.RedrawWindow(WindowDimensions=event.size)
 
 			elif EvType == pg.MOUSEBUTTONDOWN:
-				if (Button := event.button) == 1 and ClicksNeeded and not pg.mouse.get_pressed(5)[2]:
+				if (Button := event.button) == 1 and self.ClicksNeeded and not pg.mouse.get_pressed(5)[2]:
 					click = True
 
-				elif Button == 2:
-					self.ScrollwheelDown = not self.ScrollwheelDown
-					if self.ScrollwheelDown:
-						self.ScrollwheelDownPos = pg.mouse.get_pos()
-						self.ScrollwheelDownTime = self.OriginalScrollwheelDownTime = pg.time.get_ticks()
+				elif Button == 2 and not self.FireworksInProgress:
+					self.UserInputQ.put(Action('scrollwheelvars', None))
 
 				elif Button in (4, 5):
 					if key.get_mods() & pg.KMOD_CTRL:
 						self.ZoomWindow(Button, ScreenSize)
-					else:
-						GameSurf.ArrowKeyMove((pg.K_UP if Button == 4 else pg.K_DOWN))
-						self.UpdateAttributesWithLock()
+					elif not self.FireworksInProgress:
+						self.UserInputQ.put(Action('GameSurfMove', ('arrow', (pg.K_UP if Button == 4 else pg.K_DOWN))))
 
-			elif (
-					EvType == pg.MOUSEBUTTONUP and (
-						event.button != 2
-						or (event.button == 2 and pg.time.get_ticks() > self.OriginalScrollwheelDownTime + 1000))
-			):
+			elif not self.FireworksInProgress:
+				if EvType == pg.MOUSEBUTTONUP:
+					if (Button := event.button) == 1:
+						click = False
+					elif Button == 2 and GetTicks() > self.OriginalScrollwheelDownTime + 1000:
+						self.UserInputQ.put(Action('scrollwheelup', None))
 
-				self.ScrollwheelDown = False
-				click = False
+				elif EvType == pg.MOUSEMOTION and pg.mouse.get_pressed(5)[0] and pg.mouse.get_pressed(5)[2]:
+					self.UserInputQ.put(Action('GameSurfMove', ('mouse', event.rel)))
 
-			elif EvType == pg.MOUSEMOTION and pg.mouse.get_pressed(5)[0] and pg.mouse.get_pressed(5)[2]:
-				GameSurf.MouseMove(event.rel)
-				self.UpdateAttributesWithLock()
+		if self.ScrollwheelDown and GetTicks() > (self.ScrollwheelDownTime + 20):
+			self.UserInputQ.put(Action('GameSurfMove', ('scrollwheel', self.ScrollwheelDownPos)))
 
-		if self.ScrollwheelDown and (Time := pg.time.get_ticks()) > (self.ScrollwheelDownTime + 20):
-			self.Surfaces['Game'] = GameSurf.ScrollwheelDownMove(self.ScrollwheelDownPos, pg.mouse.get_pos())
-			self.UpdateAttributesWithLock()
-			self.ScrollwheelDownTime = Time
-
-		if not InputNeeded:
+		if not self.TypingNeeded or self.ClicksNeeded:
 			return None
 
 		if click:
-			if ClickToStart:
+			if self.ClickToStart:
 				self.game.StartPlay = True
 				self.ServerCommsQueue.put('StartGame')
 
-			elif cur == 'Hand' and self.player.PosInTrick == len(self.Attributes.PlayedCards):
-				self.game.ExecutePlay(CardHoverID, self.player.playerindex)
-				self.UpdateGameAttributes()
-				self.ServerCommsQueue.put(('PlayCard', CardHoverID))
-
-		if SendInputText:
-			if isinstance(self.name, int):
-				if len(self.InputText) < 30:
-					# Don't need to check that letters are ASCII-compliant;
-					# wouldn't have been able to type them if they weren't.
-					self.name = self.InputText
-					self.ServerCommsQueue.put(('player', self.InputText))
-				else:
-					self.Errors['ThisPass'].append('Name must be <30 characters; please try again.')
-
-			elif not (self.Attributes.StartCardNumber or self.player.playerindex):
-				Conditions = ((1 <= float(self.InputText) <= self.MaxCardNumber) and float(self.InputText).is_integer())
-
-				if Conditions:
-					self.game.Attributes.StartCardNumber = int(self.InputText)
-					self.ServerCommsQueue.put(('CardNumber', self.InputText))
-				else:
-					self.Errors['ThisPass'].append(f'Please enter an integer between 1 and {self.MaxCardNumber}')
-
-			elif BidNeeded:
-				Count = len(self.player.Hand)
-				Conditions = ((0 <= float(self.InputText) <= Count) and float(self.InputText).is_integer())
-
-				if Conditions:
-					self.game.PlayerMakesBid(self.InputText, player=self.player)
-					self.ServerCommsQueue.put(('Bid', self.InputText))
-				else:
-					self.Errors['ThisPass'].append(f'Your bid must be an integer between 0 and {Count}.')
-
-			self.InputText = ''
+			elif self.cur == 'Hand' and self.player.PosInTrick == len(self.Attributes.PlayedCards):
+				self.UserInputQ.put(Action('ExecutePlay', None))
 
 		if self.Errors['ThisPass']:
 			self.Errors['StartTime'] = GetTicks()
@@ -1065,78 +1118,19 @@ class KnockTournament(object):
 		while len(self.Errors['Messages']) > 5:
 			self.Errors['Messages'].pop()
 
-	def WaitFunction(self, x, y, Attribute, FunctionOfGame):
+	def AttributeWait(self, Attribute):
 		"""
 		Three methods follow below that work together...
 		...to allow the client-side script to 'do nothing' for a set period of time.
 		"""
 
-		if FunctionOfGame:
-			return self.Triggers['Server'].Events[Attribute] == self.Triggers['Client'].Events[Attribute]
-		else:
-			return x < y
+		with self.GameUpdatesNeeded:
+			while self.Triggers['Server'].Events[Attribute] == self.Triggers['Client'].Events[Attribute]:
+				pass
 
-	def WaitHelperFunction(self, FunctionOfGame, ClicksNeeded, TypingNeeded,
-	                       Bidding, UpdateWindow, OutsideRound, ClickToStart, GameReset):
-
-		Args = (ClicksNeeded, TypingNeeded, (ClicksNeeded or TypingNeeded), ClickToStart, GameReset)
-		self.HandleEvents(*Args)
-
-		if any((FunctionOfGame, TypingNeeded, GameReset)):
-			if OutsideRound:
-				self.UpdateWindow()
-				return None
-			self.UpdateGameSurface(Bidding=Bidding)
-
-		if UpdateWindow:
-			self.UpdateWindow()
-
-	def Wait(self, function=None, y=None, TimeToWait=0,  FunctionOfGame=False, ClicksNeeded=False,
-	         TypingNeeded=False, Attribute='', Bidding=False, SwitchUpdatesOnBefore=True,
-	         SwitchUpdatesOffAfter=True, UpdateWindow=True, OutsideRound=False, ClickToStart=False,
-	         GameReset=False):
-
-		assert any((function, (FunctionOfGame and Attribute), (TimeToWait and not FunctionOfGame))), 'Incorrect arguments entered.'
-
-		if SwitchUpdatesOnBefore:
-			self.GameUpdatesNeeded = True
-
-		y = 0 if FunctionOfGame else (GetTicks() + TimeToWait if not y else y)
-
-		Args = (
-			FunctionOfGame,
-			ClicksNeeded,
-			TypingNeeded,
-			Bidding,
-			UpdateWindow,
-			OutsideRound,
-			ClickToStart,
-			GameReset
-		)
-
-		if function and not FunctionOfGame:
-			while function(GetTicks(), y):
-				self.WaitHelperFunction(*Args)
-
-		elif function:
-			while function(self.game, self):
-				self.WaitHelperFunction(*Args)
-
-		elif FunctionOfGame:
-			while self.WaitFunction(0, y, Attribute, FunctionOfGame):
-				self.WaitHelperFunction(*Args)
-
-		else:
-			while self.WaitFunction(GetTicks(), y, Attribute, FunctionOfGame):
-				self.WaitHelperFunction(*Args)
-
-		if SwitchUpdatesOffAfter:
-			self.GameUpdatesNeeded = False
-
-		if Attribute:
 			self.Triggers['Client'].Events[Attribute] = self.Triggers['Server'].Events[Attribute]
 
-	def BlitSurface(self, arg1, arg2):
+	def BlitSurface(self, arg1, arg2, CardFade=False):
 		"""
 		Method for simplifying the blitting of one surface -- or a list of surfaces -- to another.
 		Arg1 refers, directly or indirectly, to a base surface.
@@ -1155,7 +1149,7 @@ class KnockTournament(object):
 				self.BlitSurface(arg1, item)
 
 		elif isinstance(arg2, CoverRectList):
-			arg1.blits(arg2.GetCoverRects())
+			arg1.blits([cv.surfandrect for cv in arg2])
 
 		elif isinstance(arg2, tuple):
 			if callable(arg2[1]):
@@ -1170,49 +1164,35 @@ class KnockTournament(object):
 		elif isinstance(arg2, SurfaceAndPosition) or isinstance(arg2, Card):
 			arg1.blit(*arg2.surfandpos)
 
+		elif arg2 is None:
+			pass
+
 		# If arg2 is a string, we look it up in the self.Surfaces dictionary
-		else:
+		elif isinstance(arg2, str):
 			arg1.blit(*self.Surfaces[arg2].surfandpos)
+
+		if CardFade and isinstance(arg1, SurfaceAndPosition):
+			arg1.SetCoverRectOpacity(self.CoverRectOpacities[f'{arg1}'])
+			self.BlitSurface(arg1, arg1.CoverRects)
 
 		return arg1
 
-	def TypeWriterTopLeft(self, rect):
-		rect.center = self.Dimensions['BoardCentre'] if self.PlayStarted else self.Surfaces['Game'].centre
-		return rect.topleft
-
-	def TopLeftHelper(self, rect):
-		setattr(self, 'TopLeftPartial', partial(self.TypeWriterTopLeft, rect=rect))
-
-	def TypeWriterText(self, text, WaitAfterwards=1200, WipeClean=False,
-	                   MidRound=True, PreGame=False, UpdateGameSurfaceAfter=False):
-
+	def TypeWriterText(self, text, WaitAfterwards=1200):
 		"""Method for creating a 'typewriter effect' of text incrementally being blitted on the screen."""
 
-		rect = pg.Rect((0, 0), self.fonts['Title'].size(text))
-		self.TopLeftHelper(rect)
+		self.TypewriterEvents.put(text)
 
-		RenderedSteps = [self.fonts['Title'].render(step, False, (0, 0, 0)) for step in accumulate(text)]
+		while not self.TypewriterEvents.empty():
+			pass
 
-		for step in RenderedSteps:
-			self.ToBlit = [(step, self.TopLeftPartial)]
-			if step != RenderedSteps[-1]:
-				self.Wait(TimeToWait=30, SwitchUpdatesOnBefore=False)
+		for i, step in enumerate(text):
+			self.TypewrittenText = i
+			delay(30)
 
 		if WaitAfterwards:
-			self.Wait(TimeToWait=WaitAfterwards, SwitchUpdatesOnBefore=False)
+			delay(WaitAfterwards)
 
-		if WipeClean:
-			self.ToBlit.clear()
-
-			if MidRound and not PreGame:
-				self.UpdateGameSurface()
-
-			self.Wait(TimeToWait=300, SwitchUpdatesOnBefore=False)
-
-		if UpdateGameSurfaceAfter and not MidRound:
-			self.UpdateGameSurface(RoundOpening=True)
-
-		return RenderedSteps[-1], self.TopLeftPartial
+		self.TypewrittenText = -1
 
 	def GetText(self, text, font='', colour=(0, 0, 0), pos=None, leftAlign=False, rightAlign=False):
 		"""Function to generate rendered text and a pygame Rect object"""
@@ -1310,43 +1290,43 @@ class KnockTournament(object):
 
 		self.Triggers['Client'].Surfaces['Hand'] = self.player.HandIteration
 
-	def BuildBoardSurface(self, TextColour, CardFade=False):
+	def BuildBoardSurface(self, CardFade=False):
 		self.Fill('Board', 'Maroon')
-		BoardSurfaceBlits = [(self.CardImages[card.ID], card.rect) for card in self.Attributes.PlayedCards]
 
-		Gen = self.gameplayers.BoardSurfaceText(
-			self.PlayerTextPositions,
-			self.fonts['Normal'].linesize,
+		BoardSurfaceBlits = self.Attributes.PlayedCards.copy()
+		TextColour = self.CurrentColours['Text']
+
+		Args = (
 			self.ClientSideAttributes['WhoseTurnPlayerIndex'],
 			self.ClientSideAttributes['TrickInProgress'],
 			len(self.Attributes.PlayedCards),
+			self.gameplayers.AllBid(),
+			self.gameplayers.PlayerNo,
+			self.fonts['Normal'].linesize,
 			self.ClientSideAttributes['RoundLeaderIndex']
 		)
 
-		BoardSurfaceBlits += [self.GetText(Tuple[0], font=Tuple[1], colour=TextColour, pos=Tuple[2]) for Tuple in Gen]
-		self.BlitSurface('Board', BoardSurfaceBlits)
-
-		if CardFade:
-			self.BlitSurface('Board', self.Surfaces['Board'].CoverRects)
-
+		Positions = self.PlayerTextPositions
+		T = sum([player.BoardText(*Args, *Positions[i]) for i, player in enumerate(self.gameplayers)], start=[])
+		BoardSurfaceBlits += [self.GetText(Tuple[0], font=Tuple[1], colour=TextColour, pos=Tuple[2]) for Tuple in T]
+		self.BlitSurface('Board', BoardSurfaceBlits, CardFade=CardFade)
 		self.Triggers['Client'].Surfaces['Board'] = self.Triggers['Server'].Surfaces['Board']
 
-	def BuildTrumpCardSurface(self, BoardTextColour=(0, 0, 0), CardFade=False):
-		TrumpCard = self.Attributes.TrumpCard
+	def BuildTrumpCardSurface(self, CardFade=False):
+		Trump = self.Attributes.TrumpCard
 		self.Fill('TrumpCard', 'Maroon')
 		Pos = (self.Surfaces['TrumpCard'].midpoint, (self.fonts['Normal'].linesize // 2))
-		Trump = (self.CardImages[TrumpCard.ID], TrumpCard.rect)
-		self.BlitSurface('TrumpCard', [self.GetText('Trumpcard', colour=BoardTextColour, pos=Pos), Trump])
-
-		if CardFade:
-			self.BlitSurface('TrumpCard', self.Surfaces['TrumpCard'].CoverRects)
-
+		Text = self.GetText('Trumpcard', colour=self.CurrentColours['Text'], pos=Pos)
+		self.BlitSurface('TrumpCard', [Text, Trump], CardFade=CardFade)
 		self.Triggers['Client'].Surfaces['TrumpCard'] = self.Triggers['Server'].Surfaces['TrumpCard']
 
 	def SurfaceUpdateRequired(self, name):
-		return self.Triggers['Server'].Surfaces[name] != self.Triggers['Client'].Surfaces[name]
+		return (
+				self.Triggers['Server'].Surfaces[name] != self.Triggers['Client'].Surfaces[name]
+				and name in self.SurfacesOnScreen
+		)
 
-	def UpdateSurfaces(self, BoardTextColour=(0, 0, 0), BoardFade=False, ToUpdate=tuple(), CardFade=False):
+	def UpdateSurfaces(self, BoardFade=False, ToUpdate=tuple(), CardFade=False):
 		if self.Surfaces['BaseScoreboard'] and (self.SurfaceUpdateRequired('Scoreboard') or 'Scoreboard' in ToUpdate):
 			try:
 				self.BuildScoreboard('LightGrey')
@@ -1355,7 +1335,7 @@ class KnockTournament(object):
 
 		Condition = (self.player.HandIteration > self.Triggers['Client'].Surfaces['Hand']) or ('Hand' in ToUpdate)
 
-		if BoardFade or (self.player.Hand and Condition):
+		if (BoardFade or Condition) and 'Hand' in self.SurfacesOnScreen:
 			try:
 				self.BuildPlayerHand(CardFade=CardFade)
 			except:
@@ -1363,45 +1343,35 @@ class KnockTournament(object):
 
 		if self.SurfaceUpdateRequired('Board') or BoardFade or 'Board' in ToUpdate:
 			try:
-				self.BuildBoardSurface(BoardTextColour, CardFade=CardFade)
+				self.BuildBoardSurface(CardFade=CardFade)
 			except:
 				pass
 
 		if self.SurfaceUpdateRequired('TrumpCard') or BoardFade or 'TrumpCard' in ToUpdate:
 			try:
-				self.BuildTrumpCardSurface(BoardTextColour, CardFade=CardFade)
+				self.BuildTrumpCardSurface(CardFade=CardFade)
 			except:
 				pass
 
-	def UpdateGameSurface(self, RoundOpening=False, Bidding=False, ToUpdate=tuple(), ClicksNeeded=False,
-	                      TypingNeeded=False):
+	def UpdateGameSurface(self, Bidding=False, ToUpdate=tuple()):
+		self.UpdateSurfaces(ToUpdate=ToUpdate)
 
-		if not RoundOpening:
-			self.UpdateSurfaces(ToUpdate=ToUpdate)
-
-			if Bidding:
-				if self.player.Bid == -1:
-					Message = self.GetText('Please enter your bid:', 'Title')
-				elif not self.gameplayers.AllBid():
-					try:
-						Message = self.GetText(self.gameplayers.BidWaitingText(self.player.playerindex), 'Title')
-					except:
-						Message = False
-				else:
+		if Bidding:
+			if self.player.Bid == -1:
+				Message = self.GetText('Please enter your bid:', 'Title')
+			elif not self.gameplayers.AllBid():
+				try:
+					Message = self.GetText(self.gameplayers.BidWaitingText(self.player.playerindex), 'Title')
+				except:
 					Message = False
+			else:
+				Message = False
 
-				if Message:
-					self.ToBlit.append(Message)
-					self.BlitInputText(Bidding=True)
+			if Message:
+				self.ToBlit.append(Message)
 
-			if not Bidding and self.Errors['Messages']:
-				self.ToBlit += self.Errors['Messages']
-
-		self.HandleEvents(
-			ClicksNeeded=ClicksNeeded,
-			TypingNeeded=TypingNeeded,
-			InputNeeded=(TypingNeeded or ClicksNeeded)
-		)
+		if not Bidding and self.Errors['Messages']:
+			self.ToBlit += self.Errors['Messages']
 
 	def GetCursor(self, List, Pos):
 		if time() % 1 > 0.5:
@@ -1413,22 +1383,16 @@ class KnockTournament(object):
 		GameX, GameY = self.Surfaces['Game'].centre
 		return (BoardX, (BoardY + 50)) if self.PlayStarted else (GameX, (GameY + 100))
 
-	def BlitInputText(self, Bidding=False, TypingNeeded=True):
-		if Bidding:
-			TypingNeeded = (self.player.Bid < 0)
-
+	def BuildInputText(self):
 		ToBlit = []
 
-		if TypingNeeded:
-			if self.InputText:
-				ToBlit.append((Message := self.GetText(self.InputText, pos=self.GetInputTextPos())))
-				ToBlit = self.GetCursor(ToBlit, Message[1].topright)
-			else:
-				ToBlit = self.GetCursor(ToBlit, self.GetInputTextPos())
+		if self.InputText:
+			ToBlit.append((Message := self.GetText(self.InputText, pos=self.GetInputTextPos())))
+			self.GetCursor(ToBlit, Message[1].topright)
+		else:
+			self.GetCursor(ToBlit, self.GetInputTextPos())
 
-			ToBlit += self.Errors['Messages']
-
-		self.ToBlit += ToBlit
+		return ToBlit
 
 	def ColourTransition(self, colour1, colour2, OpacityTransition=False, TimeToTake=1000):
 		"""Generator function for transitioning between either two colours or two opacity values"""
@@ -1448,7 +1412,6 @@ class KnockTournament(object):
 		Range = range(1) if OpacityTransition else range(3)
 
 		while (CurrentTime := GetTicks()) < EndTime:
-			self.HandleEvents(ClicksNeeded=False, TypingNeeded=False, InputNeeded=False)
 			Elapsed = CurrentTime - PreviousTime
 			ColourStep = [(((colour2[i] - colour1[i]) / TimeToTake) * Elapsed) for i in Range]
 			CurrentColour = [CurrentColour[i] + ColourStep[i] for i in Range]
@@ -1461,8 +1424,8 @@ class KnockTournament(object):
 
 		yield colour2[0] if OpacityTransition else colour2
 
-	def Fade(self, colour1=None, colour2=None, FadeIn=True, TextFade=True,
-	         CardFade=False, ScoreboardFade=False, UpdateGameSurfaceAfter=False,
+	def Fade(self, colour1=None, colour2=None, FadeIn=True, TextFade=False,
+	         CardFade=False, ScoreboardFade=False,
 	         TimeToTake=1000, EndOfTrickFade=False):
 
 		"""Function for fading cards, text or the board colour, either in or out"""
@@ -1471,95 +1434,42 @@ class KnockTournament(object):
 			colour1 = 255 if FadeIn else 0
 			colour2 = 0 if FadeIn else 255
 			if FadeIn:
-				CVs = self.Surfaces['Hand'].CoverRects[:len(self.player.Hand)] + self.Surfaces['TrumpCard'].CoverRects
-			elif EndOfTrickFade:
-				CVs = self.Surfaces['Board'].CoverRects
-			else:
-				CVs = self.Surfaces['TrumpCard'].CoverRects
+				self.BuildTrumpCardSurface(CardFade=True)
+				self.BuildPlayerHand(CardFade=True)
 
-		if ScoreboardFade:
+		elif ScoreboardFade:
 			self.BuildScoreboard(colour1)
+
+		elif TextFade and FadeIn:
+			self.BuildBoardSurface()
+			self.BuildTrumpCardSurface(CardFade=True)
 
 		for step in self.ColourTransition(colour1, colour2, OpacityTransition=CardFade, TimeToTake=TimeToTake):
 			if ScoreboardFade:
 				self.BuildScoreboard(step)
 				self.CurrentColours['Scoreboard'] = step
 			elif TextFade:
-				self.UpdateSurfaces(BoardTextColour=step, BoardFade=True)
 				self.CurrentColours['Text'] = step
+				self.UpdateSurfaces(BoardFade=True, CardFade=True)
 			elif CardFade:
-				CVs.SetOpacity(step)
-				self.UpdateSurfaces(CardFade=True, ToUpdate=(('Hand', 'TrumpCard') if FadeIn else ('TrumpCard',)))
-				self.CurrentColours['CoverRectOpacity'] = step
+				if FadeIn:
+					ToUpdate = ('Hand', 'TrumpCard')
+					self.CoverRectOpacities['Hand'] = self.CoverRectOpacities['TrumpCard'] = step
+				elif EndOfTrickFade:
+					ToUpdate = ('Board',)
+					self.CoverRectOpacities['Board'] = step
+				else:
+					ToUpdate = ('TrumpCard',)
+					self.CoverRectOpacities['TrumpCard'] = step
+
+				self.UpdateSurfaces(CardFade=True, ToUpdate=ToUpdate)
 			else:
 				self.CurrentColours['Game'] = step
+				if not FadeIn:
+					self.BuildScoreboard(step)
+					self.CurrentColours['Scoreboard'] = step
 
-			self.HandleEvents(ClicksNeeded=False, TypingNeeded=False, InputNeeded=False)
-
-		if UpdateGameSurfaceAfter:
-			self.UpdateGameSurface()
-
-	def FireworksDisplay(self):
-		# This part of the code adapted from code by Adam Binks
-		# Fade to black
-		self.Fade(colour1='Maroon', colour2=(0, 0, 0), TextFade=False)
-
-		# every frame blit a low alpha black surf so that all effects fade out slowly
-		Duration = self.FireworkSettings['SecondsDuration'] * 1000
-		StartTime = LastFirework = GetTicks()
-		EndTime = StartTime + Duration
-		RandomAmount = random.randint(*self.FireworkSettings['Bounds'])
-		x, y = self.Dimensions['Window']
-
-		# FIREWORK LOOP (adapted from code by Adam Binks)
-		while (Time := GetTicks()) < EndTime or Particle.allParticles:
-			dt = self.clock.tick(self.FireworkSettings['FPS']) / 60.0
-			self.BlitSurface('Game', 'blackSurf')
-			self.BlitSurface(self.Window, 'Game')
-			self.HandleEvents(ClicksNeeded=False, TypingNeeded=False, InputNeeded=False)
-
-			if (LastFirework + RandomAmount) < Time < (EndTime - 6000):
-				Choice = random.choice((True, False))
-
-				if Choice:
-					Sparker(
-						pos=(random.randint(0, x), random.randint(0, y)),
-						colour=(random.uniform(0, 255), random.uniform(0, 255), random.uniform(0, 255)),
-						velocity=random.uniform(40, 60),
-						particleSize=random.uniform(10, 20),
-						sparsity=random.uniform(0.05, 0.15),
-						hasTrail=True,
-						lifetime=random.uniform(10, 20),
-						WindowDimensions=self.Dimensions['Window'],
-						isShimmer=False
-					)
-				else:
-					Sparker(
-						pos=(random.randint(0, x), random.randint(0, y)),
-						colour=(random.uniform(50, 255), random.uniform(50, 255), random.uniform(50, 255)),
-						velocity=random.uniform(1, 2),
-						particleSize=random.uniform(3, 8),
-						sparsity=random.uniform(0.05, 0.15),
-						hasTrail=False,
-						lifetime=random.uniform(20, 30),
-						isShimmer=True,
-						radius=random.uniform(40, 100),
-						proportion=0.6,
-						focusRad=random.choice((0, 0.4, 3, 6)),
-						WindowDimensions=self.Dimensions['Window'],
-						weight=random.uniform(0.001, 0.0015)
-					)
-
-				LastFirework = Time
-				RandomAmount = random.randint(*self.FireworkSettings['Bounds'])
-
-			for item in chain(Particle.allParticles, Sparker.allSparkers):
-				item.update(dt)
-				item.draw(self.Surfaces['Game'])
-
-			UpdateDisplay()
-
-		self.Fade(colour1=(0, 0, 0), colour2='Maroon', TextFade=False)
+		self.UpdateSurfaces(ToUpdate=('Board', 'TrumpCard', 'Hand'))
 
 	def InteractiveScoreboard(self):
 		pg.mouse.set_cursor(*self.Cursors['Wait'])
@@ -1601,8 +1511,8 @@ class KnockTournament(object):
 
 		table.auto_set_font_size(False)
 
-		table[0, 0].visible_edges = 'B'
-		table[0, 1].visible_edges = 'BR'
+		for i, string in zip(range(2), ('B', 'BR')):
+			table[0, i].visible_edges = string
 
 		for (i, name), (j, string) in product(enumerate(names), zip(range(2, 6), ('TBL', 'TB', 'TB', 'TBR'))):
 			table[0, ((i * 4) + j)].visible_edges = string
@@ -1617,17 +1527,16 @@ class KnockTournament(object):
 			for j in range(2):
 				table[i, j].set_text_props(fontweight='bold')
 				table[i, j].set_facecolor(f'xkcd:{"dark beige" if i % 2 else "pale brown"}')
+
 			for j in range(2, columnNo):
 				if (j - 1) % 4:
 					colour = "very light green" if i % 2 else "very light blue"
 				else:
 					try:
-						if int(table[i, j].get_text().get_text()) == max(
-								int(table[i, x].get_text().get_text()) for x in range(5, columnNo, 4)):
-							colour = "periwinkle"
-						else:
-							colour = "baby blue"
-					except ValueError:
+						Max = max(int(table[i, x].get_text().get_text()) for x in range(5, columnNo, 4))
+						assert int(table[i, j].get_text().get_text()) == Max
+						colour = "periwinkle"
+					except (ValueError, AssertionError):
 						colour = 'baby blue'
 
 				table[i, j].set_facecolor(f'xkcd:{colour}')
@@ -1641,9 +1550,10 @@ class KnockTournament(object):
 		manager.window.setWindowIcon(QtGui.QIcon(r'CardImages\PyinstallerIcon.ico'))
 
 		plt.show()
-		return pg.time.get_ticks()
+		return GetTicks()
 
 	def InitialiseWindow(self, WindowDimensions, flags):
+		display.set_caption('Knock (made by Alex Waygood)')
 		display.set_icon(self.WindowIcon)
 		self.Window = display.set_mode(WindowDimensions, flags=flags)
 
@@ -1676,6 +1586,116 @@ class KnockTournament(object):
 		with self.lock:
 			self.UpdateGameAttributes()
 
+	def NewScrollwheelVars(self):
+		self.ScrollwheelDown = not self.ScrollwheelDown
+		if self.ScrollwheelDown:
+			self.ScrollwheelDownPos = pg.mouse.get_pos()
+			self.ScrollwheelDownTime = self.OriginalScrollwheelDownTime = GetTicks()
+
+	def ScrollwheelUp(self):
+		self.ScrollwheelDown = False
+
+	def MouseSetter(self):
+		MousePos = pg.mouse.get_pos()
+		Attrs = self.ClientSideAttributes
+		Hand = self.player.Hand
+
+		if self.ScrollwheelDown:
+			DownX, DownY, MouseX, MouseY = *self.ScrollwheelDownPos, *MousePos
+			if MouseX < (DownX - 50):
+				if MouseY < (DownY - 50):
+					cur = 'NW'
+				elif MouseY > (DownY + 50):
+					cur = 'SW'
+				else:
+					cur = 'W'
+			elif MouseX > (DownX + 50):
+				if MouseY < (DownY - 50):
+					cur = 'NE'
+				elif MouseY > (DownY + 50):
+					cur = 'SE'
+				else:
+					cur = 'E'
+			elif MouseY > (DownY + 50):
+				cur = 'S'
+			elif MouseY < (DownY - 50):
+				cur = 'N'
+			else:
+				cur = 'Diamond'
+
+		elif pg.mouse.get_pressed(5)[0] and pg.mouse.get_pressed(5)[2]:
+			cur = 'Hand'
+
+		elif Hand and Attrs['TrickInProgress'] and Attrs['WhoseTurnPlayerIndex'] == self.player.playerindex:
+			cur = 'default'
+			for card in Hand:
+				if card.colliderect.collidepoint(*MousePos):
+					self.CardHoverID = card.ID
+					cur = 'Hand'
+
+					if PlayedCards := self.Attributes.PlayedCards:
+						SuitLed = PlayedCards[0].ActualSuit
+						Condition = any(UnplayedCard.ActualSuit == SuitLed for UnplayedCard in Hand)
+
+						if card.ActualSuit != SuitLed and Condition:
+							cur = 'IllegalMove'
+		else:
+			cur = 'default'
+
+		self.cur = cur
+		pg.mouse.set_cursor(*self.Cursors[cur])
+		
+	def AddInputText(self, event):
+		Input = self.InputText
+
+		if event.unicode in PrintableCharactersPlusSpace:
+			try:
+				self.InputText += event.unicode
+			finally:
+				return None
+
+		elif not Input:
+			return None
+
+		if (EvKey := event.key) == pg.K_BACKSPACE:
+			self.InputText = Input[:-1]
+
+		elif EvKey == pg.K_RETURN:
+			if isinstance(self.name, int):
+				if len(Input) < 30:
+					# Don't need to check that letters are ASCII-compliant;
+					# wouldn't have been able to type them if they weren't.
+					self.name = Input
+					self.ServerCommsQueue.put(('player', Input))
+				else:
+					self.Errors['ThisPass'].append('Name must be <30 characters; please try again.')
+
+			elif not (self.Attributes.StartCardNumber or self.player.playerindex):
+				# Using try/except rather than if/else to catch unexpected errors as well as expected ones.
+				try:
+					assert 1 <= float(Input) <= self.MaxCardNumber and float(Input).is_integer()
+					self.game.Attributes.StartCardNumber = int(Input)
+					self.ServerCommsQueue.put(('CardNumber', Input))
+				except:
+					self.Errors['ThisPass'].append(f'Please enter an integer between 1 and {self.MaxCardNumber}')
+
+			elif self.player.Bid == -1:
+				# Using try/except rather than if/else to catch unexpected errors as well as expected ones.
+				Count = len(self.player.Hand)
+
+				try:
+					assert 0 <= float(Input) <= Count and float(Input).is_integer()
+					self.game.PlayerMakesBid(Input, player=self.player)
+					self.ServerCommsQueue.put(('Bid', Input))
+				except:
+					self.Errors['ThisPass'].append(f'Your bid must be an integer between 0 and {Count}.')
+
+			self.InputText = ''
+				
+	def ExecutePlay(self):
+		self.game.ExecutePlay(self.CardHoverID, self.player.playerindex)
+		self.UpdateAttributesWithLock()
+		self.ServerCommsQueue.put(('PlayCard', self.CardHoverID))
 
 
 print('Welcome to Knock!')

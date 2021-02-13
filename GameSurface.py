@@ -53,8 +53,8 @@ class GameSurface(object):
 		self.XShift(Motion[0]).YShift(Motion[1])
 		return self
 
-	def ScrollwheelDownMove(self, ScrollwheelDownPos, MousePos):
-		DownX, DownY, MouseX, MouseY = *ScrollwheelDownPos, *MousePos
+	def ScrollwheelDownMove(self, ScrollwheelDownPos):
+		DownX, DownY, MouseX, MouseY = *ScrollwheelDownPos, *pg.mouse.get_pos()
 		self.XShift((DownX - MouseX) / 200)
 		self.YShift((DownY - MouseY) / 200)
 		return self
@@ -85,9 +85,9 @@ class GameSurface(object):
 
 		return self
 
-	def MoveToCentre(self, WindowX, WindowY):
-		self.x = (WindowX / 2) - (self.RectWidth / 2)
-		self.y = (WindowY / 2) - (self.RectHeight / 2)
+	def MoveToCentre(self):
+		self.x = (self.WindowWidth / 2) - (self.RectWidth / 2)
+		self.y = (self.WindowHeight / 2) - (self.RectHeight / 2)
 		self.TidyUp()
 
 	def TidyUp(self):

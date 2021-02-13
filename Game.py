@@ -49,11 +49,9 @@ class Game(object):
 
 	def ExecutePlay(self, cardID, playerindex):
 		"""This method is designed to be used by the server or the client"""
-
 		self.Sendable = False
 		player = self.gameplayers[playerindex]
-		card = next(card for card in player.Hand if card.ID == cardID)
-		player.PlayCard(card, self.Attributes.trumpsuit)
+		player.PlayCard((card := next(card for card in player.Hand if card.ID == cardID)), self.Attributes.trumpsuit)
 		self.Attributes.PlayedCards.append(card)
 		self.IncrementTriggers('Board')
 		self.Sendable = True

@@ -77,31 +77,6 @@ class Gameplayers(UserList):
 		for player in self.MostGamesWonFirst():
 			yield f'{player}:', f'{player.GamesWon} game{"s" if player.GamesWon != 1 else ""}'
 
-	def BoardSurfaceText(self, TextPositions, LineSize, WhoseTurnPlayerIndex,
-	                     TrickInProgress, PlayedCardsNo, RoundLeaderIndex):
-
-		AllBid = self.AllBid()
-		AllBoardText = []
-
-		for index, player in enumerate(self.players):
-			condition = (WhoseTurnPlayerIndex == index and TrickInProgress and PlayedCardsNo < self.PlayerNo)
-			font = 'UnderLine' if condition else 'Normal'
-			Bid = f'Bid {"unknown" if (Bid := player.Bid) == -1 else (Bid if AllBid else "received")}'
-			Tricks = f'{player.Tricks} trick{"" if player.Tricks == 1 else "s"}'
-
-			BaseX, BaseY = Pos = TextPositions[index]
-			Pos2, Pos3 = (BaseX, (BaseY + LineSize)), (BaseX, (BaseY + (LineSize * 2)))
-
-			PlayerText = [(f'{player}', font, Pos), (Bid, 'Normal', Pos2), (Tricks, 'Normal', Pos3)]
-			Condition = (index == RoundLeaderIndex and not AllBid)
-
-			if Condition:
-				PlayerText.append(('Leads this round', 'Normal', (BaseX, (BaseY + (LineSize * 3)))))
-
-			AllBoardText += PlayerText
-
-		return AllBoardText
-
 	def BidWaitingText(self, playerindex):
 		if self.PlayerNo != 2:
 			if (PlayersNotBid := sum(1 for player in self.players if player.Bid == -1)) > 1:
@@ -242,8 +217,7 @@ class Player(object):
 	def PlayCard(self, card, TrumpSuit):
 		SuitTuple = ((Hand := self.Hand)[0].ActualSuit, Hand[-1].ActualSuit)
 		Hand.remove(card)
-		Suit = card.ActualSuit
-		self.Hand = SortHand(Hand, TrumpSuit, PlayedSuit=Suit, SuitTuple=SuitTuple)
+		self.Hand = SortHand(Hand, TrumpSuit, PlayedSuit=card.ActualSuit, SuitTuple=SuitTuple)
 		self.HandIteration += 1
 
 	def WinsTrick(self):
@@ -257,6 +231,24 @@ class Player(object):
 
 	def GetPoints(self):
 		return self.Points
+
+	def BoardText(self, WhoseTurn, TrickInProgress, PlayedCardsNo, AllBid,
+	                     PlayerNo, LineSize, RoundLeaderIndex, BaseX, BaseY):
+
+		condition = (WhoseTurn == self.playerindex and TrickInProgress and PlayedCardsNo < PlayerNo)
+		font = 'UnderLine' if condition else 'Normal'
+		Bid = f'Bid {"unknown" if (Bid := self.Bid) == -1 else (Bid if AllBid else "received")}'
+		Tricks = f'{self.Tricks} trick{"" if self.Tricks == 1 else "s"}'
+
+		Pos2, Pos3 = (BaseX, (BaseY + LineSize)), (BaseX, (BaseY + (LineSize * 2)))
+
+		PlayerText = [(f'{self}', font, (BaseX, BaseY)), (Bid, 'Normal', Pos2), (Tricks, 'Normal', Pos3)]
+		Condition = (self.playerindex == RoundLeaderIndex and not AllBid)
+
+		if Condition:
+			PlayerText.append(('Leads this round', 'Normal', (BaseX, (BaseY + (LineSize * 3)))))
+
+		return PlayerText
 
 	def EndOfRound(self, StartNo, RoundNo, server=False):
 		"""To be used on both client and server sides"""
