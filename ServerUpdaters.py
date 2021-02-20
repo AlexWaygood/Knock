@@ -39,6 +39,14 @@ class Triggers(object):
 		return self.Events == other.Events and self.Surfaces == other.Surfaces
 
 
+class DoubleTrigger(object):
+	__slots__ = 'Client', 'Server'
+
+	def __init__(self):
+		self.Client = Triggers()
+		self.Server = Triggers()
+
+
 class AttributeTracker(object):
 	"""This class holds information about the current state of play"""
 

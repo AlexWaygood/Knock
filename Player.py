@@ -215,9 +215,9 @@ class Player(object):
 		return self
 
 	def PlayCard(self, card, TrumpSuit):
-		SuitTuple = ((Hand := self.Hand)[0].ActualSuit, Hand[-1].ActualSuit)
+		SuitTuple = ((Hand := self.Hand)[0].Suit, Hand[-1].Suit)
 		Hand.remove(card)
-		self.Hand = SortHand(Hand, TrumpSuit, PlayedSuit=card.ActualSuit, SuitTuple=SuitTuple)
+		self.Hand = SortHand(Hand, TrumpSuit, PlayedSuit=card.Suit, SuitTuple=SuitTuple)
 		self.HandIteration += 1
 
 	def WinsTrick(self):

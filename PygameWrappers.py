@@ -17,37 +17,40 @@ class SurfaceAndPosition(object):
 	"""Class for holding data about various surfaces that will be used frequently in the game"""
 
 	__slots__ = 'surf', 'pos', 'surfandpos', 'RectList', 'midpoint', 'CoverRects', 'Dimensions', 'CardFadeInProgress',\
-	            'name'
+	            'name', 'CurrentColour', 'CoverRectOpacity'
 
 	CardDimensions = None
 	DefaultFillColour = None
 
-	def __init__(self, name, SurfaceDimensions=None, position=None, RectList=None,
+	def __init__(self, position, SurfaceDimensions=None, RectList=None,
 	             Dimensions=None, OpacityRequired=False, FillColour=None,
 	             CoverRectOpacity=0):
 
-		self.name = name
-		FillColour = FillColour if FillColour else self.DefaultFillColour
-
-		if position:
-			self.pos = position
+		self.pos = position
 
 		if SurfaceDimensions:
-			self.AddSurf(SurfaceDimensions, position, OpacityRequired, FillColour)
+			self.AddSurf(SurfaceDimensions, position, OpacityRequired)
 
-		self.AddRectList(RectList, CoverRectOpacity, FillColour)
+		self.AddRectList(RectList, CoverRectOpacity)
+		self.fill(FillColour if FillColour else self.DefaultFillColour)
 
 		if Dimensions:
 			self.midpoint = Dimensions[0] // 2
 
-	def AddSurf(self, SurfaceDimensions, pos=None, OpacityRequired=False, FillColour=None):
+	def NewSurfaceSize(self, NewSurfaceDimensions, position, OpacityRequired=False, RectList=None):
+		if NewSurfaceDimensions != self.Dimensions:
+			self.AddSurf(NewSurfaceDimensions, position, OpacityRequired)
+			self.AddRectList(RectList, self.CoverRectOpacity)
+
+		self.fill(self.CurrentColour)
+		self.midpoint = NewSurfaceDimensions[0] // 2
+
+	def AddSurf(self, SurfaceDimensions, pos=None, OpacityRequired=False):
 		self.Dimensions = SurfaceDimensions
 		self.surf = Surface(SurfaceDimensions)
 
 		if OpacityRequired:
 			self.surf = self.surf.convert_alpha()
-
-		self.surf.fill(FillColour)
 
 		if pos:
 			self.pos = pos
@@ -62,9 +65,9 @@ class SurfaceAndPosition(object):
 		self.pos = [0, 0]
 		self.surfandpos = (self.surf, self.pos)
 
-	def AddRectList(self, Positions, CoverRectOpacity, Colour):
+	def AddRectList(self, Positions, CoverRectOpacity):
 		self.RectList = [Rect(*Position, *self.CardDimensions) for Position in Positions] if Positions else []
-		args = (self.CardDimensions, Colour, CoverRectOpacity)
+		args = (self.CardDimensions, CoverRectOpacity)
 		self.CoverRects = CoverRectList([CoverRect(rect, *args) for rect in self.RectList])
 
 	@classmethod
@@ -76,12 +79,14 @@ class SurfaceAndPosition(object):
 		self.RectList.clear()
 		self.CoverRects.clear()
 
-	def SetCoverRectOpacity(self, *args):
-		self.CoverRects.SetOpacity(*args)
+	def SetCoverRectOpacity(self, opacity):
+		self.CoverRects.SetOpacity(opacity)
+		self.CoverRectOpacity = opacity
 
-	def fill(self, *args):
-		self.surf.fill(*args)
-		self.CoverRects.fill(*args)
+	def fill(self, colour):
+		self.surf.fill(colour)
+		self.CoverRects.fill(colour)
+		self.CurrentColour = colour
 
 	def blit(self, *args):
 		self.surf.blit(*args)
@@ -89,17 +94,13 @@ class SurfaceAndPosition(object):
 	def blits(self, *args):
 		self.surf.blits(*args)
 
-	def __repr__(self):
-		return self.name
-
 
 class CoverRect(object):
 	__slots__ = 'surf', 'rect', 'surfandrect'
 
-	def __init__(self, rect, CardDimensions, colour, Opacity):
+	def __init__(self, rect, CardDimensions, Opacity):
 		self.surf = Surface(CardDimensions)
 		self.rect = rect
-		self.surf.fill(colour)
 		self.surf.set_alpha(Opacity)
 		self.surfandrect = (self.surf, self.rect)
 
@@ -122,11 +123,13 @@ class CoverRectList(UserList):
 class FontAndLinesize(object):
 	"""Class for holding data about various fonts that will be used frequently in the game"""
 
-	__slots__ = 'font', 'linesize'
+	__slots__ = 'font', 'linesize', 'Cursor'
 
 	def __init__(self, font):
 		self.font = font
 		self.linesize = font.get_linesize()
+		self.Cursor = Surface((3, self.linesize))
+		self.Cursor.fill((0, 0, 0))
 
 	def render(self, *args):
 		return self.font.render(*args)

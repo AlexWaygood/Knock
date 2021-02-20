@@ -4,6 +4,7 @@ from itertools import cycle, product
 from Card import Card
 from Player import Player
 from ServerUpdaters import AttributeTracker, Triggers
+from ContextHelpers import Sendable
 
 from os import environ
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
@@ -14,7 +15,7 @@ class Game(object):
 	"""Class for encoding order of gameplay, in coordination with the client script."""
 
 	__slots__ = 'RepeatGame', 'Attributes', 'GameAttributes', 'Triggers', 'StartPlay', 'gameplayers', 'GamesPlayed', \
-	            'PlayerNumber', 'Sendable'
+	            'PlayerNumber', 'SendableContext'
 
 	def __init__(self, PlayerNumber):
 		self.StartPlay = False
@@ -25,7 +26,7 @@ class Game(object):
 		self.gameplayers.PlayerNo = PlayerNumber
 		self.GamesPlayed = 0
 		self.PlayerNumber = PlayerNumber
-		self.Sendable = True
+		self.SendableContext = Sendable()
 
 	# A few functions to be accessed by the threaded-client function.
 
@@ -49,12 +50,12 @@ class Game(object):
 
 	def ExecutePlay(self, cardID, playerindex):
 		"""This method is designed to be used by the server or the client"""
-		self.Sendable = False
-		player = self.gameplayers[playerindex]
-		player.PlayCard((card := next(card for card in player.Hand if card.ID == cardID)), self.Attributes.trumpsuit)
-		self.Attributes.PlayedCards.append(card)
-		self.IncrementTriggers('Board')
-		self.Sendable = True
+		with self.SendableContext:
+			player = self.gameplayers[playerindex]
+			Hand = player.Hand
+			player.PlayCard((card := next(card for card in Hand if f'{card}' == cardID)), self.Attributes.trumpsuit)
+			self.Attributes.PlayedCards.append(card)
+			self.IncrementTriggers('Board')
 
 	def RepeatQuestionAnswer(self):
 		self.RepeatGame = True
@@ -81,27 +82,24 @@ class Game(object):
 	def RoundCleanUp(self, gameplayers, server=False):
 		"""Can be used on either the client or the server side"""
 
-		self.Sendable = False
-		gameplayers.RoundCleanUp(server)
-		self.IncrementTriggers('Scoreboard', 'Board')
-		self.Attributes.TrumpCard = None
-		self.Attributes.trumpsuit = ''
-		self.Sendable = True
+		with self.SendableContext:
+			gameplayers.RoundCleanUp(server)
+			self.IncrementTriggers('Scoreboard', 'Board')
+			self.Attributes.TrumpCard = None
+			self.Attributes.trumpsuit = ''
 
 	def GameCleanUp(self):
 		"""To be used on client-side only"""
-		self.Sendable = False
-		self.gameplayers.GameCleanUp()
-		self.IncrementTriggers('Scoreboard')
-		self.Sendable = True
+		with self.SendableContext:
+			self.gameplayers.GameCleanUp()
+			self.IncrementTriggers('Scoreboard')
 
 	def NewGameReset(self):
-		self.Sendable = False
-		self.Attributes.StartCardNumber = 0
-		self.gameplayers.NewGame()
-		self.IncrementTriggers('Scoreboard')
-		self.StartPlay = False
-		self.Sendable = True
+		with self.SendableContext:
+			self.Attributes.StartCardNumber = 0
+			self.gameplayers.NewGame()
+			self.IncrementTriggers('Scoreboard')
+			self.StartPlay = False
 
 	def PlayGame(self):
 		# Wait until the opening sequence is complete
@@ -128,19 +126,17 @@ class Game(object):
 
 	def PlayRound(self, cardnumber):
 		# Make a new pack of cards, set the trumpsuit.
-		Pack = [Card(*prod) for prod in product(range(2, 15), ('D', 'S', 'C', 'H'))]
+		Pack = [Card(*prod) for prod in product(range(2, 15), ('♢', '♠', '♣', '♡'))]
 		shuffle(Pack)
-		self.Sendable = False
-		self.Attributes.TrumpCard = (TrumpCard := Pack.pop())
-		self.Attributes.trumpsuit = (trumpsuit := TrumpCard.ActualSuit)
-		self.Triggers.Events['NewPack'] += 1
-		self.Sendable = True
+		with self.SendableContext:
+			self.Attributes.TrumpCard = (TrumpCard := Pack.pop())
+			self.Attributes.trumpsuit = (trumpsuit := TrumpCard.Suit)
+			self.Triggers.Events['NewPack'] += 1
 
 		# Deal cards
-		self.Sendable = False
-		self.gameplayers.ReceiveCards(Pack, cardnumber, trumpsuit)
-		self.IncrementTriggers('TrumpCard', 'Board', 'Scoreboard')
-		self.Sendable = True
+		with self.SendableContext:
+			self.gameplayers.ReceiveCards(Pack, cardnumber, trumpsuit)
+			self.IncrementTriggers('TrumpCard', 'Board', 'Scoreboard')
 		self.WaitForPlayers('CardsDealt')
 
 		# Play tricks

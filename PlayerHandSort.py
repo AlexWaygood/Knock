@@ -1,14 +1,14 @@
 from itertools import groupby
 
 
-Blacks = ('C', 'S')
-Reds = ('H', 'D')
+Blacks = ('♣', '♠')
+Reds = ('♡', '♢')
 
 
 def OtherOfColour(Suit, Blacks=Blacks):
 	if Suit in Blacks:
-		return 'C' if Suit == 'S' else 'S'
-	return 'D' if Suit == 'H' else 'H'
+		return '♣' if Suit == '♠' else '♠'
+	return '♢' if Suit == '♡' else '♡'
 
 
 def ListOfCardValues(Grouped, Suit):
@@ -38,9 +38,9 @@ def SortHand(Hand, trumpsuit, PlayedSuit='', SuitTuple=('', ''), Blacks=Blacks, 
 	BlackSuitsPresent = 0
 
 	if not PlayedSuit:
-		Hand.sort(key=lambda card: (card.ActualSuit, card.ActualValue), reverse=True)
+		Hand.sort(key=lambda card: (card.Suit, card.ActualValue), reverse=True)
 
-	for k, g in groupby(Hand, lambda card: card.ActualSuit):
+	for k, g in groupby(Hand, lambda card: card.Suit):
 		Grouped[k] = list(g)
 		if k in Blacks:
 			BlackSuitsPresent += 1
@@ -65,7 +65,7 @@ def SortHand(Hand, trumpsuit, PlayedSuit='', SuitTuple=('', ''), Blacks=Blacks, 
 			return Hand
 		if BlackSuitsPresent == 2:
 			Suit1 = trumpsuit if TrumpIsBlack else MaxSuit(Grouped)
-			Suit2 = 'H'
+			Suit2 = '♡'
 		elif BlackSuitsPresent:
 			if trumpsuit in Grouped:
 				Suit1 = trumpsuit
@@ -75,7 +75,7 @@ def SortHand(Hand, trumpsuit, PlayedSuit='', SuitTuple=('', ''), Blacks=Blacks, 
 				Suit2 = next(suit for suit in Grouped if suit != Suit1)
 		else:
 			Suit1 = MaxSuit(Grouped) if TrumpIsBlack else trumpsuit
-			Suit2 = 'C'
+			Suit2 = '♣'
 
 	else:
 		return Hand
@@ -87,4 +87,4 @@ def SortHand(Hand, trumpsuit, PlayedSuit='', SuitTuple=('', ''), Blacks=Blacks, 
 		OtherOfColour(Suit2): 1
 	}
 
-	return sorted(Hand, key=lambda card: (SuitDict[card.ActualSuit], card.ActualValue), reverse=True)
+	return sorted(Hand, key=lambda card: (SuitDict[card.Suit], card.ActualValue), reverse=True)

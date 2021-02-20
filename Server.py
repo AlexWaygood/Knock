@@ -3,7 +3,7 @@
 """This script must be run by exactly one machine for a game to take place."""
 
 
-import socket, pickle
+import socket
 
 from Network import Network, AccessToken
 from Game import Game
@@ -57,9 +57,28 @@ Operations.update({
 })
 
 
-def CommsWithClient(Server, player, conn, addr, Operations=Operations):
-	global game
+NumberOfPlayers = inputInt('How many players will be playing? ', min=2, max=6)
+print()
 
+game = Game(NumberOfPlayers)
+
+BiddingRuleChoices = [
+	'Classic rules (players decide what they will bid prior to each round)',
+	'Anna Benjer rules (bids are randomly generated for each player prior to each round)'
+]
+
+BiddingSystem = inputMenu(
+	choices=BiddingRuleChoices,
+	prompt='Which variant of the rules will this tournament use?',
+	numbered=True,
+	blank=True
+)
+
+BiddingSystem = 'Random' if BiddingSystem == BiddingRuleChoices[1] else 'Classic'
+print()
+
+
+def CommsWithClient(Server, player, conn, addr, Operations=Operations, game=game):
 	Broken = False
 	playerindex = game.gameplayers.index(player)
 	data = Server.receive(conn)
@@ -90,29 +109,26 @@ def CommsWithClient(Server, player, conn, addr, Operations=Operations):
 		finally:
 			raise Exception('Connection was terminated.')
 
-	while not game.Sendable:
+	while not game.SendableContext:
 		pass
 
 	Server.ConnectionInfo[conn]['SendQueue'].put(game)
 
 
-def ClientConnect(Server, playerindex, conn, addr):
-	global game
-
+def ClientConnect(Server, playerindex, conn, addr, BiddingSystem=BiddingSystem, game=game):
 	# We want the whole server script to fail if a single thread goes down,
 	# since there's no point continuing a game if one of the players has left
-
 	player = Player(playerindex)
-	Server.ConnectionInfo[conn]['SendQueue'].put({'game': game, 'player': player})
+	Server.ConnectionInfo[conn]['SendQueue'].put({'game': game, 'player': player, 'BiddingSystem': BiddingSystem})
 	print(f'Game sent to client {addr} at {GetTime()}.\n')
 	Server.ConnectionInfo[conn]['player'] = player
 
 
-def EternalGameLoop():
-	global game
+def EternalGameLoop(game=game, NumberOfPlayers=NumberOfPlayers):
+	global Server
 
 	while len(game.gameplayers) < NumberOfPlayers or any(not player.name for player in game.gameplayers):
-		pg.time.delay(1000)
+		pg.time.delay(100)
 
 	try:
 		while True:
@@ -130,14 +146,14 @@ PasswordChoices = [
 	"I don't want a password for this game"
 ]
 
+Choice = inputMenu(
+	choices=PasswordChoices,
+	prompt='Select whether you want to set a password for this game:\n\n',
+	numbered=True,
+	blank=True
+)
 
-NumberOfPlayers = inputInt('How many players will be playing? ', min=2, max=6)
-game = Game(NumberOfPlayers)
-print()
-
-if Choice := inputMenu(choices=PasswordChoices, prompt='Select whether you want to set a password for this game:\n\n',
-                       numbered=True, blank=True) == PasswordChoices[0]:
-
+if Choice == PasswordChoices[0]:
 	password = GeneratePassword()
 	print(f'\nYour randomly generated password for this session is {password}')
 elif Choice == PasswordChoices[1]:
@@ -145,9 +161,13 @@ elif Choice == PasswordChoices[1]:
 else:
 	password = ''
 
-ManuallyVerify = inputYesNo('\nDo you want to manually authorise each connection? '
-                            '(If "no", new connections will be accepted automatically '
-                            'if they have entered the correct password.) ', blank=True) == 'yes'
+print()
+
+ManuallyVerify = inputYesNo(
+	'\nDo you want to manually authorise each connection? '
+	'(If "no", new connections will be accepted automatically if they have entered the correct password.) ',
+	blank=True
+)
 
 print('Initialising server...')
 
@@ -156,12 +176,12 @@ print('Initialising server...')
 # (Warning does not apply if you are playing within one local area network.)
 # Remember to take the port out when publishing this code online.
 
-(thread := Thread(target=EternalGameLoop)).start()
+(thread := Thread(target=EternalGameLoop, daemon=True)).start()
 
 Server = Network(
 	IP='127.0.0.1',
 	port=5555,
-	ManuallyVerify=ManuallyVerify,
+	ManuallyVerify=(ManuallyVerify == 'yes'),
 	ClientConnectFunction=ClientConnect,
 	server=True,
 	NumberOfPlayers=NumberOfPlayers,
