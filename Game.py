@@ -1,7 +1,7 @@
 from random import shuffle
-from itertools import cycle, product
+from itertools import cycle
 
-from Card import Card
+from Card import AllCards
 from Player import Player
 from ServerUpdaters import AttributeTracker, Triggers
 from ContextHelpers import Sendable
@@ -16,6 +16,8 @@ class Game(object):
 
 	__slots__ = 'RepeatGame', 'Attributes', 'GameAttributes', 'Triggers', 'StartPlay', 'gameplayers', 'GamesPlayed', \
 	            'PlayerNumber', 'SendableContext'
+
+	AllCards = AllCards
 
 	def __init__(self, PlayerNumber):
 		self.StartPlay = False
@@ -53,7 +55,7 @@ class Game(object):
 		with self.SendableContext:
 			player = self.gameplayers[playerindex]
 			Hand = player.Hand
-			player.PlayCard((card := next(card for card in Hand if f'{card}' == cardID)), self.Attributes.trumpsuit)
+			player.PlayCard((card := Hand[cardID]), self.Attributes.trumpsuit)
 			self.Attributes.PlayedCards.append(card)
 			self.IncrementTriggers('Board')
 
@@ -126,7 +128,7 @@ class Game(object):
 
 	def PlayRound(self, cardnumber):
 		# Make a new pack of cards, set the trumpsuit.
-		Pack = [Card(*prod) for prod in product(range(2, 15), ('♢', '♠', '♣', '♡'))]
+		Pack = list(self.AllCards)
 		shuffle(Pack)
 		with self.SendableContext:
 			self.Attributes.TrumpCard = (TrumpCard := Pack.pop())

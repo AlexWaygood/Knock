@@ -5,6 +5,8 @@ from typing import List, Any
 from queue import Queue
 from os import environ
 from itertools import accumulate
+from time import time
+from SurfaceBaseClasses import FixedTextBlitsMixin
 
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame as pg
@@ -30,8 +32,14 @@ class Queues:
 		self.SurfaceUpdates = Queue()
 
 
+def GetCursor(text: List, font):
+	if time() % 1 > 0.5:
+		text.append((font.Cursor, (position.topright if isinstance((position := text[0][1]), pg.Rect) else position)))
+	return text
+
+
 @dataclass
-class UserInput:
+class UserInput(FixedTextBlitsMixin):
 	__slots__ = 'Text', 'click'
 
 	Text: str
@@ -54,6 +62,9 @@ class UserInput:
 			Text = self.Text
 			self.Text = ''
 			return Text
+
+	def GetPresetText(self, font, center):
+		return GetCursor(super().GetPresetText(font, center), font)
 
 
 class Typewriter:
@@ -80,12 +91,11 @@ class Typewriter:
 
 		self.Index = -1
 
-	def RenderStepsIfNeeded(self, font):
+	def GetTypedText(self, font, RectCenter):
 		if not self.Q.empty():
 			self.Rect = pg.Rect((0, 0), font.size((text := self.Q.get())))
 			self.RenderedSteps = [font.render(step, False, (0, 0, 0)) for step in accumulate(text)]
 
-	def GetTypedText(self, RectCenter):
 		if self.Index == -1:
 			return []
 
@@ -93,7 +103,7 @@ class Typewriter:
 		self.Rect.center = RectCenter
 		SubRect = TypewrittenText.get_rect()
 		SubRect.topleft = self.Rect.topleft
-		return [(TypewrittenText, SubRect)]
+		return GetCursor([(TypewrittenText, SubRect)], font)
 
 
 @dataclass
@@ -119,6 +129,3 @@ class FireworkVars:
 	LastFirework: int
 	EndTime: int
 	RandomAmount: int
-
-
-

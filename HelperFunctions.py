@@ -47,19 +47,17 @@ def AllEqual(Iterable):
 
 
 @lru_cache
-def GetDimensions1(NewGameSurfDimensions, CurrentCardDimensions=(691, 1056)):
+def GetDimensions1(GameX, GameY, CurrentCardDimensions=(691, 1056)):
 	"""This function is designed to be used both at the beginning of the game and midway through the game"""
 
 	# Calculate the required size of the card images, based on various ratios of surfaces that will appear on the screen.
 	# Lots of "magic numbers" here, based purely on the principle of "keep the proportions that look good on my laptop".
 
-	GameX, GameY = NewGameSurfDimensions
 	WindowMargin = int(GameX * Fraction(15, 683))
-	ImpliedCardHeight = min(((GameY // Fraction(768, 150)) - WindowMargin), (GameY // 5.5))
-	ImpliedCardWidth = ImpliedCardHeight * Fraction(*CurrentCardDimensions)
-	NewCardDimensions = (ceil(ImpliedCardWidth), ceil(ImpliedCardHeight))
-	RequiredResizeRatio = CurrentCardDimensions[1] / ImpliedCardHeight
-	return WindowMargin, NewCardDimensions, RequiredResizeRatio
+	CardY = min(((GameY // Fraction(768, 150)) - WindowMargin), (GameY // 5.5))
+	CardX, CardY = ceil(CardY * Fraction(*CurrentCardDimensions)), ceil(CardY)
+	RequiredResizeRatio = CurrentCardDimensions[1] / CardY
+	return WindowMargin, CardX, CardY, RequiredResizeRatio
 
 
 @lru_cache

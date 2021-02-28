@@ -1,3 +1,6 @@
+from SurfaceBaseClasses import FixedTextBlitsMixin
+
+
 class ContextHelper(object):
 	def __init__(self, **kwargs):
 		pass
@@ -14,14 +17,14 @@ class ContextHelper(object):
 		return self
 
 
-class InputContext(ContextHelper):
-	__slots__ = 'TrickClickNeeded', 'ClickToStart', 'TypingNeeded', 'GameUpdatesNeeded', 'Message', 'font', \
+class InputContext(ContextHelper, FixedTextBlitsMixin):
+	__slots__ = 'TrickClickNeeded', 'ClickToStart', 'TypingNeeded', 'GameUpdatesNeeded', 'Text', 'font', \
 	            'GameReset', 'FireworksDisplay'
 
 	def __init__(self, TrickClickNeeded=False, ClickToStart=False, TypingNeeded=False, GameUpdatesNeeded=False,
-	             Message='', font='', GameReset=False, FireworksDisplay=False):
+	             Message='', font='', GameReset=False, FireworksDisplay=False, **kwargs):
 
-		super().__init__()
+		super().__init__(**kwargs)
 
 		assert bool(Message) == bool(font), 'Must specify both message and font, or neither'
 
@@ -29,7 +32,7 @@ class InputContext(ContextHelper):
 		self.ClickToStart = ClickToStart
 		self.TypingNeeded = TypingNeeded
 		self.GameUpdatesNeeded = GameUpdatesNeeded
-		self.Message = Message
+		self.Text = Message
 		self.font = font
 		self.GameReset = GameReset
 		self.FireworksDisplay = FireworksDisplay
@@ -40,12 +43,15 @@ class InputContext(ContextHelper):
 	def ClicksNeeded(self):
 		return self.ClickToStart or self.TrickClickNeeded
 
+	def GetMessage(self, fontdict, center):
+		return self.GetPresetText(fontdict[self.font], center=center) if self.Text else []
+
 
 class FadeContext(ContextHelper):
 	__slots__ = 'Hand', 'BoardCards', 'TrumpCard', 'BoardColour', 'Scoreboard'
 
-	def __init__(self, Hand=False, BoardCards=False, BoardColour=False, Scoreboard=False, TrumpCard=False):
-		super().__init__()
+	def __init__(self, Hand=False, BoardCards=False, BoardColour=False, Scoreboard=False, TrumpCard=False, **kwargs):
+		super().__init__(**kwargs)
 		self.Hand = Hand
 		self.BoardCards = BoardCards
 		self.TrumpCard = TrumpCard

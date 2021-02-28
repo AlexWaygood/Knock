@@ -1,4 +1,4 @@
-from PlayerHandSort import SortHand
+from Hand import Hand
 from collections import UserList
 from HelperFunctions import AllEqual
 from os import environ
@@ -186,7 +186,7 @@ class Player(object):
 		self.AllPlayers.append(self)
 		self.name = playerindex
 		self.playerindex = playerindex
-		self.Hand = []
+		self.Hand = None
 		self.Bid = -1
 		self.Points = 0
 		self.Tricks = 0
@@ -205,7 +205,7 @@ class Player(object):
 
 	def ReceiveCards(self, cards, TrumpSuit):
 		# Must receive an argument in the form of a list
-		self.Hand = [card.AddToHand(self.name) for card in SortHand(cards, TrumpSuit)]
+		self.Hand = Hand(cards, f'{self}', TrumpSuit)
 		self.HandIteration += 1
 		return self
 
@@ -215,9 +215,7 @@ class Player(object):
 		return self
 
 	def PlayCard(self, card, TrumpSuit):
-		SuitTuple = ((Hand := self.Hand)[0].Suit, Hand[-1].Suit)
-		Hand.remove(card)
-		self.Hand = SortHand(Hand, TrumpSuit, PlayedSuit=card.Suit, SuitTuple=SuitTuple)
+		self.Hand.RemoveCard(card, TrumpSuit)
 		self.HandIteration += 1
 
 	def WinsTrick(self):

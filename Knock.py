@@ -13,7 +13,7 @@ from Network import Network
 from PasswordChecker import PasswordInput
 from ServerUpdaters import DoubleTrigger, AttributeTracker
 from PygameWrappers import SurfaceAndPosition, CoverRect, CoverRectList, RestartDisplay
-from Card import Card
+from Card import Card, AllCardValues
 from GameSurface import GameSurface
 from Cursors import CursorDict
 from ContextHelpers import Contexts
@@ -22,6 +22,7 @@ from DataContainers import Errors, Queues, UserInput, Typewriter, Scrollwheel, F
 from HelperFunctions import GetTime, GetDimensions1, ResizeHelper, FontMachine, GetDimensions2Helper, SurfMachine, \
 	CardResizer, GetHandRects
 
+from functools import singledispatch
 from time import time
 from PIL import Image
 from os import chdir, environ, path
@@ -31,6 +32,7 @@ from pyinputplus import inputCustom, inputMenu
 from PyQt5 import QtGui
 from warnings import filterwarnings
 from traceback_with_variables import printing_exc
+from typing import Dict, Union, Tuple
 
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 
@@ -45,6 +47,7 @@ from pygame.time import delay
 
 # This is only relevant if you are using pyinstaller to convert this script into a .exe file.
 if getattr(sys, 'frozen', False):
+	# noinspection PyUnresolvedReferences,PyProtectedMember
 	chdir(sys._MEIPASS)
 	filterwarnings("ignore")
 
@@ -141,7 +144,7 @@ class KnockTournament(object):
 		self.Errors = Errors([], [], 0, (0, 0), None)
 		self.Triggers = DoubleTrigger()
 
-		self.CurrentColours = {
+		self.CurrentColours: Dict[str, Union[str, tuple]] = {
 			'Game': self.Colours['LightGrey'],
 			'Scoreboard': self.Colours['Maroon'],
 			'Text': self.Colours['Black']
@@ -205,9 +208,10 @@ class KnockTournament(object):
 		self.gameplayers = self.game.gameplayers
 		self.StartCardPositions = list(range(self.PlayerNumber))
 		self.WindowIcon = pg.image.load(path.join('CardImages', 'PygameIcon.png'))
+		Card.AddCardImages(CardImages)
 		self.InitialiseWindow(WindowDimensions, pg.RESIZABLE)
 
-		self.Surfaces = {
+		self.Surfaces: Dict[str, Union[SurfaceAndPosition, GameSurface, tuple, None]] = {
 			'BaseScoreboard': tuple(),
 			'Game': GameSurface(*WindowDimensions, self.Colours['LightGrey'])
 		}
@@ -368,7 +372,7 @@ class KnockTournament(object):
 
 		# Wait for the server to make a new pack of cards.
 		self.AttributeWait('NewPack')
-		Trump = self.Attributes.TrumpCard.VerboseString
+		Trump = self.Attributes.TrumpCard
 		self.Typewriter.Type(f'The trumpcard for this round is the {Trump}, which has been removed from the pack.')
 
 		# Wait for the server to deal cards for this round.
@@ -635,21 +639,23 @@ class KnockTournament(object):
 		if UpdateGameAttributes:
 			self.UpdateGameAttributes()
 
-	def Fill(self, SurfaceObject, colour=None, CurrentColour=False):
+	@singledispatch
+	def Fill(self, SurfaceObject, colour, CurrentColour=False):
 		if CurrentColour:
 			return self.Fill(
 				SurfaceObject,
-				self.CurrentColours['Scoreboard' if SurfaceObject == 'Scoreboard' else 'Game']
+				self.CurrentColours['Scoreboard' if SurfaceObject == self.Surfaces['Scoreboard'] else 'Game']
 			)
-
-		if isinstance(SurfaceObject, str):
-			SurfaceObject = self.Surfaces[SurfaceObject]
 
 		if colour and isinstance(colour, str):
 			colour = self.ColourScheme[colour]
 
 		SurfaceObject.fill(colour)
 		return SurfaceObject
+
+	@Fill.register
+	def Fill(self, SurfaceObject: str, colour):
+		self.Fill(self.Surfaces[SurfaceObject], colour)
 
 	def GetPlayer(self):
 		return self.game.gameplayers[self.name]
@@ -667,10 +673,8 @@ class KnockTournament(object):
 		PlayerOrder, Surfaces = self.ClientSideAttributes['PlayerOrder'], self.Surfaces
 
 		for CardList, ListName in zip(CardLists, ('Hand', 'Board', 'TrumpCard')):
-			CardList = [
+			for i, card in enumerate(CardList):
 				card.UpdateOnArrival(i, ListName, PlayerOrder, Surfaces, self.CardImages)
-				for i, card in enumerate(CardList)
-			]
 
 		self.player.ServerUpdate(self.GetPlayer())
 		self.gameplayers.UpdateFromServer(self.game.gameplayers)
@@ -707,9 +711,12 @@ class KnockTournament(object):
 			self.GetDimensions2()
 			self.Dimensions['Window'] = (x, y)
 
+	# noinspection PyAttributeOutsideInit
 	def GetDimensions2(self, FromInit=False):
-		NewGameDimensions, CurrentCardDimensions = self.Surfaces['Game'].Dimensions, self.Dimensions['OriginalCard']
+		NewGameDimensions: Tuple[float, float] = self.Surfaces['Game'].Dimensions
+		CurrentCardDimensions: Tuple[float, float] = self.Dimensions['OriginalCard']
 		WindowMargin, NewCardDims, ResizeRatio = GetDimensions1(NewGameDimensions, CurrentCardDimensions)
+		# noinspection PyTupleAssignmentBalance
 		GameX, GameY, CardX, CardY = *NewGameDimensions, *NewCardDims
 
 		Dimensions = {
@@ -777,8 +784,7 @@ class KnockTournament(object):
 	def CalculateHandRects(self, GameSurfX, WindowMargin, CardX):
 		self.Surfaces['Hand'].AddRectList(
 			GetHandRects(GameSurfX, WindowMargin, CardX, self.Attributes.StartCardNumber),
-			self.CoverRectOpacities['Hand'],
-			self.CurrentColours['Game']
+			self.CoverRectOpacities['Hand']
 		)
 
 	def UpdateWindow(self, List=None):
@@ -864,6 +870,7 @@ class KnockTournament(object):
 
 			self.Triggers.Client.Events[Attribute] = self.Triggers.Server.Events[Attribute]
 
+	@singledispatch
 	def BlitSurface(self, arg1, arg2, CardFade=False):
 		"""
 		Method for simplifying the blitting of one surface -- or a list of surfaces -- to another.
@@ -871,19 +878,12 @@ class KnockTournament(object):
 		Arg2 refers, directly or indirectly, to a second surface to be blitted onto that base surface.
 		"""
 
-		# If arg1 is a string, we look it up in the self.Surfaces dictionary
-		if isinstance(arg1, str):
-			arg1 = self.Surfaces[arg1]
-
-		if isinstance(arg2, list) or isinstance(arg2, chain):
+		if type(arg2) in (list, chain, CoverRectList):
 			# We can't use .blits in this situation
 			# We don't know if arg2 is a list of cards or a list of surface objects
 
 			for item in arg2:
 				self.BlitSurface(arg1, item)
-
-		elif isinstance(arg2, CoverRectList):
-			arg1.blits([cv.surfandrect for cv in arg2])
 
 		elif isinstance(arg2, tuple):
 			if callable(arg2[1]):
@@ -891,11 +891,8 @@ class KnockTournament(object):
 			elif isinstance(arg2[0], pg.Surface):
 				arg1.blit(*arg2)
 
-		elif isinstance(arg2, CoverRect):
-			arg1.blit(*arg2.surfandrect)
-
 		# If arg2 is a SurfaceAndPosition object, we use its .surfandpos attribute
-		elif isinstance(arg2, SurfaceAndPosition) or isinstance(arg2, Card):
+		elif type(arg2) in (SurfaceAndPosition, Card, CoverRect):
 			arg1.blit(*arg2.surfandpos)
 
 		elif arg2 is None:
@@ -912,11 +909,18 @@ class KnockTournament(object):
 				else:
 					raise e
 
+		arg1.blit(arg2)
+
 		if CardFade and isinstance(arg1, SurfaceAndPosition):
 			arg1.SetCoverRectOpacity(self.CoverRectOpacities[f'{arg1}'])
 			self.BlitSurface(arg1, arg1.CoverRects)
 
 		return arg1
+
+	@BlitSurface.register
+	def BlitSurface(self, arg1: str, arg2, CardFade=False):
+		# If arg1 is a string, we look it up in the self.Surfaces dictionary
+		return self.BlitSurface(self.Surfaces[arg1], arg2, CardFade=CardFade)
 
 	def GetText(self, text, font='Normal', colour=(0, 0, 0), pos=None, leftAlign=False, rightAlign=False):
 		"""Function to generate rendered text and a pygame Rect object"""
@@ -1002,7 +1006,7 @@ class KnockTournament(object):
 			Gen = self.gameplayers.ScoreboardText2()
 			ScoreboardBlits, y = self.ScoreboardHelper(LeftMargin, y, ScoreboardBlits, Gen)
 
-		self.Surfaces['Scoreboard'].AddSurf(SurfaceDimensions=SurfDimensions, FillColour=ScoreboardColour)
+		self.Surfaces['Scoreboard'].AddSurf(SurfaceDimensions=SurfDimensions)
 		self.BlitSurface('Scoreboard', ScoreboardBlits)
 
 	def BuildPlayerHand(self, CardFade=False):
@@ -1032,7 +1036,8 @@ class KnockTournament(object):
 
 		Positions = self.PlayerTextPositions
 		T = sum([player.BoardText(*Args, *Positions[i]) for i, player in enumerate(self.gameplayers)], start=[])
-		BoardSurfaceBlits += [self.GetText(Tuple[0], font=Tuple[1], colour=TextColour, pos=Tuple[2]) for Tuple in T]
+		BoardSurfaceBlits += [self.GetText(Tuple_[0], font=Tuple_[1], colour=TextColour, pos=Tuple_[2]) for Tuple_ in T]
+
 		self.BlitSurface('Board', BoardSurfaceBlits, CardFade=CardFade)
 		self.Triggers.Client.Surfaces['Board'] = self.Triggers.Server.Surfaces['Board']
 
@@ -1200,6 +1205,7 @@ class KnockTournament(object):
 		StartNo = self.Attributes.StartCardNumber
 		RoundsPlayed = self.ClientSideAttributes['RoundNumber'] - 1
 
+		# noinspection PyTypeChecker
 		Data = [FirstLine] + self.gameplayers.Scoreboard + [
 			([x, y] + [None for c in range(PlayerNoTimes4)])
 			for x, y in zip(range((RoundsPlayed + 1), (StartNo + 1)), range((StartNo - RoundsPlayed), 0, -1))
@@ -1258,6 +1264,7 @@ class KnockTournament(object):
 		plt.show()
 		return GetTicks()
 
+	# noinspection PyAttributeOutsideInit
 	def InitialiseWindow(self, WindowDimensions, flags):
 		display.set_caption('Knock (made by Alex Waygood)')
 		display.set_icon(self.WindowIcon)
@@ -1298,6 +1305,7 @@ class KnockTournament(object):
 		Hand = self.player.Hand
 
 		if self.Scrollwheel.IsDown:
+			# noinspection PyTupleAssignmentBalance
 			DownX, DownY, MouseX, MouseY = *self.Scrollwheel.DownPos, *MousePos
 			if MouseX < (DownX - 50):
 				if MouseY < (DownY - 50):
@@ -1327,7 +1335,7 @@ class KnockTournament(object):
 			cur = 'default'
 			for card in Hand:
 				if card.colliderect.collidepoint(*MousePos):
-					self.CardHoverID = f'{card}'
+					self.CardHoverID = f'{card!r}'
 					cur = 'Hand'
 
 					if PlayedCards := self.Attributes.PlayedCards:
@@ -1598,8 +1606,10 @@ except:
 
 _, NewCardDimensions, RequiredResizeRatio = GetDimensions1(WindowDimensions)
 
-CardIDs = [f'{p[0]}{p[1]}' for p in product(chain(range(2, 11), ('J', 'Q', 'K', 'A')), ('♢', '♠', '♣', '♡'))]
-CardImages = {CardID: Image.open(path.join('CardImages', f'{CardID}.jpg')).convert("RGB") for CardID in CardIDs}
+CardImages = {
+	(CardID := f'{ID[0]}{ID[1]}'): Image.open(path.join('CardImages', f'{CardID}.jpg')).convert("RGB")
+	for ID in AllCardValues
+}
 
 CardImages = {
 	key: value.resize((int(value.size[0] / RequiredResizeRatio), int(value.size[1] / RequiredResizeRatio)))

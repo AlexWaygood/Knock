@@ -96,13 +96,13 @@ class SurfaceAndPosition(object):
 
 
 class CoverRect(object):
-	__slots__ = 'surf', 'rect', 'surfandrect'
+	__slots__ = 'surf', 'rect', 'surfandpos'
 
 	def __init__(self, rect, CardDimensions, Opacity):
 		self.surf = Surface(CardDimensions)
 		self.rect = rect
 		self.surf.set_alpha(Opacity)
-		self.surfandrect = (self.surf, self.rect)
+		self.surfandpos = (self.surf, self.rect)
 
 
 class CoverRectList(UserList):
