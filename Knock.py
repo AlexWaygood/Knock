@@ -7,19 +7,19 @@ import sys, random
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from FireworkParticle import Particle
-from FireworkSparker import Sparker
-from Network import Network
-from PasswordChecker import PasswordInput
-from ServerUpdaters import DoubleTrigger, AttributeTracker
+from PythonFiles.Fireworks.FireworkParticle import Particle
+from PythonFiles.Fireworks.FireworkSparker import Sparker
+from PythonFiles.NetworkFiles.Network import Network
+from PythonFiles.NetworkFiles.PasswordChecker import PasswordInput
+from PythonFiles.NetworkFiles.ServerUpdaters import DoubleTrigger, AttributeTracker
 from PygameWrappers import SurfaceAndPosition, CoverRect, CoverRectList, RestartDisplay
-from Card import Card, AllCardValues
-from GameSurface import GameSurface
-from Cursors import CursorDict
-from ContextHelpers import Contexts
+from PythonFiles.Cards.ServerCard import Card, AllCardValues
+from PythonFiles.DisplayFiles.GameSurface import GameSurface
+from PythonFiles.Mouse.Cursors import CursorDict
+from PythonFiles.DisplayFiles.InputContext import Contexts
 from DataContainers import Errors, Queues, UserInput, Typewriter, Scrollwheel, FireworkVars
 
-from HelperFunctions import GetTime, GetDimensions1, ResizeHelper, FontMachine, GetDimensions2Helper, SurfMachine, \
+from PythonFiles.HelperFunctions import GetTime, GetDimensions1, ResizeHelper, FontMachine, GetDimensions2Helper, SurfMachine, \
 	CardResizer, GetHandRects
 
 from functools import singledispatch
@@ -68,8 +68,6 @@ class KnockTournament(object):
 	            'Contexts', 'FunctionDict', 'GameSurfMovementDict', 'cur', 'CardHoverID', 'Typewriter', \
 	            'FireworkVars', 'Queues', 'UserInput', 'ColourScheme', 'BiddingSystem'
 
-	DefaultFont = 'Times New Roman'
-
 	FireworkSettings = {
 		'FadeRate': 3,  # lower values mean fireworks fade out more slowly.
 		'FPS': 600,  # Can lower this to lower the CPU usage of the fireworks display.
@@ -80,16 +78,6 @@ class KnockTournament(object):
 		'Bounds': (0, 2500)
 	}
 
-	Colours = {
-		'Black': (0, 0, 0),
-		'Maroon': (128, 0, 0),
-		'Silver': (128, 128, 128),
-		'LightGrey': (204, 204, 204),
-		'Black_fade': (0, 0, 0, FireworkSettings['FadeRate']),
-		'Orange': (255, 136, 0)
-	}
-
-	DefaultTextColour = (0, 0, 0)
 	Cursors = CursorDict
 
 	def __init__(self, WindowDimensions, StartCardDimensions, CardImages, IP, Port, password, Theme):
@@ -109,16 +97,6 @@ class KnockTournament(object):
 		self.FireworkVars = FireworkVars(0, 0, 0)
 		self.cur = ''
 		self.CardHoverID = ''
-
-		self.ColourScheme = {
-			f'{x}Colour': self.Colours[y if Theme == 'Classic' else z]
-
-			for x, y, z in zip(
-				('MenuScreen', 'Silver', 'LightGrey'),
-				('Scoreboard', 'Silver', 'LightGrey'),
-				('GamePlayScreen', 'Maroon', 'Orange')
-			)
-		}
 
 		GameSurface.AddDefaults(1186, 588)
 
@@ -207,7 +185,7 @@ class KnockTournament(object):
 		self.MaxCardNumber = 51 // self.PlayerNumber
 		self.gameplayers = self.game.gameplayers
 		self.StartCardPositions = list(range(self.PlayerNumber))
-		self.WindowIcon = pg.image.load(path.join('CardImages', 'PygameIcon.png'))
+		self.WindowIcon = pg.image.load(path.join('Images/Cards', 'PygameIcon.png'))
 		Card.AddCardImages(CardImages)
 		self.InitialiseWindow(WindowDimensions, pg.RESIZABLE)
 
@@ -1259,7 +1237,7 @@ class KnockTournament(object):
 
 		manager = plt.get_current_fig_manager()
 		manager.window.showMaximized()
-		manager.window.setWindowIcon(QtGui.QIcon(r'CardImages\PyinstallerIcon.ico'))
+		manager.window.setWindowIcon(QtGui.QIcon(r'Images/Cards/PyinstallerIcon.ico'))
 
 		plt.show()
 		return GetTicks()
@@ -1596,18 +1574,12 @@ Theme = ThemeDict[Theme]
 
 print('Initialising...')
 
-try:
-	# Try to calculate the size of the client's computer screen
-	from screeninfo import get_monitors
-	Monitor = get_monitors()[0]
-	WindowDimensions = (WindowX, WindowY) = (Monitor.width, Monitor.height)
-except:
-	WindowDimensions = (WindowX, WindowY) = (1300, 680)
+
 
 _, NewCardDimensions, RequiredResizeRatio = GetDimensions1(WindowDimensions)
 
 CardImages = {
-	(CardID := f'{ID[0]}{ID[1]}'): Image.open(path.join('CardImages', f'{CardID}.jpg')).convert("RGB")
+	(CardID := f'{ID[0]}{ID[1]}'): Image.open(path.join('Images/Cards', f'{CardID}.jpg')).convert("RGB")
 	for ID in AllCardValues
 }
 

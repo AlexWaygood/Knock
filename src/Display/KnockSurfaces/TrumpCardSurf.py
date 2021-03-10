@@ -1,0 +1,50 @@
+from functools import lru_cache
+from src.Display.AbstractSurfaces.KnockSurfaceWithCards import KnockSurfaceWithCards
+from src.Display.AbstractSurfaces.TextRendering import TextBlitsMixin
+from src.Display.Faders import OpacityFader
+
+
+@lru_cache
+def TrumpCardDimensionsHelper(GameX, CardX, CardY, NormalLinesize):
+	"""
+	@type GameX: int
+	@type CardX int
+	@type CardY: int
+	@type NormalLinesize: int
+	"""
+
+	return (GameX - (CardX + 50)), (CardX + 2), (CardY + int(NormalLinesize * 2.5) + 10), (1, int(NormalLinesize * 2.5))
+
+
+# noinspection PyAttributeOutsideInit
+class TrumpCardSurface(KnockSurfaceWithCards, TextBlitsMixin):
+	__slots__ = 'font'
+
+	def __init__(self):
+		self.CardList = (self.game.TrumpCard,)
+		self.CardFadeManager = OpacityFader('TrumpCard')
+		self.CardUpdateQueue = self.game.NewCardQueues.TrumpCard
+		super().__init__()   # Calls SurfDimensions()
+
+	def Initialise(self):
+		super().Initialise()
+		self.font = self.Fonts['TrumpcardFont']
+
+	def SurfDimensions(self):
+		Vals = TrumpCardDimensionsHelper(self.GameSurfWidth, self.CardX, self.CardY, self.font.linesize)
+		self.x, self.SurfWidth, self.SurfHeight, TrumpCardPos = Vals
+		self.y = self.WindowMargin
+		self.AddRectList((TrumpCardPos,))
+
+	def UpdateCard(self, card, index):
+		"""
+		@type card: src.Cards.ClientCard.ClientCard
+		@type index: int
+		"""
+
+		card.ReceiveRect(self.RectList[0])
+
+	def GetSurfBlits(self):
+		L = super().GetSurfBlits()
+		font, LineSize = self.font, self.font.linesize
+		return L + [self.GetText('TrumpCard', font, center=((self.attrs.centre[0] / 2), (LineSize / 2)))]
