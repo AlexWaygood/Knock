@@ -6,19 +6,18 @@ from fractions import Fraction
 from math import ceil
 
 from src.Display.AbstractSurfaces.TextRendering import Fonts
-
 from src.Cards.ClientCard import ClientCard as Card
-from src.Game.ClientGame import ClientGame as Game
-from src.Players.ClientPlayers import ClientPlayer as Player, ClientGameplayers as Gameplayers
 
 if TYPE_CHECKING:
 	from src.Display.KnockSurfaces.GameSurf import GameSurface
 	from src.Display.KnockSurfaces.BoardSurf import BoardSurface
 	from src.Display.ColourScheme import ColourScheme
+	from src.Game.ClientGame import ClientGame as Game
+	from src.Players.ClientPlayers import ClientPlayer as Player, ClientGameplayers as Gameplayers
 
 
 @lru_cache
-def GetDimensions(GameX, GameY, CurrentCardDimensions=(691, 1056)):
+def GetDimensions(GameX, GameY, CurrentCardDimensions=Card.OriginalImageDimensions):
 	"""This function is designed to be used both at the beginning of the game and midway through the game
 
 	@type GameX: int
@@ -73,6 +72,7 @@ class SurfaceCoordinator:
 		cls.gameplayers = game.gameplayers
 		cls.PlayerNo = game.PlayerNumber
 		cls.GameSurf = GameSurf
+		cls.GameSurf.Hand = cls.player.Hand
 		cls.Fonts = Fonts(GameSurf.Width, GameSurf.Height)
 
 		cls.WindowMargin, cls.CardX, cls.CardY, RequiredResizeRatio = GetDimensions(GameSurf.Width, GameSurf.Height)

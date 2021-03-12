@@ -3,6 +3,7 @@ from collections import namedtuple
 from os import environ
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 from pygame import Surface, Rect
+from pygame import error as PGerror
 
 
 Dimensions = namedtuple('Dimensions', ('surf', 'rect', 'centre', 'surfandpos', 'dimensions', 'topleft'))
@@ -12,6 +13,7 @@ Dimensions = namedtuple('Dimensions', ('surf', 'rect', 'centre', 'surfandpos', '
 class BaseKnockSurface:
 	__slots__ = 'Width', 'Height', 'x', 'y', 'colour', 'attrs'
 
+	# Static method, but kept in this namespace for lrucaching reasons
 	@lru_cache
 	def SurfRectCentre(self, x, y, width, height):
 		"""
@@ -20,8 +22,12 @@ class BaseKnockSurface:
 		@type width: int
 		@type height: int
 		"""
+		try:
+			surf, rect, centre = Surface((width, height)), Rect(x, y, width, height), ((width / 2), (height / 2))
+		except PGerror as e:
+			print(width, height)
+			raise e
 
-		surf, rect, centre = Surface((width, height)), Rect(x, y, width, height), ((width / 2), (height / 2))
 		surfandpos, dimensions, topleft = (surf, rect), (width, height), (x, y)
 		return Dimensions(surf, rect, centre, surfandpos, dimensions, topleft)
 

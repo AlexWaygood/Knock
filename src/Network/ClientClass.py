@@ -23,9 +23,7 @@ class Client(Network):
 		self.SendQueue = Queue()
 		self.ReceiveQueue = Queue(maxsize=1)
 		self.LastUpdate = 0
-		self.Connect(password)
 
-	def Connect(self, password: str):
 		print(f'Starting attempt to connect at {GetTime()}, loading data...')
 
 		ErrorTuple = (
@@ -44,7 +42,9 @@ class Client(Network):
 					PasswordChecker(self, self.conn, password)  # Sends the password to the server in __init__()
 
 				print(f'Connected at {GetTime()}.')
+				print('Line 45 reached: starting attempt to receive first message.')
 				self.ClientReceive()
+				break
 
 			except (TypeError, ConnectionRefusedError) as e:
 				if str(e) in ErrorTuple:
@@ -69,6 +69,7 @@ class Client(Network):
 	# Called ClientReceive to distinguish from method in parent class
 	def ClientReceive(self):
 		Info = self.receive(self.conn, connecting=True)
+		print(f'Line 71 of ClientClass: Info received from AbstractNetwork message is {Info}.')
 		self.LastUpdate = GetTicks()
 		self.ReceiveQueue.put(Info)
 

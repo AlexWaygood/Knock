@@ -1,9 +1,16 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING, Optional
+
 from src.Display.AbstractSurfaces.BaseKnockSurface import BaseKnockSurface
 from src.Display.AbstractSurfaces.SurfaceCoordinator import SurfaceCoordinator
 from src.Display.Faders import ColourFader
+
 from os import environ
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame as pg
+
+if TYPE_CHECKING:
+	from src.Players.Hand import Hand
 
 
 # noinspection PyAttributeOutsideInit
@@ -44,7 +51,7 @@ class GameSurface(BaseKnockSurface, SurfaceCoordinator):
 			pg.K_DOWN: lambda: self.YShift(-20, ArrowShift=True)
 		}
 
-		self.Hand = self.player.Hand
+		self.Hand: Optional[Hand] = None
 
 	def SurfAndPos(self):
 		super().SurfAndPos()

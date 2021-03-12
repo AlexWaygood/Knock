@@ -1,5 +1,4 @@
-import sys, os, ctypes
-from warnings import filterwarnings
+import os, ctypes
 
 from subprocess import check_call
 from ctypes import wintypes
@@ -7,12 +6,6 @@ from msvcrt import get_osfhandle
 
 
 def MaximiseWindow():
-	# This is only relevant if you are using pyinstaller to convert this script into a .exe file.
-	if getattr(sys, 'frozen', False):
-		# noinspection PyUnresolvedReferences,PyProtectedMember
-		os.chdir(sys._MEIPASS)
-		filterwarnings("ignore")
-
 	# Maximise the console window
 	kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
 	user32 = ctypes.WinDLL('user32', use_last_error=True)

@@ -61,6 +61,7 @@ class DisplayManager(DictLike):
 	MinGameHeight = 588
 	DefaultMaxWidth = 1300
 	DefaultMaxHeight = 680
+	PygameIconFilePath = path.join('Images', 'Cards', 'PygameIcon.png')
 
 	def __init__(self, Theme, game, player):
 		"""
@@ -84,7 +85,8 @@ class DisplayManager(DictLike):
 		self.ScreenY = WindowY
 		colours = ColourScheme(Theme)
 
-		self.WindowIcon = pg.image.load(path.join('../../Images/Cards', 'PygameIcon.png'))
+		self.WindowIcon = pg.image.load(self.PygameIconFilePath)
+
 		self.InitialiseWindow(pg.RESIZABLE)
 		RestartDisplay()
 		self.InitialiseWindow(pg.RESIZABLE)

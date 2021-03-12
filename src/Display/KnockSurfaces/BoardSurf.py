@@ -61,9 +61,14 @@ def BoardDimensionsHelper(SurfWidth, SurfHeight, CardX, CardY, NormalLinesize, P
 	return CardRectsOnBoard, PlayerTextPositions
 
 
+@lru_cache
+def BoardHeightHelper(Width, GameSurfHeight, WindowMargin):
+	return min(Width, (GameSurfHeight - WindowMargin - (GameSurfHeight + 40)))
+
+
 # noinspection PyAttributeOutsideInit
 class BoardSurface(KnockSurfaceWithCards, TextBlitsMixin):
-	__slots__ = 'PlayerTextPositions', 'NonrelativeBoardCentre', 'StandardBoardFont'
+	__slots__ = 'PlayerTextPositions', 'NonrelativeBoardCentre', 'StandardFont'
 
 	def __init__(self):
 		self.CardList = self.game.PlayedCards
@@ -71,18 +76,21 @@ class BoardSurface(KnockSurfaceWithCards, TextBlitsMixin):
 		super().__init__()   # calls SurfDimensions()
 
 	def Initialise(self):
-		super().Initialise()
 		self.StandardFont = self.Fonts['StandardBoardFont']
+		super().Initialise()
 
 	def SurfDimensions(self):
-		self.SurfWidth = self.GameSurfWidth // 2
-		self.x = self.GameSurfHeight // 4
+		self.Width = self.GameSurf.Width // 2
+		self.x = self.GameSurf.Height // 4
 		self.y = self.WindowMargin
-		self.SurfHeight = min(self.SurfWidth, (self.GameSurfHeight - self.WindowMargin - (self.GameSurfHeight + 40)))
+		self.Height = BoardHeightHelper(self.Width, self.GameSurf.Height, self.WindowMargin)
 
-		W, H, X, Y, L = self.SurfWidth, self.SurfHeight, self.CardX, self.CardY, self.StandardFont.linesize
-		CardRects, self.PlayerTextPositions = BoardDimensionsHelper(W, H, X, Y, L, self.PlayerNo)
+		W, H, X, Y, L, P = self.Width, self.Height, self.CardX, self.CardY, self.StandardFont.linesize, self.PlayerNo
+		CardRects, self.PlayerTextPositions = BoardDimensionsHelper(W, H, X, Y, L, P)
 		self.AddRectList(CardRects)
+
+	def SurfAndPos(self):
+		super().SurfAndPos()
 		self.NonrelativeBoardCentre = (self.attrs.centre[0] + self.x, self.attrs.centre[1] + self.y)
 
 	def UpdateCard(self, card, index):

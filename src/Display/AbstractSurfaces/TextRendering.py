@@ -64,14 +64,19 @@ def FontMachine(GameX, GameY):
 
 	UnderLineFont.set_underline(True)
 
-	return NormalFont, \
-	       UnderLineFont, \
-	       FontAndLinesize(SysFont(Fonts.DefaultFont, 20, bold=True)), \
-	       FontAndLinesize(SysFont(Fonts.DefaultFont, 40, bold=True))
+	return [
+		FontAndLinesize(font) for font in (
+			NormalFont,
+			UnderLineFont,
+			SysFont(Fonts.DefaultFont, 20, bold=True),
+			SysFont(Fonts.DefaultFont, 40, bold=True))
+	]
 
 
 class Fonts(DictLike):
-	__slots__ = 'Normal', 'UnderLine', 'Massive', 'Title', 'TypewriterFont'
+	__slots__ = 'Normal', 'UnderLine', 'Massive', 'Title', 'TypewriterFont', 'UserInputFont', 'TrumpcardFont',\
+	            'ErrorTitleFont', 'ErrorMessagesFont', 'StandardBoardFont', 'UnderlinedBoardFont', \
+	            'NormalScoreboardFont', 'UnderlinedScoreboardFont'
 
 	DefaultFont = 'Times New Roman'
 

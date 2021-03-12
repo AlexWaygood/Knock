@@ -7,6 +7,9 @@ from pyinputplus import inputYesNo
 from src.Network.AbstractNetwork import Network, GetTime
 
 
+AccessToken = '62e82f844db51d'
+
+
 class Server(Network):
 	__slots__ = 'ConnectionInfo'
 
@@ -31,10 +34,16 @@ class Server(Network):
 
 		NumberOfClients = 0
 
-		try:
-			handler = IPHandler(AccessToken) if AccessToken else None
-		except:
-			handler = None
+		handler = None
+
+		if AccessToken:
+			try:
+				import ipinfo
+				handler = ipinfo.getHandler(AccessToken)
+			except:
+				print("Encountered an error import ipinfo; won't be able to provide info on IP addresses.")
+		else:
+			print('Not checking IP addresses as no access token was supplied.')
 
 		print(f'Ready to accept connections to the server (time {GetTime()}).\n')
 
@@ -73,7 +82,9 @@ class Server(Network):
 
 			for s in writable:
 				if not (Q := self.ConnectionInfo[s]['SendQueue']).empty():
-					self.send(Q.get(), conn=s)
+					Message = Q.get()
+					print(f'Line 86 of ServerClass: Message is {Message}')
+					self.send(Message, conn=s)
 
 			if exceptional:
 				raise Exception('Exception in one of the client threads!')
@@ -81,7 +92,7 @@ class Server(Network):
 	def Connect(self, ClientConnectFunction, handler, NumberOfClients, password, ManuallyVerify):
 		"""
 		@type ClientConnectFunction: Callable
-		@type handler: IPHandler
+		@type handler: ipinfo.handler.Handler
 		@type NumberOfClients: int
 		@type password: str
 		@type ManuallyVerify: bool
@@ -90,7 +101,19 @@ class Server(Network):
 		conn, addr = self.conn.accept()
 
 		if handler:
-			handler.CheckIPDetails(addr)
+			try:
+				# Should change this to addr[0] when other computers need to connect
+				details = handler.getDetails('86.14.41.223')
+
+				print(
+					f'Attempted connection from {details.city}, '
+					f'{details.region}, {details.country_name} at {GetTime()}.'
+				)
+
+				print(f'IP, port: {addr}')
+				print(f'Hostname: {details.hostname}')
+			except:
+				print(f"Couldn't get requested info for this IP address {addr}.")
 
 		if handler and ManuallyVerify:
 			if inputYesNo('\nAccept this connection? ') == 'no':
@@ -113,33 +136,3 @@ class Server(Network):
 	# noinspection PyTypeChecker
 	def CloseDown(self):
 		self.ConnectionInfo = [self.CloseConnection(conn) for conn in self.ConnectionInfo]
-
-
-AccessToken = '62e82f844db51d'
-
-
-class IPHandler:
-	"""Non-essential class to provide information on where attempted connections to the server are coming from."""
-	__slots__ = 'handler'
-
-	def __init__(self, AccessToken: str):
-		try:
-			import ipinfo
-			self.handler = ipinfo.getHandler(AccessToken)
-		except:
-			print("Couldn't import ipinfo; will not be able to give information on attempted connections.")
-			self.handler = None
-
-	def CheckIPDetails(self, addr: tuple):
-		if self.handler:
-			try:
-				# Should change this to addr[0] when other computers need to connect
-				details = self.handler.getDetails('86.14.41.223')
-
-				print(f'Attempted connection from {details.city}, '
-				      f'{details.region}, {details.country_name} at {GetTime()}.')
-
-				print(f'IP, port: {addr}')
-				print(f'Hostname: {details.hostname}')
-			except:
-				print(f"Couldn't get requested info for this IP address {addr}.")

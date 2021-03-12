@@ -1,7 +1,20 @@
+import sys
+from warnings import filterwarnings
+
+
+# This is only relevant if you are using pyinstaller to convert this script into a .exe file.
+if getattr(sys, 'frozen', False):
+	# noinspection PyUnresolvedReferences,PyProtectedMember
+	os.chdir(sys._MEIPASS)
+	filterwarnings("ignore")
+
+
 from src.Initialisation.MaximiseWindow import MaximiseWindow
+
 
 MaximiseWindow()
 print('Loading modules...')
+
 
 from threading import Thread
 from traceback_with_variables import printing_exc
@@ -20,10 +33,13 @@ from pygame.time import Clock
 
 
 IP, Port, password, Theme = PrintIntroMessage()
+
+
 init()
 clock = Clock()
 client = Client(IP, Port, password)
 Message = client.ReceiveQueue.get()
+print(f'Line 42 of Knock2: Message received is {Message}.')
 PlayerNo, playerindex, BiddingSystem = int(Message[0]), int(Message[1]), Message[2:]
 game = Game(PlayerNo)
 player = game.gameplayers[playerindex]

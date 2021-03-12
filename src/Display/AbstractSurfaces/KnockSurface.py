@@ -7,7 +7,6 @@ class KnockSurface(BaseKnockSurface, SurfaceCoordinator):
 
 	def __init__(self):
 		self.colour = self.ColourScheme.GamePlay
-		super().__init__()
 		self.Iteration = 0
 		self.Initialise()
 		self.OnScreen = False

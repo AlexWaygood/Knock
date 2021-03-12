@@ -2,23 +2,19 @@ from typing import Sequence
 from src.Display.AbstractSurfaces.KnockSurface import KnockSurface
 from os import environ
 from functools import lru_cache
+from dataclasses import dataclass
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 from pygame import Surface, Rect
 
 
-class CoverRect(object):
+@dataclass
+class CoverRect:
 	__slots__ = 'surf', 'rect', 'surfandpos'
 
-	def __init__(self, rect, CardDimensions, Opacity):
-		"""
-		@type rect: Rect
-		@type CardDimensions: tuple
-		@type Opacity: int
-		"""
+	surf: Surface
+	rect: Rect
 
-		self.surf = Surface(CardDimensions)
-		self.rect = rect
-		self.surf.set_alpha(Opacity)
+	def __post_init__(self):
 		self.surfandpos = (self.surf, self.rect)
 
 
@@ -28,17 +24,21 @@ class KnockSurfaceWithCards(KnockSurface):
 	            'CardFadeManager', 'CardUpdateQueue'
 
 	def __init__(self):
-		super().__init__()
 		self.CoverRectOpacity = 255
+		super().__init__()
 
+	# Static method, but kept in this namespace for lrucaching reasons
 	@lru_cache
-	def RectListHelper(self, CardPositions: Sequence):
-		a = [Rect(p[0], p[1], self.CardX, self.CardY) for p in CardPositions]
-		b = [CoverRect(rect, (self.CardX, self.CardY), self.CoverRectOpacity) for rect in self.RectList]
+	def RectListHelper(self, CardX, CardY, *CardPositions):
+		a = [Rect(p[0], p[1], CardX, CardY) for p in CardPositions]
+		b = [CoverRect(Surface((CardX, CardY)), rect) for rect in a]
 		return a, b
 
 	def AddRectList(self, CardPositions: Sequence):
-		self.RectList, self.CoverRects = self.RectListHelper(CardPositions)
+		self.RectList, self.CoverRects = self.RectListHelper(self.CardX, self.CardY, *CardPositions)
+
+		for cv in self.CoverRects:
+			cv.surf.set_alpha(self.CoverRectOpacity)
 
 	def fill(self):
 		super().fill()

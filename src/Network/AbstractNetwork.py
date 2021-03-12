@@ -32,12 +32,20 @@ class Network:
 		# Create a header telling the other computer the size of the data we want to send.
 		# Turn the header into a fixed-length message using f-string left-alignment, encode it, send it.
 		# Then send the main message itself.
-
-		conn.sendall(f'{len(message):-<10}'.encode())
-		conn.sendall(message.encode())
+		print(f'Line 35 of Network script: message1 is {len(message):-<10}')
+		print(f'Line 36 of Network script: message is {message}')
+		if len(message) > 10:
+			conn.sendall(f'{len(message):-<10}'.encode())
+			conn.sendall(message.encode())
+		else:
+			conn.sendall(f'{message:-<10}'.encode())
 
 	def receive(self, conn: socket.socket, connecting=False):
-		Message = self.SubReceive(10, conn).split('-')[0]
+		print('Line 41 of AbstractNetworkClass')
+		Message = self.SubReceive(10, conn)
+		print(f'Message received is {Message}.')
+		Message = Message.split('-')[0]
+		print(f'Line 45: Message is now {Message}')
 
 		if Message[0].isdigit() and Message[1].isdigit() and not connecting:
 			Message = self.SubReceive(int(Message), conn)

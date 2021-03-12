@@ -1,4 +1,6 @@
-from os import get_terminal_size
+from PIL import Image
+from fractions import Fraction
+from os import path, get_terminal_size
 from ipaddress import ip_address
 from socket import gethostbyname
 from pyinputplus import inputCustom, inputMenu
@@ -8,7 +10,42 @@ from rich.panel import Panel
 from rich import print as rprint
 
 from src.Network.AbstractPasswordChecker import PasswordInput
-from src.Initialisation.ASCIISuits import Club, Diamond, Heart, Spade
+
+
+def ConvertImage(name, NewWidth):
+	im = Image.open(path.join('Images', 'Suits', f'{name}.png'))
+	ratio = Fraction(im.size[1], im.size[0]) * Fraction(55, 100)
+	im = im.resize((NewWidth, int(NewWidth * ratio)))
+	Ascii = ''.join((' ' if p else '@') for p in im.getdata())
+	return [Ascii[i: i + NewWidth] for i in range(0, len(Ascii), NewWidth)]
+
+
+# noinspection PyUnboundLocalVariable
+def ASCIISuits(TextLength):
+	try:
+		terminal = get_terminal_size()
+		width, height = terminal.columns, terminal.lines
+	except OSError:
+		width = 140
+		height = 40
+
+	Divisor = 5
+	ClubsLength = 1000
+
+	while ClubsLength > (height - TextLength):
+		ImageWidth = width // Divisor
+
+		Clubs, Diamonds, Hearts, Spades = [
+			ConvertImage(string, ImageWidth) for string in ('Club', 'Diamond', 'Heart', 'Spade')
+		]
+
+		ClubsLength = len(Clubs)
+		Divisor += 1
+
+	buffer = ''.join(' ' for _ in range(((width - (ImageWidth * 4)) // 5)))
+
+	for c, d, h, s in zip(Clubs, Diamonds, Hearts, Spades):
+		yield ''.join((buffer, c, buffer, d, buffer, h, buffer, s, buffer))
 
 
 def IPValidation(InputText: str):
@@ -23,49 +60,30 @@ def IPValidation(InputText: str):
 	return InputText
 
 
-text = Text(
-
-	''.join((
-		'\n\n\n\n\n',
-		'Welcome to Knock, a multiplayer card game developed by Alex Waygood!',
-		'\n\n\n',
-		'This game is written in Python, using the pygame library.',
-		'\n\n\n',
-		'Knock is a variant of contract whist, also known as diminishing whist or "Oh Hell". ',
-		'To take a look at the rules of the game, see this website here:',
-		'\n\n',
-		'https://www.pagat.com/exact/ohhell.html',
-		'\n\n\n\n\n'
-	)),
-
-	justify='center',
-	style='bold white on red'
-)
+t = ''.join((
+	'\n\n\n\n',
+	'Welcome to Knock, a multiplayer card game developed by Alex Waygood!',
+	'\n\n\n',
+	'This game is written in Python, using the pygame library.',
+	'\n\n\n',
+	'Knock is a variant of contract whist, also known as diminishing whist or "Oh Hell". ',
+	'To take a look at the rules of the game, see this website here:',
+	'\n\n',
+	'https://www.pagat.com/exact/ohhell.html',
+	'\n\n\n\n'
+))
 
 
-def PrintIntroMessage(text=text):
-	try:
-		width = get_terminal_size().columns
-	except OSError:
-		width = 140
+text = Text(t, justify='center', style='bold white on red')
+VerticalPadding = 3
+TextLength = len(t.splitlines()) + (VerticalPadding * 2) + 6
 
-	Buffer = (width - 130) // 3
 
-	for l1, l2, l3, l4 in zip(Club, Diamond, Heart, Spade):
-		print(
-			''.join((
-				''.join(' ' for _ in range(5)),
-				l1,
-				''.join(' ' for _ in range(Buffer)),
-				l2,
-				''.join(' ' for _ in range(Buffer)),
-				l3,
-				''.join(' ' for _ in range(Buffer)),
-				l4
-			))
-		)
+def PrintIntroMessage(text=text, TextLength=TextLength, VerticalPadding=VerticalPadding):
+	for line in ASCIISuits(TextLength):
+		print(line)
 
-	rprint(Panel(text, padding=(3, 2), style="black"))
+	rprint(Panel(text, padding=(VerticalPadding, 2), style="black"))
 
 	# IP = 'alexknockparty.mywire.org'
 	IP = '127.0.0.1'
@@ -81,7 +99,7 @@ def PrintIntroMessage(text=text):
 	)
 
 	ThemeChoices = ['Classic theme (dark red board)', 'High contrast theme (orange board)']
-	ThemeDict = {'Classic theme (dark red board)': 'Classic', 'High contrast theme (orange board)': 'High Contrast'}
+	ThemeDict = {'Classic theme (dark red board)': 'Classic', 'High contrast theme (orange board)': 'Contrast'}
 
 	Theme = inputMenu(
 		choices=ThemeChoices,

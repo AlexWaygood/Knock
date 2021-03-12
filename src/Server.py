@@ -77,6 +77,8 @@ def ClientConnect(Server, playerindex, conn, addr, BiddingSystem=BiddingSystem, 
 
 	# We want the whole server script to fail if a single thread goes down,
 	# since there's no point continuing a game if one of the players has left
+	Message = f'{game.PlayerNumber}{playerindex}{BiddingSystem}'
+	print(f'Line 81 of server script: message {Message} being added to queue.')
 	Server.ConnectionInfo[conn]['SendQueue'].put(f'{game.PlayerNumber}{playerindex}{BiddingSystem}')
 	print(f'Game sent to client {addr} at {GetTime()}.\n')
 	Server.ConnectionInfo[conn]['player'] = Player.AllPlayers[playerindex]
