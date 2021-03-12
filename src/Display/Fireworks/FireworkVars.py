@@ -11,3 +11,14 @@ class FireworkVars:
 		self.LastFirework = 0
 		self.EndTime = 0
 		self.RandomAmount = 0
+
+	def __repr__(self):
+		return f'''FireworkVars object, keeps state of all firework-related variables. Current state:
+FadeRate: {self.FadeRate}.
+FPS: {self.FPS}.
+SecondsDuration: {self.SecondsDuration}.
+Bounds: {self.Bounds}.
+LastFirework: {self.LastFirework}.
+EndTime: {self.EndTime}.
+RandomAmount: {self.RandomAmount}.
+'''

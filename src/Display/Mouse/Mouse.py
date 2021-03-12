@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 from dataclasses import dataclass
 from src.DataStructures import DictLike
 from src.Display.Mouse.Cursors import NWArrow, NEArrow, DownArrow, UpArrow, SWArrow, SEArrow, LeftArrow, RightArrow
@@ -9,21 +12,24 @@ import pygame as pg
 from pygame.cursors import compile, diamond
 from pygame.locals import SYSTEM_CURSOR_HAND, SYSTEM_CURSOR_NO, SYSTEM_CURSOR_WAIT, SYSTEM_CURSOR_ARROW
 
+if TYPE_CHECKING:
+	from src.SpecialKnockTypes import Position
+
 
 @dataclass
 class Scrollwheel:
+	# Repr automatically defined as it's a dataclass!
+
 	__slots__ = 'IsDown', 'DownPos', 'DownTime', 'OriginalDownTime'
 
 	IsDown: bool
-	DownPos: tuple
+	DownPos: Position
 	DownTime: int
 	OriginalDownTime: int
 
-	def clicked(self, MousePos, Time):
-		"""
-		@type MousePos: tuple
-		@type Time: int
-		"""
+	def clicked(self,
+	            MousePos: Position,
+	            Time: int):
 
 		self.IsDown = not self.IsDown
 		if self.IsDown:
@@ -32,7 +38,7 @@ class Scrollwheel:
 
 
 class Mouse(SurfaceCoordinator, DictLike):
-	__slots__ = 'Scrollwheel', 'cursor', 'ScoreboardButton', 'CardHoverID', 'click'
+	__slots__ = 'Scrollwheel', 'cursor', 'ScoreboardButton', 'CardHoverID', 'click', 'CardsInHand'
 
 	N   =   ((128, 40), (64, 0),    *compile(UpArrow))
 	NE  =   ((128, 40), (97, 8),    *compile(NEArrow))
@@ -55,7 +61,15 @@ class Mouse(SurfaceCoordinator, DictLike):
 		self.ScoreboardButton = ScoreboardButton
 		self.CardHoverID = ''
 		self.click = False
-		self.Hand = self.player.Hand
+		self.CardsInHand = self.player.Hand
+
+	def __repr__(self):
+		return f'''Object representing current state of the mouse. Current state:
+-cursor: {self.cursor}
+-CardHoverID: {self.CardHoverID}
+-click: {self.click}
+
+'''
 
 	# **kwargs included so that the method still works
 	# if it's passed an unexpected argument from the SurfaceCoordinator classmethod
@@ -93,16 +107,20 @@ class Mouse(SurfaceCoordinator, DictLike):
 		):
 			cur = 'Hand'
 
-		elif self.Hand and self.game.TrickInProgress and self.game.WhoseTurnPlayerIndex == self.player.playerindex:
+		elif (
+				self.CardsInHand
+				and self.game.TrickInProgress
+				and self.game.WhoseTurnPlayerIndex == self.player.playerindex
+		):
 			cur = 'default'
-			for card in self.Hand:
+			for card in self.CardsInHand:
 				if card.colliderect.collidepoint(*MousePos):
 					self.CardHoverID = f'{card!r}'
 					cur = 'Hand'
 
 					if PlayedCards := self.game.PlayedCards:
 						SuitLed = PlayedCards[0].Suit
-						Condition = any(UnplayedCard.Suit == SuitLed for UnplayedCard in self.Hand)
+						Condition = any(UnplayedCard.Suit == SuitLed for UnplayedCard in self.CardsInHand)
 
 						if card.Suit != SuitLed and Condition:
 							cur = 'IllegalMove'

@@ -1,10 +1,12 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 from src.Cards.Rank import Rank
 from src.Cards.Suit import Suit
 from src.DataStructures import OnlyAFixedNumber
 
-from os import environ
-environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
-from typing import Union
+if TYPE_CHECKING:
+	from src.SpecialKnockTypes import RankType
 
 
 class ServerCard(OnlyAFixedNumber):
@@ -13,11 +15,9 @@ class ServerCard(OnlyAFixedNumber):
 
 	AllCards = []
 
-	def __init__(self, rank, suit):
-		"""
-		@type rank: Union[int, str]
-		@type suit: str
-		"""
+	def __init__(self,
+	             rank: RankType,
+	             suit: str):
 
 		self.Rank = Rank(rank)
 		self.Suit = Suit(suit)

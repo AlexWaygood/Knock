@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from random import shuffle
-from typing import Union
+from typing import Dict, TYPE_CHECKING
 
 from src.Game.AbstractGame import Game
 from src.Network.ServerUpdaters import Triggers
@@ -9,6 +11,9 @@ from src.Cards.ServerCard import ServerCard as Card
 from os import environ
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 from pygame.time import delay
+
+if TYPE_CHECKING:
+	from src.SpecialKnockTypes import CardList, NumberInput
 
 
 class ServerGame(Game):
@@ -48,10 +53,13 @@ class ServerGame(Game):
 			'@T': lambda Info: 'Terminate',
 
 			# If the client is telling us they've completed an animation sequence.
-			'@A': lambda Info: self.PlayerActionCompleted(int(Info[2]))
+			'@A': lambda Info: self.PlayerActionCompleted(int(Info[2])),
+
+			# If it's just a ping to keep the connection going
+			'pi': lambda Info: 'pong'
 		}
 
-	def SetCardNumber(self, number: Union[int, str]):
+	def SetCardNumber(self, number: NumberInput):
 		self.StartCardNumber = int(number)
 
 	def TimeToStart(self):
@@ -95,7 +103,7 @@ class ServerGame(Game):
 		Pack = Card.AllCards.copy()
 		shuffle(Pack)
 		with self.lock:
-			self.TrumpCard = (TrumpCard := Pack.pop())
+			self.TrumpCard = ((TrumpCard := Pack.pop()),)
 			self.trumpsuit = (trumpsuit := TrumpCard.Suit)
 			self.Triggers.Events['NewPack'] += 1
 
@@ -151,11 +159,11 @@ class ServerGame(Game):
 		))
 
 
-def DictToString(Dict: dict):
-	return '--'.join(f'{v}' for v in Dict.values())
+def DictToString(D: Dict[str: int]):
+	return '--'.join(f'{v}' for v in D.values())
 
 
-def CardsToString(L: list):
+def CardsToString(L: CardList):
 	if not L:
 		return 'None'
 	return '--'.join([f'{card!r}-{card.PlayedBy}' for card in L])

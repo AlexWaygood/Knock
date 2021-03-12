@@ -41,7 +41,7 @@ class Triggers(DictLike):
 		return self.Events == other.Events and self.Surfaces == other.Surfaces
 
 
-class DoubleTrigger(object):
+class DoubleTrigger:
 	__slots__ = 'Client', 'Server'
 
 	def __init__(self):

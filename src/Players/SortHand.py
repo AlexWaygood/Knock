@@ -1,5 +1,11 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Optional
 from src.Cards.Suit import Suit
 from itertools import groupby
+
+if TYPE_CHECKING:
+	from src.SpecialKnockTypes import SuitTuple as SuitTupleType, CardList, Grouped_Type
 
 
 Blacks = (Suit('♣'), Suit('♠'))
@@ -12,37 +18,40 @@ def OtherOfColour(suit: Suit):
 	return Suit('♢') if f'{suit!r}' == '♡' else Suit('♡')
 
 
-def ListOfCardValues(Grouped, suit):
-	return [card.Rank for card in Grouped[suit]]
+def ListOfCardValues(grouped: Grouped_Type, 
+                     suit: Suit):
+	
+	return [card.Rank for card in grouped[suit]]
 
 
-def MaxOfColour(Colour, Grouped):
-	return max((suit for suit in Grouped if suit in Colour), key=lambda suit: ListOfCardValues(Grouped, suit))
+def MaxOfColour(Colour: SuitTupleType,
+                grouped: Grouped_Type):
+	
+	return max((suit for suit in grouped if suit in Colour), key=lambda suit: ListOfCardValues(grouped, suit))
 
 
-def WhicheverSuitPresent(Colour, Grouped):
-	return Colour[0 if Colour[0] in Grouped else 1]
+def WhicheverSuitPresent(Colour: SuitTupleType,
+                         grouped: Grouped_Type):
+	
+	return Colour[0 if Colour[0] in grouped else 1]
 
 
-def MaxSuit(Grouped):
-	return max(Grouped, key=lambda suit: ListOfCardValues(Grouped, suit))
+def MaxSuit(grouped: Grouped_Type):
+	return max(grouped, key=lambda suit: ListOfCardValues(grouped, suit))
 
 
-def SortHand(Hand, trumpsuit, PlayedSuit=None, SuitTuple=(None, None), Blacks=Blacks, Reds=Reds):
-	"""
-	@type Hand: list[src.Cards.ServerCard.ServerCard]
-	@type trumpsuit: Suit
-	@type PlayedSuit: Suit
-	@type SuitTuple: tuple[Suit, Suit]
-	@type Blacks: tuple[Suit, Suit]
-	@type Reds: tuple[Suit, Suit]
-	"""
+def SortHand(Hand: CardList,
+             trumpsuit: Suit,
+             PlayedSuit: Optional[Suit] = None,
+             SuitTuple: SuitTupleType = (None, None),
+             Blacks=Blacks, 
+             Reds=Reds):
 
 	if PlayedSuit:
 		if PlayedSuit in SuitTuple:
 			return Hand
 
-	Grouped = {}
+	grouped: Grouped_Type = {}
 
 	TrumpIsBlack = trumpsuit.IsBlack
 	BlackSuitsPresent = 0
@@ -51,40 +60,40 @@ def SortHand(Hand, trumpsuit, PlayedSuit=None, SuitTuple=(None, None), Blacks=Bl
 		Hand.sort(key=lambda card: card.ID, reverse=True)
 
 	for k, g in groupby(Hand, lambda card: card.Suit):
-		Grouped[k] = list(g)
+		grouped[k] = list(g)
 		if k.IsBlack:
 			BlackSuitsPresent += 1
 
-	if PlayedSuit in Grouped:
+	if PlayedSuit in grouped:
 		return Hand
 
-	if (SuitNumber := len(Grouped)) == 4:
+	if (SuitNumber := len(grouped)) == 4:
 		Suit1 = trumpsuit
-		Suit2 = MaxOfColour((Reds if TrumpIsBlack else Blacks), Grouped)
+		Suit2 = MaxOfColour((Reds if TrumpIsBlack else Blacks), grouped)
 
 	elif SuitNumber == 3:
 		if BlackSuitsPresent == 2:
-			Suit1 = trumpsuit if TrumpIsBlack else MaxOfColour(Blacks, Grouped)
-			Suit2 = WhicheverSuitPresent(Reds, Grouped)
+			Suit1 = trumpsuit if TrumpIsBlack else MaxOfColour(Blacks, grouped)
+			Suit2 = WhicheverSuitPresent(Reds, grouped)
 		else:
-			Suit1 = MaxOfColour(Reds, Grouped) if TrumpIsBlack else trumpsuit
-			Suit2 = WhicheverSuitPresent(Blacks, Grouped)
+			Suit1 = MaxOfColour(Reds, grouped) if TrumpIsBlack else trumpsuit
+			Suit2 = WhicheverSuitPresent(Blacks, grouped)
 
 	elif SuitNumber == 2:
 		if PlayedSuit:
 			return Hand
 		if BlackSuitsPresent == 2:
-			Suit1 = trumpsuit if TrumpIsBlack else MaxSuit(Grouped)
+			Suit1 = trumpsuit if TrumpIsBlack else MaxSuit(grouped)
 			Suit2 = Suit('♡')
 		elif BlackSuitsPresent:
-			if trumpsuit in Grouped:
+			if trumpsuit in grouped:
 				Suit1 = trumpsuit
-				Suit2 = WhicheverSuitPresent((Reds if TrumpIsBlack else Blacks), Grouped)
+				Suit2 = WhicheverSuitPresent((Reds if TrumpIsBlack else Blacks), grouped)
 			else:
-				Suit1 = MaxSuit(Grouped)
-				Suit2 = next(suit for suit in Grouped if suit != Suit1)
+				Suit1 = MaxSuit(grouped)
+				Suit2 = next(suit for suit in grouped if suit != Suit1)
 		else:
-			Suit1 = MaxSuit(Grouped) if TrumpIsBlack else trumpsuit
+			Suit1 = MaxSuit(grouped) if TrumpIsBlack else trumpsuit
 			Suit2 = Suit('♣')
 
 	else:

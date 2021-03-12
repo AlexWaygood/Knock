@@ -60,7 +60,7 @@ class PasswordChecker(DictLike):
 
 		self.conn.sendall(key.encode())
 
-	def ReceiveKey(self, Partial):
+	def ReceiveKey(self, Partial: bool):
 		Key = self.parent.SubReceive((10 if Partial else 6), self.conn).decode()
 
 		if Partial:

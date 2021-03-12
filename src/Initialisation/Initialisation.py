@@ -13,6 +13,11 @@ from src.Network.AbstractPasswordChecker import PasswordInput
 
 
 def ConvertImage(name, NewWidth):
+	"""
+	@type name: str
+	@type NewWidth: int
+	"""
+
 	im = Image.open(path.join('Images', 'Suits', f'{name}.png'))
 	ratio = Fraction(im.size[1], im.size[0]) * Fraction(55, 100)
 	im = im.resize((NewWidth, int(NewWidth * ratio)))
@@ -21,7 +26,7 @@ def ConvertImage(name, NewWidth):
 
 
 # noinspection PyUnboundLocalVariable
-def ASCIISuits(TextLength):
+def ASCIISuits(TextLength: int):
 	try:
 		terminal = get_terminal_size()
 		width, height = terminal.columns, terminal.lines
@@ -80,6 +85,12 @@ TextLength = len(t.splitlines()) + (VerticalPadding * 2) + 6
 
 
 def PrintIntroMessage(text=text, TextLength=TextLength, VerticalPadding=VerticalPadding):
+	"""
+	@type text: Text
+	@type TextLength: int
+	@type VerticalPadding: int
+	"""
+
 	for line in ASCIISuits(TextLength):
 		print(line)
 

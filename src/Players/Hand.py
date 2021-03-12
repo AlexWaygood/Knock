@@ -1,27 +1,27 @@
-from typing import Union
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Optional
 from collections import UserList
 from src.Players.SortHand import SortHand
-from src.Cards.ServerCard import Suit
+from src.Cards.Suit import Suit
+
+if TYPE_CHECKING:
+	from src.Players.AbstractPlayers import Player
+	from src.SpecialKnockTypes import CardList, IndexOrKey, SuitTuple
 
 
 class Hand(UserList):
 	__slots__ = 'Iteration', 'player'
 
-	def __init__(self, player):
-		"""
-		@type player: src.Players.AbstractPlayers.Player
-		"""
-
+	def __init__(self, player: Player):
 		super().__init__()
 		self.Iteration = 0
 		self.player = player
 
 	# noinspection PyAttributeOutsideInit
-	def NewHand(self, cards, TrumpSuit):
-		"""
-		@type cards: list[src.Cards.ServerCard.ServerCard]
-		@type TrumpSuit: Suit
-		"""
+	def NewHand(self,
+	            cards: CardList,
+	            TrumpSuit: Suit):
 
 		self.data = cards
 		if cards:
@@ -34,20 +34,19 @@ class Hand(UserList):
 		@type TrumpSuit: Suit
 		"""
 
-		SuitTuple = (self.data[0].Suit, self.data[-1].Suit)
+		suitTuple = (self.data[0].Suit, self.data[-1].Suit)
 		self.data.remove(card)
-		self.sort(TrumpSuit, PlayedSuit=card.Suit, SuitTuple=SuitTuple)
+		self.sort(TrumpSuit, PlayedSuit=card.Suit, suit_tuple=suitTuple)
 
-	def sort(self, TrumpSuit, PlayedSuit=None, SuitTuple=(None, None)):
-		"""
-		@type TrumpSuit: Suit
-		@type PlayedSuit: Suit
-		@type SuitTuple: tuple[Suit]
-		"""
-
+	def sort(
+			self,
+			TrumpSuit: Suit,
+			PlayedSuit: Optional[Suit] = None,
+			suit_tuple: SuitTuple = (None, None)
+	):
 		self.data = SortHand(self.data, TrumpSuit, PlayedSuit=PlayedSuit, SuitTuple=SuitTuple)
 
-	def __getitem__(self, item: Union[int, str]):
+	def __getitem__(self, item: IndexOrKey):
 		try:
 			return super().__getitem__(item)
 		except:

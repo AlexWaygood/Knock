@@ -1,9 +1,15 @@
+from __future__ import annotations
+
 from itertools import cycle
 from threading import RLock
-from typing import Union
+from typing import Tuple, TYPE_CHECKING, Optional
+
+if TYPE_CHECKING:
+	from src.Cards.ServerCard import ServerCard
+	from src.SpecialKnockTypes import CardList, NumberInput
 
 
-class Game(object):
+class Game:
 	"""Class for encoding order of gameplay, in coordination with the client script."""
 
 	__slots__ = 'StartPlay', 'RepeatGame', 'gameplayers', 'PlayerNumber', 'lock', '_StartCardNumber', 'PlayedCards', \
@@ -15,9 +21,9 @@ class Game(object):
 		self.PlayerNumber = PlayerNumber
 		self.lock = RLock()
 		self._StartCardNumber = 0
-		self.TrumpCard = None
+		self.TrumpCard: Tuple[Optional[ServerCard]] = tuple()
 		self.trumpsuit = ''
-		self.PlayedCards = []
+		self.PlayedCards: CardList = []
 
 	def AddPlayerName(self, name, playerindex):
 		"""
@@ -32,14 +38,14 @@ class Game(object):
 		return self._StartCardNumber
 
 	@StartCardNumber.setter
-	def StartCardNumber(self, number: Union[int, str]):
+	def StartCardNumber(self, number: NumberInput):
 		self._StartCardNumber = int(number)
 
 	def IncrementTriggers(self, *args: str):
 		for arg in args:
 			self.Triggers.Surfaces[arg] += 1
 
-	def PlayerMakesBid(self, bid: Union[int, str], playerindex: int):
+	def PlayerMakesBid(self, bid: NumberInput, playerindex: int):
 		self.gameplayers[playerindex].MakeBid(int(bid))
 		self.IncrementTriggers('Board')
 
@@ -80,3 +86,13 @@ class Game(object):
 	def __exit__(self, exc_type, exc_val, exc_tb):
 		self.lock.release()
 		return True
+
+	def __repr__(self):
+		return f'''Object representing the current state of gameplay. Current state:
+-StartPlay = {self.StartPlay}
+-RepeatGame = {self.RepeatGame}
+-PlayerNumber = {self.PlayerNumber}
+-StartCardNumber = {self._StartCardNumber}
+-TrumpCard = {self.TrumpCard!r}
+-trumpsuit = {self.trumpsuit!r}
+-self.PlayedCards = {[repr(card) for card in self.PlayedCards]}'''

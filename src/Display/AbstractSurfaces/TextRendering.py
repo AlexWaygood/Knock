@@ -1,25 +1,20 @@
-from functools import lru_cache
+from __future__ import annotations
+
+from functools import lru_cache, singledispatch
 from fractions import Fraction
 from time import time
+from typing import overload, Union, TYPE_CHECKING
 
 from src.DataStructures import DictLike
 from src.Display.Faders import ColourFader
 
+if TYPE_CHECKING:
+	from src.SpecialKnockTypes import BlitsList, Position, Colour
+
 from os import environ
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
-from pygame import Surface, Rect
+from pygame import Surface
 from pygame.font import SysFont
-
-
-def GetCursor(text, font):
-	"""
-	@type text: list
-	@type font: FontAndLinesize
-	"""
-
-	if time() % 1 > 0.5:
-		text.append((font.Cursor, (position.topright if isinstance((position := text[0][1]), Rect) else position)))
-	return text
 
 
 class FontAndLinesize:
@@ -32,11 +27,31 @@ class FontAndLinesize:
 		self.Cursor = Surface((3, self.linesize))
 		self.Cursor.fill((0, 0, 0))
 
+	def __repr__(self):
+		return f'FontAndLinesize object, style={Fonts.DefaultFont}, linesize={self.linesize}'
+
 	def render(self, *args):
 		return self.font.render(*args)
 
 	def size(self, text):
 		return self.font.size(text)
+
+
+@overload
+def GetCursor(TextAndPos: Union[Position, BlitsList], font: FontAndLinesize) -> BlitsList:
+	pass
+
+
+@singledispatch
+def GetCursor(TextAndPos: tuple, font: FontAndLinesize):
+	return [(font.Cursor, TextAndPos)] if time() % 1 > 0.5 else []
+
+
+@GetCursor.register
+def _(TextAndPos: list, font: FontAndLinesize):
+	if time() % 1 > 0.5:
+		TextAndPos.append((font.Cursor, TextAndPos[0][1].topright))
+	return TextAndPos
 
 
 @lru_cache
@@ -106,6 +121,13 @@ class Fonts(DictLike):
 		self.NormalScoreboardFont = self.Normal
 		self.UnderlinedScoreboardFont = self.UnderLine
 
+	def __repr__(self):
+		return ''.join((
+			f'Fonts-theme object: \n--',
+			'\n--'.join(f"{f}: {self[f]}" for f in self.__slots__),
+			'\n\n')
+		)
+
 
 # noinspection PyAttributeOutsideInit
 class TextBlitsMixin:
@@ -114,12 +136,13 @@ class TextBlitsMixin:
 	TextFade = ColourFader()
 
 	@lru_cache
-	def GetTextHelper(self, text, font, colour, **kwargs):
-		"""
-		@type text: str
-		@type font: FontAndLinesize
-		@type colour: tuple
-		"""
+	def GetTextHelper(
+			self,
+			text: str,
+			font: FontAndLinesize,
+			colour: Colour,
+			**kwargs
+	):
 
 		text = font.render(text, False, colour)
 		return text, text.get_rect(**kwargs)

@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 from itertools import chain
 from queue import Queue
 from traceback_with_variables import printing_exc
-from typing import Union
+from time import time
+from typing import List, TYPE_CHECKING, Dict
 
 from src.DataStructures import DictLike
 from src.Game.AbstractGame import Game
@@ -10,6 +13,9 @@ from src.Cards.ClientCard import AllCardValues, ClientCard as Card
 from src.Network.ServerUpdaters import DoubleTrigger
 
 from pygame.time import delay
+
+if TYPE_CHECKING:
+	from src.SpecialKnockTypes import NumberInput
 
 
 class NewCardQueues:
@@ -36,7 +42,7 @@ class ClientGame(Game, DictLike):
 		self.TrickInProgress = False
 		self.TrickNumber = 0
 		self.WhoseTurnPlayerIndex = -1
-		self.PlayerOrder = []
+		self.PlayerOrder: List[int] = []
 		self.RoundLeaderIndex = -1
 		self.MaxCardNumber = 51 // PlayerNumber
 		self.NewCardQueues = NewCardQueues()
@@ -49,7 +55,7 @@ class ClientGame(Game, DictLike):
 		return self._StartCardNumber
 
 	@StartCardNumber.setter
-	def StartCardNumber(self, number: Union[int, str]):
+	def StartCardNumber(self, number: NumberInput):
 		self._StartCardNumber = int(number)
 		self.gameplayers.InitialiseScoreboard(self)
 
@@ -138,15 +144,34 @@ class ClientGame(Game, DictLike):
 
 				if not client.ReceiveQueue.empty():
 					gameInfo = client.ReceiveQueue.get()
-					with self.lock:
-						self.UpdateFromServer(gameInfo, player.playerindex)
+					if gameInfo != 'pong':
+						with self.lock:
+							self.UpdateFromServer(gameInfo, player.playerindex)
 
 				if client.SendQueue.empty():
 					if context.GameUpdatesNeeded:
 						client.ClientSend('@G')
+					elif client.LastUpdate < time() - 5:
+						client.ClientSend('ping')
 					continue
 
 				client.ClientSend(client.SendQueue.get())
+
+	def __repr__(self):
+		String = super().__repr__()
+		Added = f'''gameplayers = {self.gameplayers}
+GamesPlayed = {self.GamesPlayed}
+CardNumberThisRound = {self.CardNumberThisRound}
+RoundNumber = {self.RoundNumber}
+TrickInProgress = {self.TrickInProgress}
+TrickNumber = {self.TrickNumber}
+WhoseTurnPlayerIndex = {self.WhoseTurnPlayerIndex}
+PlayerOrder = {self.PlayerOrder}
+RoundLeaderIndex = {self.RoundLeaderIndex}
+MaxCardNumber = {self.MaxCardNumber}
+
+'''
+		return '\n'.join((String, Added))
 
 	def UpdateFromServer(self, String, playerindex):
 		"""
@@ -189,8 +214,8 @@ class ClientGame(Game, DictLike):
 		if not self.TrumpCard:
 			try:
 				# noinspection PyTypeChecker
-				self.TrumpCard = Card(AttemptToInt(FinalString[3]), FinalString[4])
-				self.trumpsuit = self.TrumpCard.Suit
+				self.TrumpCard = (Card(AttemptToInt(FinalString[3]), FinalString[4]),)
+				self.trumpsuit = self.TrumpCard[0].Suit
 				self.NewCardQueues.TrumpCard.put(1)
 			except KeyError:
 				pass
@@ -209,11 +234,6 @@ def CardsFromString(L: str):
 	return [Card(*c) for c in cards]
 
 
-def UpdateDictFromString(Dict, String):
-	"""
-	@type Dict: dict
-	@type String: str
-	"""
-
-	for key, value in zip(Dict.keys(), String.split('--')):
-		Dict[key] = int(value)
+def UpdateDictFromString(D: Dict[str: int], String: str):
+	for key, value in zip(D.keys(), String.split('--')):
+		D[key] = int(value)

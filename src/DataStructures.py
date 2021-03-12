@@ -1,4 +1,4 @@
-from typing import Sequence
+from typing import Sequence, Any
 
 
 class DictLike:
@@ -7,7 +7,10 @@ class DictLike:
 	def __getitem__(self, item: str):
 		return getattr(self, item)
 
-	def __setitem__(self, key: str, value):
+	def __setitem__(self,
+	                key: str,
+	                value: Any):
+
 		setattr(self, key, value)
 
 	def GetAttributes(self, attrs: Sequence[str]):

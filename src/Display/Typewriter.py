@@ -1,7 +1,16 @@
-from queue import Queue
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Optional, TYPE_CHECKING, List
 from itertools import accumulate
+
 from src.Display.AbstractSurfaces.SurfaceCoordinator import SurfaceCoordinator
 from src.Display.AbstractSurfaces.TextRendering import GetCursor
+
+if TYPE_CHECKING:
+	from src.Display.AbstractSurfaces.TextRendering import FontAndLinesize
+	from queue import Queue
+	from pygame import Surface
 
 from os import environ
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
@@ -9,15 +18,18 @@ from pygame import Rect
 from pygame.time import delay
 
 
+@dataclass
 class Typewriter(SurfaceCoordinator):
 	__slots__ = 'RenderedSteps', 'Index', 'Rect', 'Q', 'font'
 
-	def __init__(self):
+	RenderedSteps: List[Optional[Surface]]
+	Index: int
+	Q: Queue
+	Rect: Optional[Rect]
+	font: Optional[FontAndLinesize]
+
+	def __post_init__(self):
 		self.AllSurfaces.append(self)
-		self.RenderedSteps = []
-		self.Index = -1
-		self.Rect = None
-		self.Q = Queue()
 		self.font = self.Fonts['TypewriterFont']
 
 	def Initialise(self):

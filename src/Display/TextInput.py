@@ -1,9 +1,15 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
+from typing import Optional, TYPE_CHECKING
 
 from src.PrintableCharacters import PrintableCharactersPlusSpace
 from src.Display.InputContext import InputContext
 from src.Display.AbstractSurfaces.TextRendering import TextBlitsMixin, GetCursor
 from src.Display.AbstractSurfaces.SurfaceCoordinator import SurfaceCoordinator
+
+if TYPE_CHECKING:
+	from src.Display.AbstractSurfaces.TextRendering import FontAndLinesize
 
 from os import environ
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
@@ -12,14 +18,17 @@ from pygame import K_RETURN, K_BACKSPACE
 
 @dataclass
 class TextInput(TextBlitsMixin, SurfaceCoordinator):
+	# Repr automatically defined as it's a dataclass!
+
 	__slots__ = 'Text', 'font', 'InputContext'
 
 	Text: str
-	font: None
+	font: Optional[FontAndLinesize]
 	InputContext: InputContext
 
 	def __post_init__(self):
 		self.AllSurfaces.append(self)
+		self.font = self.Fonts['UserInputFont']
 
 	def Initialise(self):
 		self.font = self.Fonts['UserInputFont']
@@ -51,8 +60,8 @@ class TextInput(TextBlitsMixin, SurfaceCoordinator):
 			return None
 
 		with self.game as g:
-			PlayStarted = g.PlayStarted
+			PlayStarted = g.StartPlay
 
 		center = self.PlayStartedInputPos if PlayStarted else self.PreplayInputPos
-		L = self.GetTextHelper(self.Text, self.font, (0, 0, 0), center=center) if self.Text else []
+		L = self.GetTextHelper(self.Text, self.font, (0, 0, 0), center=center) if self.Text else center
 		self.GameSurf.attrs.surf.blits(GetCursor(L, self.font))

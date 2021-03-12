@@ -1,8 +1,13 @@
-from typing import Sequence
+from __future__ import annotations
+
+from typing import Sequence, TYPE_CHECKING
 from os import environ
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 from pygame.time import delay
 from pygame.time import get_ticks as GetTicks
+
+if TYPE_CHECKING:
+	from src.SpecialKnockTypes import Colour
 
 
 class Fader:
@@ -16,12 +21,10 @@ class Fader:
 		self.Colour2 = tuple()
 		self.TimeToTake = 0
 
-	def DoFade(self, colour1, colour2, TimeToTake):
-		"""
-		@type colour1: tuple
-		@type colour2: tuple
-		@type TimeToTake: int
-		"""
+	def DoFade(self,
+	           colour1: Colour,
+	           colour2: Colour,
+	           TimeToTake: int):
 
 		self.Fade = True
 		self.StartTime = GetTicks()
@@ -94,7 +97,7 @@ class OpacityFader(Fader):
 		self.AllOpacityFaders[name] = self
 
 	def GetOpacity(self):
-		return self.GetColour()[0]
+		return op if not (op := self.GetColour()) else op[0]
 
 	@classmethod
 	def CardFade(cls, Surfaces, TimeToTake, FadeIn):

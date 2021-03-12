@@ -48,7 +48,7 @@ class ServerPasswordChecker(PasswordChecker):
 		self.CalculateFullKey(server=True)
 		print('Completed key exchange.')
 
-	def ReceiveKey(self, Partial):
+	def ReceiveKey(self, Partial: bool):
 		Key = super().ReceiveKey(Partial)
 		self[f'Client{"Partial" if Partial else "Public"}Key'] = Key
 

@@ -1,8 +1,14 @@
-from typing import Sequence
+from __future__ import annotations
+
+from typing import Sequence, TYPE_CHECKING, List, Optional
 from src.Display.AbstractSurfaces.KnockSurface import KnockSurface
-from os import environ
 from functools import lru_cache
 from dataclasses import dataclass
+
+if TYPE_CHECKING:
+	from src.SpecialKnockTypes import Position
+
+from os import environ
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 from pygame import Surface, Rect
 
@@ -25,16 +31,24 @@ class KnockSurfaceWithCards(KnockSurface):
 
 	def __init__(self):
 		self.CoverRectOpacity = 255
+		self.RectList: List[Optional[Rect]] = []
+		self.CoverRects: List[Optional[CoverRect]] = []
 		super().__init__()
 
 	# Static method, but kept in this namespace for lrucaching reasons
 	@lru_cache
 	def RectListHelper(self, CardX, CardY, *CardPositions):
+		"""
+		@type CardX: int
+		@type CardY: int
+		@type CardPositions: Position
+		"""
+
 		a = [Rect(p[0], p[1], CardX, CardY) for p in CardPositions]
 		b = [CoverRect(Surface((CardX, CardY)), rect) for rect in a]
 		return a, b
 
-	def AddRectList(self, CardPositions: Sequence):
+	def AddRectList(self, CardPositions: Sequence[Position]):
 		self.RectList, self.CoverRects = self.RectListHelper(self.CardX, self.CardY, *CardPositions)
 
 		for cv in self.CoverRects:

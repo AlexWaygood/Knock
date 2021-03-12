@@ -1,5 +1,6 @@
 import select
 
+# noinspection PyUnresolvedReferences
 from typing import Callable
 from queue import Queue
 from pyinputplus import inputYesNo
@@ -13,9 +14,8 @@ AccessToken = '62e82f844db51d'
 class Server(Network):
 	__slots__ = 'ConnectionInfo'
 
-	def __init__(self, IP, port, ManuallyVerify, ClientConnectFunction: Callable,
-	             NumberOfPlayers, AccessToken, password, CommsFunction: Callable):
-
+	def __init__(self, IP, port, ManuallyVerify, ClientConnectFunction,
+	             NumberOfPlayers, AccessToken, password, CommsFunction):
 		"""
 		@type IP: str
 		@type port: int

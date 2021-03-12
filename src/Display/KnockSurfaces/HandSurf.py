@@ -37,8 +37,8 @@ class HandSurface(KnockSurfaceWithCards):
 
 	# noinspection PyAttributeOutsideInit
 	def SurfDimensions(self):
-		self.y = self.GameSurfHeight - (self.CardY + self.WindowMargin)
-		self.Width = self.GameSurfWidth
+		self.y = self.GameSurf.Height - (self.CardY + self.WindowMargin)
+		self.Width = self.GameSurf.Width
 		self.Height = self.CardY + self.WindowMargin
 
 	def GetHandRects(self):
@@ -56,7 +56,7 @@ class HandSurface(KnockSurfaceWithCards):
 		@type index: int
 		"""
 
-		card.ReceiveRect(self.RectList[index], self.attrs.topleft, self.GameSurf.topleft, CardInHand=True)
+		card.ReceiveRect(self.RectList[index], self.attrs.topleft, self.GameSurf.attrs.topleft, CardInHand=True)
 
 	# Update & GetSurfBlits methods not defined here.
 	# The base class doesn't need to be overridden.

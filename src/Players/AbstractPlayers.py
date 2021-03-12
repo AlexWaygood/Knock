@@ -1,6 +1,12 @@
-from typing import Union
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Dict
 from src.Players.Hand import Hand
 from collections import UserList
+
+if TYPE_CHECKING:
+	from src.SpecialKnockTypes import CardList, IndexOrKey
+	from src.Cards.Suit import Suit
 
 
 class Gameplayers(UserList):
@@ -9,17 +15,17 @@ class Gameplayers(UserList):
 	def __init__(self):
 		super().__init__()
 		self.PlayerNo = 0
-		self.Dict = {}
+		self.Dict: Dict[str: Player] = {}
 
 	def NewGame(self):
 		self.data = self.data[1:] + self.data[:1]
 		self.data = [player.ResetPlayer(self.PlayerNo) for player in self.data]
 
-	def __getitem__(self, index: Union[int, str]):
+	def __getitem__(self, index_or_key: IndexOrKey):
 		try:
-			return super().__getitem__(index)
+			return super().__getitem__(index_or_key)
 		except:
-			return self.Dict[index]
+			return self.Dict[index_or_key]
 
 	def __iter__(self):
 		return iter(self.data)
@@ -48,11 +54,9 @@ class Player(object):
 		self._name = n
 		self.AllPlayers.Dict[n] = self
 
-	def ReceiveCards(self, cards, TrumpSuit):
-		"""
-		@type cards: list[src.Cards.ServerCard.ServerCard]
-		@type TrumpSuit: src.Cards.Suit.Suit
-		"""
+	def ReceiveCards(self,
+	                 cards: CardList,
+	                 TrumpSuit: Suit):
 
 		# Must receive an argument in the form of a list
 		self.Hand.NewHand(cards, TrumpSuit)

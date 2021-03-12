@@ -62,8 +62,15 @@ def BoardDimensionsHelper(SurfWidth, SurfHeight, CardX, CardY, NormalLinesize, P
 
 
 @lru_cache
-def BoardHeightHelper(Width, GameSurfHeight, WindowMargin):
-	return min(Width, (GameSurfHeight - WindowMargin - (GameSurfHeight + 40)))
+def BoardHeightHelper(Width, GameSurfHeight, WindowMargin, CardY):
+	"""
+	@type Width: int
+	@type GameSurfHeight: int
+	@type WindowMargin: int
+	@type CardY: int
+	"""
+
+	return min(Width, (GameSurfHeight - WindowMargin - (CardY + 40)))
 
 
 # noinspection PyAttributeOutsideInit
@@ -73,6 +80,7 @@ class BoardSurface(KnockSurfaceWithCards, TextBlitsMixin):
 	def __init__(self):
 		self.CardList = self.game.PlayedCards
 		self.CardFadeManager = OpacityFader('Board')
+		self.CardUpdateQueue = self.game.NewCardQueues.PlayedCards
 		super().__init__()   # calls SurfDimensions()
 
 	def Initialise(self):
@@ -83,7 +91,7 @@ class BoardSurface(KnockSurfaceWithCards, TextBlitsMixin):
 		self.Width = self.GameSurf.Width // 2
 		self.x = self.GameSurf.Height // 4
 		self.y = self.WindowMargin
-		self.Height = BoardHeightHelper(self.Width, self.GameSurf.Height, self.WindowMargin)
+		self.Height = BoardHeightHelper(self.Width, self.GameSurf.Height, self.WindowMargin, self.CardY)
 
 		W, H, X, Y, L, P = self.Width, self.Height, self.CardX, self.CardY, self.StandardFont.linesize, self.PlayerNo
 		CardRects, self.PlayerTextPositions = BoardDimensionsHelper(W, H, X, Y, L, P)

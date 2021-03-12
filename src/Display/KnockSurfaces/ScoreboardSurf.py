@@ -1,7 +1,12 @@
-from typing import Generator
+from __future__ import annotations
+
+from typing import Generator, Tuple, TYPE_CHECKING
 from src.Display.AbstractSurfaces.KnockSurface import KnockSurface
 from src.Display.AbstractSurfaces.TextRendering import TextBlitsMixin
 from src.Display.Faders import ColourFader
+
+if TYPE_CHECKING:
+	from src.SpecialKnockTypes import BlitsList
 
 
 # noinspection PyAttributeOutsideInit
@@ -42,12 +47,11 @@ class Scoreboard(KnockSurface, TextBlitsMixin):
 		self.SurfHeight = (NormalLineSize * Multiplier) + (2 * self.LeftMargin)
 		self.title = (self.UnderlinedFont.render('SCOREBOARD'), (self.attrs.centre[0], int(NormalLineSize * 1.5)))
 
-	def TextBlitsHelper(self, y, ScoreboardBlits, Gen):
-		"""
-		@type y: int
-		@type ScoreboardBlits: list
-		@type Gen: Generator[tuple, None, None]
-		"""
+	def TextBlitsHelper(
+			self,
+			y: int,
+			ScoreboardBlits: BlitsList,
+			Gen: Generator[Tuple[str, str], None, None]):
 
 		for Message in Gen:
 			args = ({'topleft': (self.LeftMargin, y)}, {'topright': ((self.SurfWidth - self.LeftMargin), y)})

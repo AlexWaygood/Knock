@@ -1,6 +1,13 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, List, Optional
 from fractions import Fraction
-from collections import deque
 from functools import lru_cache
+from dataclasses import dataclass
+
+if TYPE_CHECKING:
+	from collections import deque
+	from src.SpecialKnockTypes import Blittable
 
 from src.Display.AbstractSurfaces.TextRendering import TextBlitsMixin
 from src.Display.AbstractSurfaces.SurfaceCoordinator import SurfaceCoordinator
@@ -20,16 +27,18 @@ def ErrorPosHelper(GameX, GameY):
 	return int(GameX * Fraction(550, 683)), int(GameY * Fraction(125, 192))
 
 
+@dataclass
 class Errors(TextBlitsMixin, SurfaceCoordinator):
 	__slots__ = 'Messages', 'ThisPass', 'StartTime', 'Pos', 'Title', 'TitleFont', 'MessageFont'
 
-	def __init__(self):
+	Messages: deque[Blittable]
+	ThisPass: List[str]
+	StartTime: int
+	Title: Optional[Blittable]
+
+	def __post_init__(self):
 		self.AllSurfaces.append(self)
-		self.Messages = deque()
-		self.ThisPass = []
-		self.StartTime = GetTicks()
 		self.Initialise()
-		self.Title = None
 
 	# noinspection PyAttributeOutsideInit
 	def Initialise(self):
@@ -59,7 +68,7 @@ class Errors(TextBlitsMixin, SurfaceCoordinator):
 			if not self.Title:
 				self.Title = self.GetText(f'Messages to {Name}:', self.TitleFont, center=self.Pos)
 
-			self.Messages = [self.Title]
+			self.Messages.append(self.Title)
 			y = self.Pos[1] + self.MessageFont.linesize
 
 		else:

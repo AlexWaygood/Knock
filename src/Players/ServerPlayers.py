@@ -1,8 +1,14 @@
-from typing import Union
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 from src.Players.AbstractPlayers import Gameplayers, Player
 from os import environ
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 from pygame.time import delay
+
+if TYPE_CHECKING:
+	from src.SpecialKnockTypes import CardList, NumberInput
+	from src.Cards.Suit import Suit
 
 
 class ServerGameplayers(Gameplayers):
@@ -20,12 +26,10 @@ class ServerGameplayers(Gameplayers):
 	def RoundCleanUp(self):
 		self.data = [player.EndOfRound() for player in self.data]
 
-	def ReceiveCards(self, Pack, CardNo, trumpsuit):
-		"""
-		@type Pack: list[src.Cards.ServerCard.ServerCard]
-		@type CardNo: int
-		@type trumpsuit: src.Cards.Suit.Suit
-		"""
+	def ReceiveCards(self,
+	                 Pack: CardList,
+	                 CardNo: int,
+	                 trumpsuit: Suit):
 
 		self.data = [player.ReceiveCards([Pack.pop() for _ in range(CardNo)], trumpsuit) for player in self.data]
 
@@ -42,7 +46,7 @@ class ServerPlayer(Player):
 		self.Bid = -1
 		return self
 
-	def MakeBid(self, number: Union[int, str]):
+	def MakeBid(self, number: NumberInput):
 		self.Bid = int(number)
 		self.ActionComplete = True
 		return self

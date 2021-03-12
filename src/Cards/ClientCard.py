@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Union, Optional, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING, Dict
 from PIL import Image
 from functools import lru_cache
 from itertools import product
@@ -17,6 +17,7 @@ from pygame import image
 
 if TYPE_CHECKING:
 	from pygame import Surface
+	from src.SpecialKnockTypes import RankType
 
 
 def OpenImage(ID, ResizeRatio):
@@ -31,11 +32,8 @@ def OpenImage(ID, ResizeRatio):
 
 
 @lru_cache
-def CardResizer(ResizeRatio, BaseCardImages):
-	"""
-	@type ResizeRatio: float
-	@type BaseCardImages: dict
-	"""
+def CardResizer(ResizeRatio: float,
+                BaseCardImages: Dict[str: Surface]):
 
 	return {ID: rotozoom(cardimage, 0, (1 / ResizeRatio)) for ID, cardimage in BaseCardImages.items()}
 
@@ -53,23 +51,18 @@ class ClientCard(Card):
 	OriginalImageDimensions = (691, 1056)
 	PathToImages = path.join('Images', 'Cards')
 
-	def __new__(cls, rank, suit, PlayedBy=''):
-		"""
-		@type rank: Union[int, str]
-		@type suit: str
-		@type PlayedBy: str
-		"""
+	def __new__(cls,
+	            rank: RankType,
+	            suit: str,
+	            PlayedBy: str = ''):
 
 		new = super(ClientCard, cls).__new__(cls, rank, suit)
 		new.PlayedBy = PlayedBy
 		return new
 
-	def __init__(self, rank, suit):
-		"""
-		@rtype: object
-		@type rank: Union[int, str]
-		@type suit: str
-		"""
+	def __init__(self,
+	             rank: RankType,
+	             suit: str):
 
 		super().__init__(rank, suit)
 		self.rect = Rect(0, 0, 1, 1)

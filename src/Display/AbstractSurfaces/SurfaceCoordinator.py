@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Tuple
 
 from functools import lru_cache
 from fractions import Fraction
@@ -9,6 +9,7 @@ from src.Display.AbstractSurfaces.TextRendering import Fonts
 from src.Cards.ClientCard import ClientCard as Card
 
 if TYPE_CHECKING:
+	from src.SpecialKnockTypes import Position
 	from src.Display.KnockSurfaces.GameSurf import GameSurface
 	from src.Display.KnockSurfaces.BoardSurf import BoardSurface
 	from src.Display.ColourScheme import ColourScheme
@@ -22,7 +23,7 @@ def GetDimensions(GameX, GameY, CurrentCardDimensions=Card.OriginalImageDimensio
 
 	@type GameX: int
 	@type GameY: int
-	@type CurrentCardDimensions: tuple
+	@type CurrentCardDimensions: Tuple[int, int]
 	"""
 
 	# Calculate the required size of the card images, based on various ratios of surfaces that will appear on the screen.
@@ -51,23 +52,23 @@ class SurfaceCoordinator:
 	CardX = 0
 	CardY = 0
 
-	BoardCentre = tuple()
-	PlayStartedInputPos = tuple()
-	PreplayInputPos = tuple()
+	BoardCentre: Position = tuple()
+	PlayStartedInputPos: Position = tuple()
+	PreplayInputPos: Position = tuple()
 
 	AllSurfaces = []
 
 	@classmethod
-	def AddClassVars(cls, game, player, ColourScheme, GameSurf):
+	def AddClassVars(cls, game, player, colour_scheme, GameSurf):
 		"""
 		@type game: Game
 		@type player: Player
-		@type ColourScheme: ColourScheme
+		@type colour_scheme: ColourScheme
 		@type GameSurf: src.Display.KnockSurfaces.GameSurf.GameSurface
 		"""
 
 		cls.game = game
-		cls.ColourScheme = ColourScheme
+		cls.ColourScheme = colour_scheme
 		cls.player = player
 		cls.gameplayers = game.gameplayers
 		cls.PlayerNo = game.PlayerNumber

@@ -50,8 +50,9 @@ def CommsWithClient(Server, player, conn, addr, game=game):
 	"""
 
 	data = Server.receive(conn)
+	Result = game.Operations[data[:2]](data)
 
-	if not data or game.Operations[data[:2]](data) == 'Terminate':
+	if not data or Result == 'Terminate':
 		print(f'Connection with {addr} was broken at {GetTime()}.\n')
 
 		try:
@@ -61,8 +62,13 @@ def CommsWithClient(Server, player, conn, addr, game=game):
 		finally:
 			raise Exception('Connection was terminated.')
 
-	with game:
-		Server.ConnectionInfo[conn]['SendQueue'].put(game.Export(player.playerindex))
+	elif Result == 'pong':
+		ToExport = Result
+	else:
+		with game:
+			ToExport = game.Export(player.playerindex)
+
+	Server.ConnectionInfo[conn]['SendQueue'].put(ToExport)
 
 
 def ClientConnect(Server, playerindex, conn, addr, BiddingSystem=BiddingSystem, game=game):
@@ -77,8 +83,6 @@ def ClientConnect(Server, playerindex, conn, addr, BiddingSystem=BiddingSystem, 
 
 	# We want the whole server script to fail if a single thread goes down,
 	# since there's no point continuing a game if one of the players has left
-	Message = f'{game.PlayerNumber}{playerindex}{BiddingSystem}'
-	print(f'Line 81 of server script: message {Message} being added to queue.')
 	Server.ConnectionInfo[conn]['SendQueue'].put(f'{game.PlayerNumber}{playerindex}{BiddingSystem}')
 	print(f'Game sent to client {addr} at {GetTime()}.\n')
 	Server.ConnectionInfo[conn]['player'] = Player.AllPlayers[playerindex]

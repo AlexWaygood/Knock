@@ -1,7 +1,13 @@
-from typing import Union, Iterable
+from __future__ import annotations
+
+from typing import Iterable, TYPE_CHECKING, Optional
 from src.Players.AbstractPlayers import Gameplayers, Player
 from itertools import groupby
 from src.Display.InteractiveScoreboard import InteractiveScoreboard
+
+if TYPE_CHECKING:
+	from src.SpecialKnockTypes import NumberInput
+	from src.Game.ClientGame import ClientGame as Game
 
 
 class ClientGameplayers(Gameplayers):
@@ -9,9 +15,22 @@ class ClientGameplayers(Gameplayers):
 
 	def __init__(self):
 		super().__init__()
-		self.Scoreboard = None
+		self.Scoreboard: Optional[InteractiveScoreboard] = None
 
-	def InitialiseScoreboard(self, game):
+	def __repr__(self):
+		L1 = f'''Object representing all players in the game, and information about them.'''
+		L2 = '\n---'.join(
+			f'{player!r}. Playerindex: {player.playerindex}. Hand {player.Hand}. '
+			f'Bid: {player.Bid}. ActionComplete: {player.ActionComplete}. '
+			f'PosInTrick: {player.PosInTrick}. Points: {player.Points}. Tricks: {player.Tricks}.'
+			f'PointsThisRound: {player.PointsThisRound}. PointsLastRound: {player.PointsLastRound}.'
+			f'GamesWon: {player.GamesWon}. RoundLeader: {player.RoundLeader}. '
+			for player in self.data
+		)
+
+		return '\n---'.join((L1, L2))
+
+	def InitialiseScoreboard(self, game: Game):
 		self.Scoreboard = InteractiveScoreboard(game)
 
 	def RoundCleanUp(self):
@@ -144,7 +163,7 @@ class ClientPlayer(Player):
 		self.GamesWon = 0
 		self.RoundLeader = False
 
-	def MakeBid(self, number: Union[int, str]):
+	def MakeBid(self, number: NumberInput):
 		self.Bid = int(number)
 		return self
 

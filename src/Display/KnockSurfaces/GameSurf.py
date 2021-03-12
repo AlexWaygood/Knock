@@ -11,6 +11,8 @@ import pygame as pg
 
 if TYPE_CHECKING:
 	from src.Players.Hand import Hand
+	from src.SpecialKnockTypes import Colour
+	from src.Display.Mouse.Mouse import Scrollwheel
 
 
 # noinspection PyAttributeOutsideInit
@@ -18,19 +20,17 @@ class GameSurface(BaseKnockSurface, SurfaceCoordinator):
 	__slots__ = 'WindowWidth', 'WindowHeight', 'MinRectWidth', 'MinRectHeight', 'MovementLookup', 'FillFade', \
 	            'scrollwheel', 'Hand', 'surfandpos', 'topleft'
 
-	def __init__(self, FillColour, WindowWidth, WindowHeight, MinRectWidth, MinRectHeight):
-		"""
-		@type FillColour: tuple
-		@type WindowWidth: int
-		@type WindowHeight: int
-		@type MinRectWidth: int
-		@type MinRectHeight: int
-		"""
+	def __init__(self,
+	             FillColour: Colour,
+	             WindowWidth: int,
+	             WindowHeight: int,
+	             MinRectWidth: int,
+	             MinRectHeight: int):
 
 		self.colour = FillColour
 		super().__init__()
 		self.FillFade = ColourFader()
-		self.scrollwheel = None
+		self.scrollwheel: Optional[Scrollwheel] = None
 
 		self.x = 0
 		self.y = 0
@@ -52,6 +52,20 @@ class GameSurface(BaseKnockSurface, SurfaceCoordinator):
 		}
 
 		self.Hand: Optional[Hand] = None
+
+	def __repr__(self):
+		return f'''\
+GameSurf object, an intermediate surf all things are blitted onto before being blitted onto the screen. Current state:
+-x: {self.x}.
+-y: {self.y}.
+-Width: {self.Width}.
+-Height: {self.Height}.
+-WindowWidth: {self.WindowWidth}.
+-WindowHeight: {self.WindowHeight}.
+-MinRectWidth: {self.MinRectWidth}.
+-MinRectHeight: {self.MinRectHeight}.
+
+'''
 
 	def SurfAndPos(self):
 		super().SurfAndPos()

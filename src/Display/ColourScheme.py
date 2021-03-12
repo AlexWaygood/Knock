@@ -24,3 +24,10 @@ class ColourScheme(DictLike):
 			self.Scoreboard = self.LightGrey
 			self.GamePlay = self.Orange
 			self.TextDefault = self.Black
+
+	def __repr__(self):
+		return '\n'.join((
+			'Colour scheme for the game.',
+			'\n-'.join(f'{name}: {self[name]}.' for name in ("MenuScreen", "Scoreboard", "GamePlay", "TextDefault")),
+			'\n\n'
+		))

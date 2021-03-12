@@ -1,7 +1,11 @@
+from __future__ import annotations
+
 import random
 
 from functools import lru_cache
-from typing import Sequence
+from typing import Sequence, TYPE_CHECKING, Optional
+from queue import Queue
+from collections import deque
 
 from src.Display.AbstractSurfaces.SurfaceCoordinator import SurfaceCoordinator
 from src.Display.AbstractSurfaces.TextRendering import TextBlitsMixin
@@ -30,6 +34,9 @@ import pygame.display as display
 from pygame.time import get_ticks as GetTicks
 from pygame.time import delay
 
+if TYPE_CHECKING:
+	from src.SpecialKnockTypes import Position
+
 
 def RestartDisplay():
 	display.quit()
@@ -37,13 +44,10 @@ def RestartDisplay():
 
 
 @lru_cache
-def ResizeHelper(var1, var2, ScreenSize, i):
-	"""
-	@type var1: int
-	@type var2: int
-	@type ScreenSize: tuple[int, int]
-	@type i: int
-	"""
+def ResizeHelper(var1: int,
+                 var2: int,
+                 ScreenSize: Position,
+                 i: int):
 
 	var1 = ScreenSize[i] if var1 > ScreenSize[i] else var1
 	var1 = 10 if var1 < 10 else var1
@@ -98,7 +102,7 @@ class DisplayManager(DictLike):
 
 		# Default placeholder value for the ScoreboardSurf
 		self.BoardSurf = BoardSurface()
-		self.ScoreboardSurf = None
+		self.ScoreboardSurf: Optional[Scoreboard] = None
 		self.HandSurf = HandSurface()
 		self.TrumpCardSurf = TrumpCardSurface()
 
@@ -106,12 +110,35 @@ class DisplayManager(DictLike):
 		SurfaceCoordinator.NewWindowSize2()
 
 		self.InputContext = InputContext()
-		self.Typewriter = Typewriter()
+		self.Typewriter = Typewriter([], -1, Queue(), None, None)
 		self.UserInput = TextInput('', None, self.InputContext)
-		self.Errors = Errors()
+		self.Errors = Errors(deque(), [], GetTicks(), None)
 		self.Mouse = Mouse(None)
 		self.GameSurf.scrollwheel = self.Mouse.Scrollwheel
 		self.FireworkVars = FireworkVars()
+
+	def __repr__(self):
+		return f'''Object for managing all variables related to pygame display on the client-side of the game. Current state:
+-MinGameWidth: {self.MinGameWidth}
+-MinGameHeight: {self.MinGameHeight}
+-DefaultMaxWidth = {self.DefaultMaxWidth}
+-DefaultMaxHeight = {self.DefaultMaxHeight}
+-PygameIconFilePath: {self.PygameIconFilePath} (absolute: {path.abspath(self.PygameIconFilePath)}).
+-Fullscreen: {self.Fullscreen}.
+-DeactivateVideoResize: {self.DeactivateVideoResize}
+-ScreenX: {self.ScreenX}.
+-ScreenY: {self.ScreenY}.
+-Fonts: {SurfaceCoordinator.Fonts}.
+-Colourscheme: [[\n\n{SurfaceCoordinator.ColourScheme}]].
+-FireworkVars: [[\n\n{self.FireworkVars}]].
+-WindowMargin: {SurfaceCoordinator.WindowMargin}.
+-CardX: {SurfaceCoordinator.CardX}
+-CardY: {SurfaceCoordinator.CardY}
+-BoardCentre: {SurfaceCoordinator.BoardCentre}
+-PlayStartedInputPos: {SurfaceCoordinator.PlayStartedInputPos}
+-PreplayInputPos: {SurfaceCoordinator.PreplayInputPos}
+
+'''
 
 	def InitialiseScoreboard(self):
 		self.ScoreboardSurf = Scoreboard()
@@ -175,7 +202,10 @@ class DisplayManager(DictLike):
 		self.Window.blit(*self.GameSurf.Update())
 		display.update()
 
-	def NewWindowSize(self, ToggleFullscreen=False, WindowDimensions=None):
+	def NewWindowSize(self,
+	                  ToggleFullscreen: bool = False,
+	                  WindowDimensions: Optional[Position] = None):
+
 		WindowX, WindowY, InitialiseArg = self.ScreenX, self.ScreenY, pg.RESIZABLE
 
 		if ToggleFullscreen:
@@ -199,7 +229,7 @@ class DisplayManager(DictLike):
 		self.Update()
 
 	# noinspection PyAttributeOutsideInit
-	def InitialiseWindow(self, flags):
+	def InitialiseWindow(self, flags: int):
 		display.set_caption('Knock (made by Alex Waygood)')
 		display.set_icon(self.WindowIcon)
 		self.Window = display.set_mode((self.WindowX, self.WindowY), flags=flags)

@@ -1,5 +1,10 @@
-from typing import Union
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 from src.DataStructures import OnlyAFixedNumber
+
+if TYPE_CHECKING:
+	from src.SpecialKnockTypes import RankType
 
 
 class Rank(OnlyAFixedNumber):
@@ -14,11 +19,7 @@ class Rank(OnlyAFixedNumber):
 		'A': 'Ace'
 	}
 
-	def __init__(self, rank):
-		"""
-		@type rank: Union[int, str]
-		"""
-
+	def __init__(self, rank: RankType):
 		self.Rank = rank
 		self.VerboseRank = self.RankMapper[rank] if isinstance(rank, str) else rank
 		self.Value = self.AllRanks.index(rank) + 2

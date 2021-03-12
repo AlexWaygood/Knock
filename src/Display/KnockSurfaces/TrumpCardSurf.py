@@ -21,18 +21,18 @@ class TrumpCardSurface(KnockSurfaceWithCards, TextBlitsMixin):
 	__slots__ = 'font'
 
 	def __init__(self):
-		self.CardList = (self.game.TrumpCard,)
+		self.CardList = self.game.TrumpCard
 		self.CardFadeManager = OpacityFader('TrumpCard')
 		self.CardUpdateQueue = self.game.NewCardQueues.TrumpCard
 		super().__init__()   # Calls SurfDimensions()
 
 	def Initialise(self):
-		super().Initialise()
 		self.font = self.Fonts['TrumpcardFont']
+		super().Initialise()
 
 	def SurfDimensions(self):
-		Vals = TrumpCardDimensionsHelper(self.GameSurfWidth, self.CardX, self.CardY, self.font.linesize)
-		self.x, self.SurfWidth, self.SurfHeight, TrumpCardPos = Vals
+		Vals = TrumpCardDimensionsHelper(self.GameSurf.Width, self.CardX, self.CardY, self.font.linesize)
+		self.x, self.Width, self.Height, TrumpCardPos = Vals
 		self.y = self.WindowMargin
 		self.AddRectList((TrumpCardPos,))
 
