@@ -46,7 +46,7 @@ class ClientCard(Card):
 	BaseCardImages = {}
 	CardImages = {}
 	OriginalImageDimensions = (691, 1056)
-	PathToImages = path.join('Images', 'Cards')
+	PathToImages = path.join('Images', 'Cards', 'Compressed')
 
 	def __new__(cls,
 	            rank: RankType,

@@ -2,11 +2,13 @@
 
 block_cipher = None
 
+datas = [('Images\\Cards\\Compressed', 'Images\\Cards\\Compressed'),  ('Images\\Suits', 'Images\\Suits')]
+
 
 a = Analysis(['Knock.py'],
              pathex=['C:\\Users\\Alex\\Desktop\\Code dump\\Knock model\\Final version'],
              binaries=[],
-             datas=[('CardImages', 'CardImages')],
+             datas=datas,
              hiddenimports=[],
              hookspath=[],
              runtime_hooks=[],
@@ -30,6 +32,6 @@ exe = EXE(pyz,
           upx=True,
           upx_exclude=[],
           version='C:\\Users\\Alex\\Desktop\\Code dump\\Knock model\\Final version - Local copy\\Knock_version_info.rc',
-          icon='C:\\Users\\Alex\\Desktop\\Code dump\\Knock model\\Final version - Local copy\\CardImages\PyinstallerIcon.ico',
+          icon='C:\\Users\\Alex\\Desktop\\Code dump\\Knock model\\Final version - Local copy\\Images\\PyinstallerIcon.ico',
           runtime_tmpdir=None,
           console=True )

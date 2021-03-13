@@ -3,6 +3,9 @@
 """This script must be run by exactly one machine for a game to take place."""
 from __future__ import annotations
 
+from src.initialisation.maximise_window import MaximiseWindow
+MaximiseWindow()
+
 import socket
 
 from pyinputplus import inputInt, inputMenu, inputCustom, inputYesNo
@@ -12,6 +15,7 @@ from typing import TYPE_CHECKING
 from src.network.network_abstract_class import GetTime
 from src.network.server_class import Server, AccessToken
 from src.network.password_checker_abstract import GeneratePassword, PasswordInput
+from src.initialisation.initialisation import PrintIntroMessage
 from src.game.server_game import ServerGame as Game
 from src.players.players_server import ServerPlayer as Player
 
@@ -23,7 +27,7 @@ if TYPE_CHECKING:
 	from src.special_knock_types import ConnectionAddress
 
 
-print('Welcome to Knock!')
+PrintIntroMessage()
 NumberOfPlayers = inputInt('How many players will be playing? ', min=2, max=6)
 print()
 
