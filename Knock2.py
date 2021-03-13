@@ -9,7 +9,7 @@ if getattr(sys, 'frozen', False):
 	filterwarnings("ignore")
 
 
-from src.Initialisation.MaximiseWindow import MaximiseWindow
+from src.initialisation.maximise_window import MaximiseWindow
 
 
 MaximiseWindow()
@@ -19,12 +19,12 @@ print('Loading modules...')
 from threading import Thread
 from traceback_with_variables import printing_exc
 
-from src.Game.ClientGame import ClientGame as Game
-from src.ClientsideGameplay.Gameplay import Play
-from src.ClientsideGameplay.EventLoop import GameplayLoop
-from src.Network.ClientClass import Client
-from src.Display.DisplayManager import DisplayManager
-from src.Initialisation.Initialisation import PrintIntroMessage
+from src.game.client_game import ClientGame as Game
+from src.clientside_gameplay.gameplay import Play
+from src.clientside_gameplay.event_loop import GameplayLoop
+from src.network.client_class import Client
+from src.display.display_manager import DisplayManager
+from src.initialisation.initialisation import PrintIntroMessage
 
 from os import environ
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
@@ -39,7 +39,6 @@ init()
 clock = Clock()
 client = Client(IP, Port, password)
 Message = client.ReceiveQueue.get()
-print(f'Line 42 of Knock2: Message received is {Message}.')
 PlayerNo, playerindex, BiddingSystem = int(Message[0]), int(Message[1]), Message[2:]
 game = Game(PlayerNo)
 player = game.gameplayers[playerindex]
