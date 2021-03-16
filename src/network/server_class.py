@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import select
-
+from select import select
+from logging import getLogger
 from typing import TYPE_CHECKING
 from queue import Queue
 from pyinputplus import inputYesNo
@@ -11,31 +11,34 @@ from src.network.network_abstract_class import Network, GetTime
 if TYPE_CHECKING:
 	from src.special_knock_types import NetworkFunction
 	from ipinfo.handler import Handler
+	from socket import socket
 
 
+log = getLogger(__name__)
 AccessToken = '62e82f844db51d'
 
 
 class Server(Network):
 	__slots__ = 'ConnectionInfo'
 
-	def __init__(self,
-	             IP: str,
-	             port: int,
-	             ManuallyVerify: bool,
-	             ClientConnectFunction: NetworkFunction,
-	             NumberOfPlayers: int,
-	             AccessToken: str,
-	             password: str,
-	             CommsFunction: NetworkFunction):
+	def __init__(
+			self,
+			IP: str,
+			port: int,
+			ManuallyVerify: bool,
+			ClientConnectFunction: NetworkFunction,
+			NumberOfPlayers: int,
+			AccessToken: str,
+			password: str,
+			CommsFunction: NetworkFunction
+	):
 
-		super().__init__()
+		super().__init__(log)
 		self.ConnectionInfo = {}
 		self.conn.bind((IP, port))
 		self.conn.listen()
 
 		NumberOfClients = 0
-
 		Handler_object = None
 
 		if AccessToken:
@@ -52,7 +55,7 @@ class Server(Network):
 		Inputs, Outputs = [self.conn], []
 
 		while True:
-			readable, writable, exceptional = select.select(Inputs, Outputs, Inputs)
+			readable, writable, exceptional = select(Inputs, Outputs, Inputs)
 			for s in readable:
 				if s is self.conn and NumberOfClients < NumberOfPlayers:
 
@@ -132,6 +135,31 @@ class Server(Network):
 		ClientConnectFunction(self, NumberOfClients, conn, addr)
 		return conn
 
-	# noinspection PyTypeChecker
+	@staticmethod
+	def send(message: str,
+	         conn: socket):
+
+		# Create a header telling the other computer the size of the data we want to send.
+		# Turn the header into a fixed-length message using f-string left-alignment, encode it, send it.
+		# Then send the main message itself.
+		if len(message) > 10:
+			conn.sendall(f'{len(message):-<10}'.encode())
+			conn.sendall(message.encode())
+		else:
+			conn.sendall(f'{message:-<10}'.encode())
+
+		log.debug(f'Message sent to client: {message}.')
+
+	def receive(self, conn: socket):
+		Message = self.SubReceive(10, conn)
+		Message = Message.split('-')[0]
+
+		if Message[0].isdigit() and Message[1].isdigit():
+			Message = self.SubReceive(int(Message), conn)
+
+		log.debug(f'Message received from client: {Message}.')
+		return Message
+
 	def CloseDown(self):
+		log.debug('Attempting to close the server down.')
 		self.ConnectionInfo = [self.CloseConnection(conn) for conn in self.ConnectionInfo]

@@ -5,7 +5,7 @@ Two classes that have to do with communications between the server and clients..
 
 """
 
-import socket
+from socket import socket, AF_INET, SOCK_STREAM, SHUT_RDWR
 from datetime import datetime
 
 
@@ -19,36 +19,11 @@ class Network:
 	__slots__ = 'conn'
 
 	def __init__(self, *args, **kwargs):
-		self.conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-	@staticmethod
-	def send(message: str,
-	         conn: socket.socket):
-
-		# Create a header telling the other computer the size of the data we want to send.
-		# Turn the header into a fixed-length message using f-string left-alignment, encode it, send it.
-		# Then send the main message itself.
-		if len(message) > 10:
-			conn.sendall(f'{len(message):-<10}'.encode())
-			conn.sendall(message.encode())
-		else:
-			conn.sendall(f'{message:-<10}'.encode())
-
-	def receive(self,
-	            conn: socket.socket,
-	            connecting: bool = False):
-
-		Message = self.SubReceive(10, conn)
-		Message = Message.split('-')[0]
-
-		if Message[0].isdigit() and Message[1].isdigit() and not connecting:
-			Message = self.SubReceive(int(Message), conn)
-
-		return Message
+		self.conn = socket(AF_INET, SOCK_STREAM)
 
 	@staticmethod
 	def SubReceive(AmountToReceive: int,
-	               conn: socket.socket):
+	               conn: socket):
 
 		response = []
 
@@ -60,6 +35,6 @@ class Network:
 		return b''.join(response).decode()
 
 	@staticmethod
-	def CloseConnection(conn: socket.socket):
-		conn.shutdown(socket.SHUT_RDWR)
+	def CloseConnection(conn: socket):
+		conn.shutdown(SHUT_RDWR)
 		conn.close()

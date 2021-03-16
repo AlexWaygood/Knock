@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from itertools import cycle
 from threading import RLock
-from typing import Tuple, TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-	from src.cards.server_card import ServerCard
-	from src.special_knock_types import CardList, NumberInput
+	from src.special_knock_types import CardList, NumberInput, OptionalTrump
 
 
 class Game:
@@ -15,13 +14,12 @@ class Game:
 	__slots__ = 'StartPlay', 'RepeatGame', 'gameplayers', 'PlayerNumber', 'lock', '_StartCardNumber', 'PlayedCards', \
 	            'TrumpCard', 'trumpsuit', 'Triggers'
 
-	def __init__(self, PlayerNumber: int):
+	def __init__(self):
 		self.StartPlay = False
 		self.RepeatGame = True
-		self.PlayerNumber = PlayerNumber
 		self.lock = RLock()
 		self._StartCardNumber = 0
-		self.TrumpCard: Tuple[Optional[ServerCard]] = tuple()
+		self.TrumpCard: OptionalTrump = tuple()
 		self.trumpsuit = ''
 		self.PlayedCards: CardList = []
 

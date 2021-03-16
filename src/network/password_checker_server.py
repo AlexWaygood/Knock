@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from Crypto.Util.Padding import unpad
-from Crypto.Cipher import AES
+from Crypto.Cipher.AES import block_size as AES_block_size
 
 from src.network.password_checker_abstract import PasswordChecker, PasswordLength
 
@@ -41,7 +41,7 @@ class ServerPasswordChecker(PasswordChecker):
 		iv = self.parent.SubReceive(16, conn)
 
 		print('Checking password...')
-		ReceivedPassword = unpad(self.GetCipher(iv).decrypt(CipheredPassword), AES.block_size).decode()
+		ReceivedPassword = unpad(self.GetCipher(iv).decrypt(CipheredPassword), AES_block_size).decode()
 
 		if ReceivedPassword != password:
 			return False

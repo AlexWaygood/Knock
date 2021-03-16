@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from Crypto.Util.Padding import pad
-from Crypto.Cipher import AES
+from Crypto.Cipher.AES import block_size as AES_block_size
 
 from src.network.password_checker_abstract import PasswordChecker
 
@@ -32,7 +32,7 @@ class ClientPasswordChecker(PasswordChecker):
 
 		# Use the key to get a cipher, use the cipher to encrypt the password.
 		# Send the encrypted password and the iv to the server.
-		CipheredPassword = self.GetCipher(None).encrypt(pad(password.encode(), AES.block_size))
+		CipheredPassword = self.GetCipher(None).encrypt(pad(password.encode(), AES_block_size))
 		print('Sending password to server...')
 		self.conn.sendall(CipheredPassword)
 		self.conn.sendall(self.cipher.iv)

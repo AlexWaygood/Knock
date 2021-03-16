@@ -1,17 +1,17 @@
 from __future__ import annotations
 
-from typing import Sequence, TYPE_CHECKING, List, Optional
+from typing import Sequence, TYPE_CHECKING
 from src.display.abstract_surfaces.knock_surface import KnockSurface
 from functools import lru_cache
 from dataclasses import dataclass
 
-if TYPE_CHECKING:
-	from src.special_knock_types import Position
-	from src.cards.client_card import ClientCard as Card
-
 from os import environ
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 from pygame import Surface, Rect
+
+if TYPE_CHECKING:
+	from src.special_knock_types import Position, RectList, CoverRectList
+	from src.cards.client_card import ClientCard as Card
 
 
 @dataclass
@@ -32,8 +32,8 @@ class KnockSurfaceWithCards(KnockSurface):
 
 	def __init__(self):
 		self.CoverRectOpacity = 255
-		self.RectList: List[Optional[Rect]] = []
-		self.CoverRects: List[Optional[CoverRect]] = []
+		self.RectList: RectList = []
+		self.CoverRects: CoverRectList = []
 		super().__init__()
 
 	# Static method, but kept in this namespace for lrucaching reasons

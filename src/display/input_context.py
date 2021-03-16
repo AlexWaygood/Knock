@@ -31,7 +31,7 @@ class InputContext(TextBlitsMixin, SurfaceCoordinator):
 			return None
 
 		center = self.BoardCentre if self.game.StartPlay else self.GameSurf.attrs.centre
-		self.GameSurf.attrs.surf.blit(
+		self.GameSurf.surf.blit(
 			*self.GetTextHelper(self.Message, self.Fonts[self.font], (0, 0, 0), center=center)
 		)
 

@@ -1,80 +1,94 @@
 from __future__ import annotations
 
-import random
-
+from random import randint
 from functools import lru_cache
 from typing import TYPE_CHECKING, Optional
 from queue import Queue
 from collections import deque
+from logging import getLogger
 
 from src.display.abstract_surfaces.surface_coordinator import SurfaceCoordinator
 from src.display.abstract_surfaces.text_rendering import TextBlitsMixin
+
 from src.display.knock_surfaces.game_surf import GameSurface
 from src.display.knock_surfaces.scoreboard_surf import Scoreboard
 from src.display.knock_surfaces.trump_card_surf import TrumpCardSurface
 from src.display.knock_surfaces.hand_surf import HandSurface
 from src.display.knock_surfaces.board_surf import BoardSurface
+
+from src.display.fireworks.firework_vars import FireworkVars
+from src.display.fireworks.particle import Particle
+
 from src.display.typewriter import Typewriter
 from src.display.text_input import TextInput
 from src.display.faders import OpacityFader, ColourFader
 from src.display.error_tracker import Errors
 from src.display.input_context import InputContext
-from src.display.colour_scheme import ColourScheme
-
-from src.display.fireworks.firework_vars import FireworkVars
-from src.display.fireworks.particle import Particle
-
-from src.data_structures import DictLike
 from src.display.mouse.mouse import Mouse
+from src.display.interactive_scoreboard import InteractiveScoreboard
+
+from src.network.client_class import Client
+from src.data_structures import DictLike
 
 from os import environ, path
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
-import pygame as pg
-import pygame.display as display
-from pygame.time import get_ticks as GetTicks
-from pygame.time import delay
+from pygame import locals as pg_locals, display as pg_display
+from pygame.image import load as pg_image_load
+from pygame.time import delay, get_ticks as GetTicks
+from pygame.mouse import set_cursor
 
 if TYPE_CHECKING:
-	from src.special_knock_types import Position, BlitsList
-	from src.game.client_game import ClientGame as Game
+	from src.special_knock_types import BlitsList, DimensionTuple
 	from src.players.players_client import ClientPlayer as Player
 
 
-def RestartDisplay():
-	display.quit()
-	display.init()
+log = getLogger(__name__)
 
 
 @lru_cache
-def ResizeHelper(var1: int,
-                 var2: int,
-                 ScreenSize: Position,
-                 i: int):
+def ZoomInHelper(
+		NewVar: int,
+		OldVar: int,
+		ScreenSize: DimensionTuple,
+		index: int
+):
 
-	var1 = ScreenSize[i] if var1 > ScreenSize[i] else var1
-	var1 = 10 if var1 < 10 else var1
-	ResizeNeeded = (var1 != var2)
-	var2 = var1
-	return var2, ResizeNeeded
+	if NewVar > (s := ScreenSize[index]):
+		NewVar = s
+	return NewVar, (NewVar != OldVar)
 
+
+@lru_cache
+def ZoomOutHelper(NewVar: int,
+                  OldVar: int):
+
+	if NewVar < 10:
+		NewVar = 10
+	return NewVar, (NewVar != OldVar)
+
+
+# Subclasses DictLike for easy attribute access in the main client script
 
 class DisplayManager(DictLike):
 	__slots__ = 'BoardSurf', 'ScoreboardSurf', 'HandSurf', 'TrumpCardSurf', 'InputContext', 'GameSurf', 'WindowX',\
 	            'WindowY', 'ScreenX', 'ScreenY', 'Window', 'WindowIcon', 'Fullscreen',  'DeactivateVideoResize', \
-	            'Mouse', 'Errors', 'FireworkVars', 'UserInput', 'Typewriter'
+	            'Mouse', 'Errors', 'FireworkVars', 'UserInput', 'Typewriter', 'client', 'FrozenState', \
+	            'DisplayUpdatesCompleted', 'LastDisplayLog', 'WindowCaption', 'InteractiveScoreboard'
 
 	MinGameWidth = 1186
 	MinGameHeight = 588
 	DefaultMaxWidth = 1300
 	DefaultMaxHeight = 680
-	PygameIconFilePath = path.join('Images', 'Cards', 'PygameIcon.png')
+	PygameIconFilePath = path.join('Images', 'PygameIcon.png')
+	DefaultWindowCaption = 'Knock (made by Alex Waygood)'
+	ConnectionBrokenCaption = 'LOST CONNECTION WITH THE SERVER'
 
 	def __init__(
 			self,
-			Theme: str,
-			game: Game,
-			player: Player
+			player: Player,
+			FrozenState: bool
 	):
+		log.debug('Starting DisplayManager __init__()')
 
 		try:
 			# Try to calculate the size of the client's computer screen
@@ -84,31 +98,25 @@ class DisplayManager(DictLike):
 		except:
 			WindowX, WindowY = self.WindowX, self.WindowY = self.DefaultMaxWidth, self.DefaultMaxHeight
 
-		self.Fullscreen = False
+		self.FrozenState = FrozenState
+		self.LastDisplayLog = 0
+		self.DisplayUpdatesCompleted = 0
+		self.Fullscreen = True  # Technically incorrect, but it fills up the whole screen.
 		self.DeactivateVideoResize = False
+		self.client = Client.OnlyClient
+		self.WindowCaption = 'INITIALISING, PLEASE WAIT...'
 
 		self.ScreenX = WindowX
 		self.ScreenY = WindowY
-		colours = ColourScheme(Theme)
+		# The GameSurf Adds itself as a class variable to the SurfaceCoordinator in __init__
+		self.GameSurf = GameSurface(WindowX, WindowY, self.MinGameWidth, self.MinGameHeight)
+		SurfaceCoordinator.AddClassVars(player)
+		ColourFader.AddColourScheme()
 
-		self.WindowIcon = pg.image.load(self.PygameIconFilePath)
-
-		self.InitialiseWindow(pg.RESIZABLE)
-		RestartDisplay()
-		self.InitialiseWindow(pg.RESIZABLE)
-
-		MinWidth, MinHeight = self.MinGameWidth, self.MinGameHeight
-		self.GameSurf = GameSurface(colours.MenuScreen, WindowX, WindowY, MinWidth, MinHeight)
-		SurfaceCoordinator.AddClassVars(game, player, colours, self.GameSurf)
-		ColourFader.AddColourScheme(colours)
-
-		# Default placeholder value for the ScoreboardSurf
-		self.BoardSurf = BoardSurface()
-		self.ScoreboardSurf: Optional[Scoreboard] = None
+		self.BoardSurf = BoardSurface()  # Adds itself as a class variable to the SurfaceCoordinator in __init__
+		self.ScoreboardSurf: Optional[Scoreboard] = None  # Default placeholder value
 		self.HandSurf = HandSurface()
 		self.TrumpCardSurf = TrumpCardSurface()
-
-		SurfaceCoordinator.BoardSurf = self.BoardSurf
 		SurfaceCoordinator.NewWindowSize2()
 
 		self.InputContext = InputContext()
@@ -118,35 +126,28 @@ class DisplayManager(DictLike):
 		self.Mouse = Mouse(None)
 		self.GameSurf.scrollwheel = self.Mouse.Scrollwheel
 		self.FireworkVars = FireworkVars()
+		self.InteractiveScoreboard = InteractiveScoreboard(self.InputContext)
 
-	def __repr__(self):
-		return f'''Object for managing all variables related to pygame display on the client-side of the game. Current state:
--MinGameWidth: {self.MinGameWidth}
--MinGameHeight: {self.MinGameHeight}
--DefaultMaxWidth = {self.DefaultMaxWidth}
--DefaultMaxHeight = {self.DefaultMaxHeight}
--PygameIconFilePath: {self.PygameIconFilePath} (absolute: {path.abspath(self.PygameIconFilePath)}).
--Fullscreen: {self.Fullscreen}.
--DeactivateVideoResize: {self.DeactivateVideoResize}
--ScreenX: {self.ScreenX}.
--ScreenY: {self.ScreenY}.
--Fonts: {SurfaceCoordinator.Fonts}.
--Colourscheme: [[\n\n{SurfaceCoordinator.ColourScheme}]].
--FireworkVars: [[\n\n{self.FireworkVars}]].
--WindowMargin: {SurfaceCoordinator.WindowMargin}.
--CardX: {SurfaceCoordinator.CardX}
--CardY: {SurfaceCoordinator.CardY}
--BoardCentre: {SurfaceCoordinator.BoardCentre}
--PlayStartedInputPos: {SurfaceCoordinator.PlayStartedInputPos}
--PreplayInputPos: {SurfaceCoordinator.PreplayInputPos}
+		self.WindowIcon = pg_image_load(self.PygameIconFilePath)
+		pg_display.set_icon(self.WindowIcon)
+		log.debug('Launching pygame window.')
+		self.InitialiseWindow(pg_locals.RESIZABLE)
+		self.RestartDisplay()
+		self.InitialiseWindow(pg_locals.RESIZABLE)
+		self.Window.fill(self.GameSurf.colour)
+		pg_display.update()
+		set_cursor(pg_locals.SYSTEM_CURSOR_WAIT)
+		SurfaceCoordinator.AddSurfs()
+		self.GameSurf.GetSurf()
+		self.WindowCaption = self.DefaultWindowCaption
 
-'''
+		log.debug('Finished DisplayManager __init__().')
 
 	def InitialiseScoreboard(self):
 		self.ScoreboardSurf = Scoreboard()
 
 	def Blits(self, L: BlitsList):
-		self.GameSurf.attrs.surf.blits(L)
+		self.GameSurf.surf.blits(L)
 
 	def GameInitialisationFade(self, GamesPlayed: int):
 		if not GamesPlayed:
@@ -187,7 +188,7 @@ class DisplayManager(DictLike):
 		FireworkVars.LastFirework = GetTicks()
 		Duration = self.FireworkVars.SecondsDuration * 1000
 		FireworkVars.EndTime = self.FireworkVars.LastFirework + Duration
-		FireworkVars.RandomAmount = random.randint(*self.FireworkVars.Bounds)
+		FireworkVars.RandomAmount = randint(*self.FireworkVars.Bounds)
 
 		with self.InputContext(FireworksInProgress=True):
 			delay(Duration)
@@ -199,31 +200,54 @@ class DisplayManager(DictLike):
 		delay(1000)
 
 	def Update(self):
-		# Calling Update() on the GameSurf itself calls Update() on all other surfs
+		if self.client.ConnectionBroken and self.WindowCaption != self.ConnectionBrokenCaption:
+			pg_display.set_caption(self.ConnectionBrokenCaption)
+			self.WindowCaption = self.ConnectionBrokenCaption
+		elif not self.client.ConnectionBroken and self.WindowCaption == self.ConnectionBrokenCaption:
+			pg_display.set_caption(self.DefaultWindowCaption)
+			self.WindowCaption = self.DefaultWindowCaption
+
 		self.Window.fill(self.GameSurf.colour)
+		# Calling Update() on the GameSurf itself calls Update() on all other surfs
 		self.Window.blit(*self.GameSurf.Update())
-		display.update()
+		self.Mouse.UpdateCursor()
+		pg_display.update()
+
+		self.DisplayUpdatesCompleted += 1
+
+		if (Time := GetTicks()) > self.LastDisplayLog + 1000:
+			self.LastDisplayLog = Time
+			log.debug(f'{self.DisplayUpdatesCompleted} display updates completed.')
 
 	def NewWindowSize(self,
+	                  EventKey: int = 0,
 	                  ToggleFullscreen: bool = False,
-	                  WindowDimensions: Position = None):
+	                  WindowDimensions: DimensionTuple = None):
 
-		WindowX, WindowY, InitialiseArg = self.ScreenX, self.ScreenY, pg.RESIZABLE
+		log.debug(f'NewWindowSize(ToggleFullscreen={ToggleFullscreen}, WindowDimensions={WindowDimensions}).')
+
+		if EventKey == pg_locals.K_ESCAPE and not self.Fullscreen:
+			return None
+
+		InitialiseArg = pg_locals.RESIZABLE
 
 		if ToggleFullscreen:
+			self.WindowX, self.WindowY = self.ScreenX, self.ScreenY
 			self.DeactivateVideoResize = True
 
 			if self.Fullscreen:
-				WindowX, WindowY = (self.ScreenX - 100), (self.ScreenY - 100)
-				RestartDisplay()
+				self.WindowX, self.WindowY = (self.ScreenX - 100), (self.ScreenY - 100)
+				self.RestartDisplay()
 			else:
-				WindowX, WindowY = WindowDimensions
-				InitialiseArg = pg.FULLSCREEN
+				self.WindowX, self.WindowY = self.ScreenX, self.ScreenY
+				InitialiseArg = pg_locals.FULLSCREEN
 
 			self.Fullscreen = not self.Fullscreen
+		else:
+			self.WindowX, self.WindowY = WindowDimensions
 
 		self.InitialiseWindow(InitialiseArg)
-		SurfaceCoordinator.NewWindowSize(WindowX, WindowY, (ToggleFullscreen and self.Fullscreen))
+		SurfaceCoordinator.NewWindowSize(self.WindowX, self.WindowY, (ToggleFullscreen and self.Fullscreen))
 
 		for surf in (self.HandSurf, self.BoardSurf, self.TrumpCardSurf):
 			surf.UpdateCardRects(ForceUpdate=True)
@@ -232,36 +256,73 @@ class DisplayManager(DictLike):
 
 	# noinspection PyAttributeOutsideInit
 	def InitialiseWindow(self, flags: int):
-		display.set_caption('Knock (made by Alex Waygood)')
-		display.set_icon(self.WindowIcon)
-		self.Window = display.set_mode((self.WindowX, self.WindowY), flags=flags)
+		self.Window = pg_display.set_mode((self.WindowX, self.WindowY), flags=flags)
 
-	def ZoomWindow(self, Button: int):
-		x, y = self.WindowX, self.WindowY
+	def RestartDisplay(self):
+		pg_display.quit()
+		pg_display.init()
+		pg_display.set_caption(self.WindowCaption)
+		pg_display.set_icon(self.WindowIcon)
 
-		if (self.Fullscreen and Button in (4, pg.K_PLUS)) or (Button in (5, pg.K_MINUS) and x == 10 and y == 10):
+	def ZoomIn(self):
+		if self.Fullscreen:
 			return None
 
-		a, b = ((x + 20), (y + 20)) if Button in (4, pg.K_PLUS) else ((x - 20), (y - 20))
+		x, y = self.WindowX, self.WindowY
+		a, b = (x + 20), (y + 20)
 
 		if a >= self.ScreenX and b >= self.ScreenY:
-			self.Fullscreen = True
 			self.NewWindowSize(ToggleFullscreen=True)
 			return None
 
-		FromFullScreen = self.Fullscreen
-		self.Fullscreen = False
-		x, ResizeNeeded1 = ResizeHelper(a, x, (self.ScreenX, self.ScreenY), 0)
-		y, ResizeNeeded2 = ResizeHelper(b, y, (self.ScreenX, self.ScreenY), 1)
+		x, ResizeNeeded1 = ZoomInHelper(a, x, (self.ScreenX, self.ScreenY), 0)
+		y, ResizeNeeded2 = ZoomInHelper(b, y, (self.ScreenX, self.ScreenY), 1)
 
 		if ResizeNeeded1 or ResizeNeeded2:
-			self.NewWindowSize(WindowDimensions=(x, y), ToggleFullscreen=FromFullScreen)
+			self.NewWindowSize(WindowDimensions=(x, y), ToggleFullscreen=False)
 
-	def VideoResizeEvent(self, event: pg.event.Event):
+	def ZoomOut(self):
+		x, y = self.WindowX, self.WindowY
+
+		if x == y == 10:
+			return None
+
+		a, b = (x - 20), (y - 20)
+
+		x, ResizeNeeded1 = ZoomOutHelper(a, x)
+		y, ResizeNeeded2 = ZoomOutHelper(b, y)
+
+		if ResizeNeeded1 or ResizeNeeded2:
+			self.NewWindowSize(WindowDimensions=(x, y), ToggleFullscreen=self.Fullscreen)
+
+	def VideoResizeEvent(self, NewSize: DimensionTuple):
 		# Videoresize events are triggered on exiting/entering fullscreen as well as manual resizing;
 		# we only want it to be triggered after a manual resize.
 
 		if self.DeactivateVideoResize:
 			self.DeactivateVideoResize = False
 		else:
-			self.NewWindowSize(WindowDimensions=event.size)
+			self.NewWindowSize(WindowDimensions=NewSize)
+
+	def __repr__(self):
+		return f'''Object for managing all variables related to pygame display on the client-side of the game. Current state:
+-MinGameWidth: {self.MinGameWidth}
+-MinGameHeight: {self.MinGameHeight}
+-DefaultMaxWidth = {self.DefaultMaxWidth}
+-DefaultMaxHeight = {self.DefaultMaxHeight}
+-PygameIconFilePath: {self.PygameIconFilePath} (absolute: {path.abspath(self.PygameIconFilePath)}).
+-Fullscreen: {self.Fullscreen}.
+-DeactivateVideoResize: {self.DeactivateVideoResize}
+-ScreenX: {self.ScreenX}.
+-ScreenY: {self.ScreenY}.
+-Fonts: {SurfaceCoordinator.Fonts}.
+-Colourscheme: [[\n\n{SurfaceCoordinator.ColourScheme}]].
+-FireworkVars: [[\n\n{self.FireworkVars}]].
+-WindowMargin: {SurfaceCoordinator.WindowMargin}.
+-CardX: {SurfaceCoordinator.CardX}
+-CardY: {SurfaceCoordinator.CardY}
+-BoardCentre: {SurfaceCoordinator.BoardCentre}
+-PlayStartedInputPos: {SurfaceCoordinator.PlayStartedInputPos}
+-PreplayInputPos: {SurfaceCoordinator.PreplayInputPos}
+
+'''

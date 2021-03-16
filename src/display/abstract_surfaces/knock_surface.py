@@ -33,9 +33,9 @@ class KnockSurface(BaseKnockSurface, SurfaceCoordinator):
 		if ServerIteration > self.Iteration or ForceUpdate:
 			self.Iteration = ServerIteration
 			self.fill()
-			self.attrs.surf.blits(self.GetSurfBlits(), False)
+			self.surf.blits(self.GetSurfBlits(), False)
 
-		self.GameSurf.attrs.surf.blit(self.attrs.surfandpos)
+		self.GameSurf.surf.blit(self.surfandpos)
 
 	# Two placeholder methods, to be overriden higher up in the inheritance chain
 	def SurfDimensions(self, *args, **kwargs):

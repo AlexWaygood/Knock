@@ -3,12 +3,11 @@ from __future__ import annotations
 from typing import Sequence, TYPE_CHECKING
 from os import environ
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
-from pygame.time import delay
-from pygame.time import get_ticks as GetTicks
+from pygame.time import delay, get_ticks as GetTicks
+from src.display.colour_scheme import ColourScheme
 
 if TYPE_CHECKING:
-	from src.special_knock_types import Colour
-	from src.display.colour_scheme import ColourScheme
+	from src.special_knock_types import Colour, OptionalColours
 
 
 class Fader:
@@ -65,7 +64,7 @@ class Fader:
 class ColourFader(Fader):
 	__slots__ = tuple()
 
-	colour_scheme = None
+	colour_scheme: OptionalColours = None
 
 	def __call__(
 			self,
@@ -80,8 +79,8 @@ class ColourFader(Fader):
 			delay(50)
 
 	@classmethod
-	def AddColourScheme(cls, colour_scheme: ColourScheme):
-		cls.colour_scheme = colour_scheme
+	def AddColourScheme(cls):
+		cls.colour_scheme: OptionalColours = ColourScheme.OnlyColourScheme
 
 
 class OpacityFader(Fader):

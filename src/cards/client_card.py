@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING, Dict
+from typing import Optional, TYPE_CHECKING
 from PIL import Image
 from functools import lru_cache
 from itertools import product
@@ -13,26 +13,27 @@ from os import environ, path
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 from pygame import Rect
 from pygame.transform import rotozoom
-from pygame import image
+from pygame.image import fromstring as pg_image_fromstring
 
 if TYPE_CHECKING:
 	from pygame import Surface
-	from src.special_knock_types import RankType, Position
+	from src.special_knock_types import RankType, Position, CardImageDict, TupledImageDict
+	from fractions import Fraction
 
 
 def OpenImage(ID: str,
-              ResizeRatio: float):
+              ResizeRatio: Fraction):
 
 	im = Image.open(path.join(ClientCard.PathToImages, f'{ID}.jpg')).convert("RGB")
 	im = im.resize((int(im.size[0] / ResizeRatio), int(im.size[1] / ResizeRatio)))
-	return image.fromstring(im.tobytes(), im.size, im.mode).convert()
+	return pg_image_fromstring(im.tobytes(), im.size, im.mode).convert()
 
 
 @lru_cache
-def CardResizer(ResizeRatio: float,
-                BaseCardImages: Dict[str: Surface]):
+def CardResizer(ResizeRatio: Fraction,
+                BaseCardImages: TupledImageDict):
 
-	return {ID: rotozoom(cardimage, 0, (1 / ResizeRatio)) for ID, cardimage in BaseCardImages.items()}
+	return {ID: rotozoom(cardimage, 0, (1 / ResizeRatio)) for ID, cardimage in BaseCardImages}
 
 
 # Imported by ClientGame script.
@@ -43,8 +44,8 @@ AllCardIDs = [f'{ID[0]}{ID[1]}' for ID in AllCardValues]
 class ClientCard(Card):
 	__slots__ = 'rect', 'colliderect', 'image', 'surfandpos'
 
-	BaseCardImages = {}
-	CardImages = {}
+	BaseCardImages: CardImageDict = {}
+	CardImages: CardImageDict = {}
 	OriginalImageDimensions = (691, 1056)
 	PathToImages = path.join('Images', 'Cards', 'Compressed')
 
@@ -100,12 +101,13 @@ class ClientCard(Card):
 			card.surfandpos = (card.image, card.rect)
 
 	@classmethod
-	def AddImages(cls, RequiredResizeRatio: float):
+	def AddImages(cls, RequiredResizeRatio: Fraction):
 		cls.BaseCardImages = {ID: OpenImage(ID, RequiredResizeRatio) for ID in AllCardIDs}
 		cls.CardImages = cls.BaseCardImages.copy()
 		cls.UpdateAtrributes()
 
+	# noinspection PyTypeChecker
 	@classmethod
-	def UpdateImages(cls, ResizeRatio: float):
-		cls.CardImages = CardResizer(ResizeRatio, cls.BaseCardImages)
+	def UpdateImages(cls, ResizeRatio: Fraction):
+		cls.CardImages = CardResizer(ResizeRatio, tuple(cls.BaseCardImages.items()))
 		cls.UpdateAtrributes()

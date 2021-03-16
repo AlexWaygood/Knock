@@ -23,6 +23,7 @@ pycryptodome==3.9.9
 pygame==2.0.1
 PyInputPlus==0.2.10
 pyparsing==2.4.7
+pyperclip==1.8.2
 PyQt5
 python-dateutil==2.8.1
 pytz==2020.1

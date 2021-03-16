@@ -1,28 +1,28 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional, TYPE_CHECKING, List
+from typing import Optional, TYPE_CHECKING
 from itertools import accumulate
 
 from src.display.abstract_surfaces.surface_coordinator import SurfaceCoordinator
 from src.display.abstract_surfaces.text_rendering import GetCursor
-
-if TYPE_CHECKING:
-	from src.display.abstract_surfaces.text_rendering import FontAndLinesize
-	from queue import Queue
-	from pygame import Surface
 
 from os import environ
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 from pygame import Rect
 from pygame.time import delay
 
+if TYPE_CHECKING:
+	from src.display.abstract_surfaces.text_rendering import FontAndLinesize
+	from src.special_knock_types import SurfaceList
+	from queue import Queue
+
 
 @dataclass
 class Typewriter(SurfaceCoordinator):
 	__slots__ = 'RenderedSteps', 'Index', 'Rect', 'Q', 'font'
 
-	RenderedSteps: List[Optional[Surface]]
+	RenderedSteps: SurfaceList
 	Index: int
 	Q: Queue
 	Rect: Optional[Rect]
@@ -69,4 +69,4 @@ class Typewriter(SurfaceCoordinator):
 		self.Rect.center = self.BoardCentre if PlayStarted else self.GameSurf.attrs.centre
 		SubRect = TypewrittenText.get_rect()
 		SubRect.topleft = self.Rect.topleft
-		self.GameSurf.attrs.surf.blits(GetCursor([(TypewrittenText, SubRect)], self.font))
+		self.GameSurf.surf.blits(GetCursor([(TypewrittenText, SubRect)], self.font))

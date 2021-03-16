@@ -6,16 +6,18 @@ from __future__ import annotations
 from src.initialisation.maximise_window import MaximiseWindow
 MaximiseWindow()
 
-import socket
-
-from pyinputplus import inputInt, inputMenu, inputCustom, inputYesNo
 from threading import Thread
 from typing import TYPE_CHECKING
+from logging import debug
+from socket import SHUT_RDWR
 
 from src.network.network_abstract_class import GetTime
 from src.network.server_class import Server, AccessToken
-from src.network.password_checker_abstract import GeneratePassword, PasswordInput
-from src.initialisation.initialisation import PrintIntroMessage
+
+from src.initialisation.ascii_suits import PrintIntroMessage
+from src.initialisation.server_user_inputs import UserInputs
+from src.initialisation.logging_config import LoggingConfig
+
 from src.game.server_game import ServerGame as Game
 from src.players.players_server import ServerPlayer as Player
 
@@ -25,35 +27,21 @@ from pygame.time import delay
 
 if TYPE_CHECKING:
 	from src.special_knock_types import ConnectionAddress
+	from socket import socket
 
 
+LoggingConfig(False)
+debug('\n\nNEW RUN OF PROGRAMME STARTING\n\n')
 PrintIntroMessage()
-NumberOfPlayers = inputInt('How many players will be playing? ', min=2, max=6)
-print()
-
+NumberOfPlayers, BiddingSystem, password, ManuallyVerify = UserInputs()
 game = Game(NumberOfPlayers)
-
-BiddingRuleChoices = [
-	'Classic rules (players decide what they will bid prior to each round)',
-	'Anna Benjer rules (bids are randomly generated for each player prior to each round)'
-]
-
-BiddingSystem = inputMenu(
-	choices=BiddingRuleChoices,
-	prompt='Which variant of the rules will this tournament use?\n\n',
-	numbered=True,
-	blank=True
-)
-
-BiddingSystem = 'Random' if BiddingSystem == BiddingRuleChoices[1] else 'Classic'
-print()
 
 
 def CommsWithClient(S: Server,
                     player: Player,
-                    conn: socket.socket,
+                    conn: socket,
                     addr: ConnectionAddress,
-                    game: Game = game):
+                    game: Game = game) -> None:
 
 	data = S.receive(conn)
 	Result = game.Operations[data[:2]](data)
@@ -63,7 +51,7 @@ def CommsWithClient(S: Server,
 
 		try:
 			game.gameplayers.remove(player)
-			conn.shutdown(socket.SHUT_RDWR)
+			conn.shutdown(SHUT_RDWR)
 			conn.close()
 		finally:
 			raise Exception('Connection was terminated.')
@@ -79,7 +67,7 @@ def CommsWithClient(S: Server,
 
 def ClientConnect(S: Server,
                   playerindex: int,
-                  conn: socket.socket,
+                  conn: socket,
                   addr: ConnectionAddress,
                   BiddingSystem: str = BiddingSystem,
                   game: Game = game) -> None:
@@ -91,11 +79,8 @@ def ClientConnect(S: Server,
 	S.ConnectionInfo[conn]['player'] = Player.AllPlayers[playerindex]
 
 
-def EternalGameLoop(game=game, NumberOfPlayers=NumberOfPlayers):
-	"""
-	@type game: ServerGame
-	@type NumberOfPlayers: int
-	"""
+def EternalGameLoop(game: Game = game,
+                    NumberOfPlayers: int = NumberOfPlayers):
 
 	global Server_object
 
@@ -112,35 +97,6 @@ def EternalGameLoop(game=game, NumberOfPlayers=NumberOfPlayers):
 			pass
 
 
-PasswordChoices = [
-	"I want a new, randomly generated password for this game",
-	"I've already got a password for this game",
-	"I don't want a password for this game"
-]
-
-Choice = inputMenu(
-	choices=PasswordChoices,
-	prompt='Select whether you want to set a password for this game:\n\n',
-	numbered=True,
-	blank=True
-)
-
-if Choice == PasswordChoices[0]:
-	password = GeneratePassword()
-	print(f'\nYour randomly generated password for this session is {password}')
-elif Choice == PasswordChoices[1]:
-	password = inputCustom(PasswordInput, '\nPlease enter the password for this session: ')
-else:
-	password = ''
-
-print()
-
-ManuallyVerify = inputYesNo(
-	'\nDo you want to manually authorise each connection? '
-	'(If "no", new connections will be accepted automatically if they have entered the correct password.) ',
-	blank=True
-)
-
 print('Initialising server...')
 
 # The server will accept new connections until the expected number of players have connected to the server.
@@ -148,7 +104,7 @@ print('Initialising server...')
 # (Warning does not apply if you are playing within one local area network.)
 # Remember to take the port out when publishing this code online.
 
-(thread := Thread(target=EternalGameLoop, daemon=True)).start()
+(thread := Thread(target=EternalGameLoop, name='Server gameplay thread', daemon=True)).start()
 
 Server_object = Server(
 	IP='127.0.0.1',

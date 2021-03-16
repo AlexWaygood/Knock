@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from random import shuffle
-from typing import Dict, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from src.game.abstract_game import Game
 from src.network.server_updaters import Triggers
@@ -13,14 +13,15 @@ environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 from pygame.time import delay
 
 if TYPE_CHECKING:
-	from src.special_knock_types import CardList, NumberInput
+	from src.special_knock_types import CardList, NumberInput, UpdaterDict
 
 
 class ServerGame(Game):
-	__slots__ = 'Operations'
+	__slots__ = 'Operations', 'PlayerNumber'
 
 	def __init__(self, PlayerNumber: int):
-		super().__init__(PlayerNumber)
+		super().__init__()
+		self.PlayerNumber = PlayerNumber
 		self.gameplayers = Player.AllPlayers
 		self.gameplayers.PlayerNo = PlayerNumber
 		self.Triggers = Triggers()
@@ -159,7 +160,7 @@ class ServerGame(Game):
 		))
 
 
-def DictToString(D: Dict[str: int]):
+def DictToString(D: UpdaterDict):
 	return '--'.join(f'{v}' for v in D.values())
 
 

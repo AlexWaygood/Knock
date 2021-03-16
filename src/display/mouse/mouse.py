@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 from dataclasses import dataclass
-from src.data_structures import DictLike
 from src.display.mouse.cursors import NWArrow, NEArrow, DownArrow, UpArrow, SWArrow, SEArrow, LeftArrow, RightArrow
 from src.display.abstract_surfaces.surface_coordinator import SurfaceCoordinator
 
 from os import environ
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
-import pygame as pg
+from pygame.mouse import get_pressed, get_pos, set_cursor
+from pygame.time import get_ticks as GetTicks
 from pygame.cursors import compile, diamond
 from pygame.locals import SYSTEM_CURSOR_HAND, SYSTEM_CURSOR_NO, SYSTEM_CURSOR_WAIT, SYSTEM_CURSOR_ARROW
 
@@ -27,17 +27,25 @@ class Scrollwheel:
 	DownTime: int
 	OriginalDownTime: int
 
-	def clicked(self,
-	            MousePos: Position,
-	            Time: int):
-
+	def clicked(self):
 		self.IsDown = not self.IsDown
 		if self.IsDown:
-			self.DownPos = MousePos
-			self.DownTime = self.OriginalDownTime = Time
+			self.DownPos = get_pos()
+			self.DownTime = self.OriginalDownTime = GetTicks()
+
+	def ComesUp(self):
+		self.IsDown = False
+
+	def IsMoving(self):
+		return self.IsDown and GetTicks() > self.OriginalDownTime + 20
+
+	def GetMovement(self):
+		# noinspection PyTupleAssignmentBalance
+		DownX, DownY, MouseX, MouseY = *self.DownPos, *get_pos()
+		return ((DownX - MouseX) / 200), ((DownY - MouseY) / 200)
 
 
-class Mouse(SurfaceCoordinator, DictLike):
+class Mouse(SurfaceCoordinator):
 	__slots__ = 'Scrollwheel', 'cursor', 'ScoreboardButton', 'CardHoverID', 'click', 'CardsInHand'
 
 	N   =   ((128, 40), (64, 0),    *compile(UpArrow))
@@ -64,6 +72,67 @@ class Mouse(SurfaceCoordinator, DictLike):
 		self.CardsInHand = self.player.Hand
 		self.AllSurfaces.append(self)
 
+	# NOT called by the SurfaceCoordinator class method
+	def UpdateCursor(self):
+		if (cur := self.CursorValue()) != self.cursor:
+			self.cursor = cur
+			set_cursor(*cur)
+
+	def CursorValue(self):
+		if self.client.ConnectionBroken:
+			return self.Wait
+
+		MousePos = get_pos()
+
+		if self.Scrollwheel.IsDown:
+			# noinspection PyTupleAssignmentBalance
+			DownX, DownY, MouseX, MouseY = *self.Scrollwheel.DownPos, *MousePos
+			if MouseX < (DownX - 50):
+				if MouseY < (DownY - 50):
+					return self.NW
+				if MouseY > (DownY + 50):
+					return self.SW
+				return self.W
+
+			if MouseX > (DownX + 50):
+				if MouseY < (DownY - 50):
+					return self.NE
+				if MouseY > (DownY + 50):
+					return self.SE
+				return self.E
+
+			if MouseY > (DownY + 50):
+				return self.S
+			if MouseY < (DownY - 50):
+				return self.N
+			return self.Diamond
+
+		if get_pressed(5)[0] and get_pressed(5)[2]:  # or self.ScoreboardButton.colliderect.collidepoint(*MousePos))
+			return self.Hand
+
+		Condition = all((
+			self.CardsInHand,
+			self.game.TrickInProgress,
+			self.game.WhoseTurnPlayerIndex == self.player.playerindex
+		))
+
+		if not Condition:
+			return self.default
+
+		cur = self.default
+		for card in self.CardsInHand:
+			if card.colliderect.collidepoint(*MousePos):
+				self.CardHoverID = f'{card!r}'
+				cur = self.Hand
+
+				if PlayedCards := self.game.PlayedCards:
+					SuitLed = PlayedCards[0].Suit
+					Condition = any(UnplayedCard.Suit == SuitLed for UnplayedCard in self.CardsInHand)
+
+					if card.Suit != SuitLed and Condition:
+						cur = self.IllegalMove
+		return cur
+
 	def __repr__(self):
 		return f'''Object representing current state of the mouse. Current state:
 -cursor: {self.cursor}
@@ -71,64 +140,3 @@ class Mouse(SurfaceCoordinator, DictLike):
 -click: {self.click}
 
 '''
-
-	# **kwargs included so that the method still works
-	# if it's passed an unexpected argument from the SurfaceCoordinator classmethod
-
-	def Update(self, **kwargs):
-		MousePos = pg.mouse.get_pos()
-
-		if self.Scrollwheel.IsDown:
-			# noinspection PyTupleAssignmentBalance
-			DownX, DownY, MouseX, MouseY = *self.Scrollwheel.DownPos, *MousePos
-			if MouseX < (DownX - 50):
-				if MouseY < (DownY - 50):
-					cur = 'NW'
-				elif MouseY > (DownY + 50):
-					cur = 'SW'
-				else:
-					cur = 'W'
-			elif MouseX > (DownX + 50):
-				if MouseY < (DownY - 50):
-					cur = 'NE'
-				elif MouseY > (DownY + 50):
-					cur = 'SE'
-				else:
-					cur = 'E'
-			elif MouseY > (DownY + 50):
-				cur = 'S'
-			elif MouseY < (DownY - 50):
-				cur = 'N'
-			else:
-				cur = 'Diamond'
-
-		elif (
-				(pg.mouse.get_pressed(5)[0] and pg.mouse.get_pressed(5)[2])
-				# or self.ScoreboardButton.colliderect.collidepoint(*MousePos)
-		):
-			cur = 'Hand'
-
-		elif (
-				self.CardsInHand
-				and self.game.TrickInProgress
-				and self.game.WhoseTurnPlayerIndex == self.player.playerindex
-		):
-			cur = 'default'
-			for card in self.CardsInHand:
-				if card.colliderect.collidepoint(*MousePos):
-					self.CardHoverID = f'{card!r}'
-					cur = 'Hand'
-
-					if PlayedCards := self.game.PlayedCards:
-						SuitLed = PlayedCards[0].Suit
-						Condition = any(UnplayedCard.Suit == SuitLed for UnplayedCard in self.CardsInHand)
-
-						if card.Suit != SuitLed and Condition:
-							cur = 'IllegalMove'
-
-		else:
-			cur = 'default'
-
-		if cur != self.cursor:
-			self.cursor = cur
-			pg.mouse.set_cursor(*self[cur])

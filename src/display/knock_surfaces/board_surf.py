@@ -4,23 +4,21 @@ from typing import TYPE_CHECKING
 from functools import lru_cache
 
 from src.display.abstract_surfaces.knock_surface_with_cards import KnockSurfaceWithCards
-from src.display.faders import OpacityFader
+from src.display.abstract_surfaces.surface_coordinator import SurfaceCoordinator
 from src.display.abstract_surfaces.text_rendering import TextBlitsMixin
+from src.display.faders import OpacityFader
 
 if TYPE_CHECKING:
 	from src.cards.client_card import ClientCard as Card
 
 
 @lru_cache
-def BoardDimensionsHelper(SurfWidth, SurfHeight, CardX, CardY, NormalLinesize, PlayerNo):
-	"""
-	@type SurfWidth: int
-	@type SurfHeight: int
-	@type CardX: int
-	@type CardY: int
-	@type NormalLinesize: int
-	@type PlayerNo: int
-	"""
+def BoardDimensionsHelper(SurfWidth: int,
+                          SurfHeight: int,
+                          CardX: int,
+                          CardY: int,
+                          NormalLinesize: int,
+                          PlayerNo: int):
 
 	BoardFifth = SurfHeight // 5
 
@@ -69,13 +67,10 @@ def BoardDimensionsHelper(SurfWidth, SurfHeight, CardX, CardY, NormalLinesize, P
 
 
 @lru_cache
-def BoardHeightHelper(Width, GameSurfHeight, WindowMargin, CardY):
-	"""
-	@type Width: int
-	@type GameSurfHeight: int
-	@type WindowMargin: int
-	@type CardY: int
-	"""
+def BoardHeightHelper(Width: int,
+                      GameSurfHeight: int,
+                      WindowMargin: int,
+                      CardY: int):
 
 	return min(Width, (GameSurfHeight - WindowMargin - (CardY + 40)))
 
@@ -89,6 +84,7 @@ class BoardSurface(KnockSurfaceWithCards, TextBlitsMixin):
 		self.CardFadeManager = OpacityFader('Board')
 		self.CardUpdateQueue = self.game.NewCardQueues.PlayedCards
 		super().__init__()   # calls SurfDimensions()
+		SurfaceCoordinator.BoardSurf = self
 
 	def Initialise(self):
 		self.StandardFont = self.Fonts['StandardBoardFont']

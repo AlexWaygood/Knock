@@ -4,13 +4,10 @@ from src.display.faders import OpacityFader
 
 
 @lru_cache
-def GetHandRects(GameSurfX, WindowMargin, CardX, StartNumber):
-	"""
-	@type GameSurfX: int
-	@type WindowMargin: int
-	@type CardX: int
-	@type StartNumber: int
-	"""
+def GetHandRects(GameSurfX: int,
+                 WindowMargin: int,
+                 CardX: int,
+                 StartNumber: int):
 
 	x = WindowMargin
 	DoubleWindowMargin = x * 2

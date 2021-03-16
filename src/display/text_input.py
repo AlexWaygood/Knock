@@ -3,18 +3,21 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional, TYPE_CHECKING
 
-from src.printable_characters import PrintableCharactersPlusSpace
+from pyperclip import copy, paste
+
+from src.Misc_locals import PrintableCharactersPlusSpace
 from src.display.input_context import InputContext
 from src.display.abstract_surfaces.text_rendering import TextBlitsMixin, GetCursor
 from src.display.abstract_surfaces.surface_coordinator import SurfaceCoordinator
 
+from os import environ
+environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
+from pygame.locals import K_RETURN, K_BACKSPACE, KMOD_CTRL, K_v
+from pygame.key import get_mods as pg_key_get_mods
+
 if TYPE_CHECKING:
 	from src.display.abstract_surfaces.text_rendering import FontAndLinesize
 	from pygame.event import Event
-
-from os import environ
-environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
-from pygame import K_RETURN, K_BACKSPACE
 
 
 @dataclass
@@ -35,22 +38,32 @@ class TextInput(TextBlitsMixin, SurfaceCoordinator):
 		self.font = self.Fonts['UserInputFont']
 
 	def AddInputText(self, event: Event):
+		if event.key == K_v and (pg_key_get_mods() & KMOD_CTRL):
+			t = paste()
+			try:
+				assert all(letter in PrintableCharactersPlusSpace for letter in t)
+				self.Text += t
+			except:
+				copy(t)
+			return None
+
 		if (EvUnicode := event.unicode) in PrintableCharactersPlusSpace:
 			try:
 				self.Text += EvUnicode
 			finally:
 				return None
 
-		elif not self.Text:
-			return None
+		if self.Text:
+			if (EvKey := event.key) == K_BACKSPACE:
+				if pg_key_get_mods() & KMOD_CTRL:
+					self.Text = ' '.join(self.Text.split(' ')[:-1])
+				else:
+					self.Text = self.Text[:-1]
 
-		if (EvKey := event.key) == K_BACKSPACE:
-			self.Text = self.Text[:-1]
-
-		elif EvKey == K_RETURN:
-			Text = self.Text
-			self.Text = ''
-			return Text
+			elif EvKey == K_RETURN:
+				Text = self.Text
+				self.Text = ''
+				return Text
 
 	# Need to keep **kwargs in as it might be passed ForceUpdate=True
 	def Update(self, **kwargs):
@@ -62,7 +75,7 @@ class TextInput(TextBlitsMixin, SurfaceCoordinator):
 
 		center = self.PlayStartedInputPos if PlayStarted else self.PreplayInputPos
 		L = [self.GetTextHelper(self.Text, self.font, (0, 0, 0), center=center)] if self.Text else center
-		self.GameSurf.attrs.surf.blits(GetCursor(L, self.font))
+		self.GameSurf.surf.blits(GetCursor(L, self.font))
 
 	def __hash__(self):
 		return hash(repr(self))

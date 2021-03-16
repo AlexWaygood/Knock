@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING
 from src.players.hand import Hand
 from collections import UserList
 
 if TYPE_CHECKING:
-	from src.special_knock_types import CardList, IndexOrKey
+	from src.special_knock_types import CardList, IndexOrKey, PlayerDict
 	from src.cards.server_card import ServerCard as Card
 	from src.cards.suit import Suit
 
@@ -16,7 +16,7 @@ class Gameplayers(UserList):
 	def __init__(self):
 		super().__init__()
 		self.PlayerNo = 0
-		self.Dict: Dict[str: Player] = {}
+		self.Dict: PlayerDict = {}
 
 	def NewGame(self):
 		self.data = self.data[1:] + self.data[:1]

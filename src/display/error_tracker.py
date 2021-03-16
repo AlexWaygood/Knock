@@ -5,10 +5,6 @@ from fractions import Fraction
 from functools import lru_cache
 from dataclasses import dataclass
 
-if TYPE_CHECKING:
-	from collections import deque
-	from src.special_knock_types import Blittable
-
 from src.display.abstract_surfaces.text_rendering import TextBlitsMixin
 from src.display.abstract_surfaces.surface_coordinator import SurfaceCoordinator
 
@@ -16,13 +12,14 @@ from os import environ
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 from pygame.time import get_ticks as GetTicks
 
+if TYPE_CHECKING:
+	from collections import deque
+	from src.special_knock_types import Blittable
+
 
 @lru_cache
-def ErrorPosHelper(GameX, GameY):
-	"""
-	@type GameX: int
-	@type GameY: int
-	"""
+def ErrorPosHelper(GameX: int,
+                   GameY: int):
 
 	return int(GameX * Fraction(550, 683)), int(GameY * Fraction(125, 192))
 
@@ -55,7 +52,7 @@ class Errors(TextBlitsMixin, SurfaceCoordinator):
 		while len(self.Messages) > 5:
 			self.Messages.popleft()
 
-		self.GameSurf.attrs.surf.blits(self.Messages)
+		self.GameSurf.surf.blits(self.Messages)
 
 	def ErrorMessages(self):
 		if not self.ThisPass:

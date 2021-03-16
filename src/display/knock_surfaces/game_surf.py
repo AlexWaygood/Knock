@@ -4,10 +4,12 @@ from typing import TYPE_CHECKING, Optional
 from src.display.abstract_surfaces.base_knock_surface import BaseKnockSurface
 from src.display.abstract_surfaces.surface_coordinator import SurfaceCoordinator
 from src.display.faders import ColourFader
+from src.display.colour_scheme import ColourScheme
 
 from os import environ
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
-import pygame as pg
+from pygame import locals as pg_locals
+from pygame.key import get_pressed as pg_key_get_pressed
 
 if TYPE_CHECKING:
 	from src.players.hand import Hand
@@ -21,14 +23,14 @@ class GameSurface(BaseKnockSurface, SurfaceCoordinator):
 	            'scrollwheel', 'Hand', 'surfandpos', 'topleft'
 
 	def __init__(self,
-	             FillColour: Colour,
 	             WindowWidth: int,
 	             WindowHeight: int,
 	             MinRectWidth: int,
 	             MinRectHeight: int):
 
-		self.colour = FillColour
+		self.colour: Colour = ColourScheme.OnlyColourScheme.MenuScreen
 		super().__init__()
+		SurfaceCoordinator.GameSurf = self
 		self.FillFade = ColourFader()
 		self.scrollwheel: Optional[Scrollwheel] = None
 
@@ -43,42 +45,17 @@ class GameSurface(BaseKnockSurface, SurfaceCoordinator):
 		self.MinRectHeight = MinRectHeight
 
 		self.SurfAndPos()
-
-		self.MovementLookup = {
-			pg.K_LEFT: lambda: self.XShift(20, ArrowShift=True),
-			pg.K_RIGHT: lambda: self.XShift(-20, ArrowShift=True),
-			pg.K_UP: lambda: self.YShift(20, ArrowShift=True),
-			pg.K_DOWN: lambda: self.YShift(-20, ArrowShift=True)
-		}
-
 		self.Hand: Optional[Hand] = None
-
-	def __repr__(self):
-		return f'''\
-GameSurf object, an intermediate surf all things are blitted onto before being blitted onto the screen. Current state:
--x: {self.x}.
--y: {self.y}.
--Width: {self.Width}.
--Height: {self.Height}.
--WindowWidth: {self.WindowWidth}.
--WindowHeight: {self.WindowHeight}.
--MinRectWidth: {self.MinRectWidth}.
--MinRectHeight: {self.MinRectHeight}.
--Attrs: {self.attrs}
-
-'''
 
 	def SurfAndPos(self):
 		super().SurfAndPos()
-		self.surfandpos = self.attrs.surfandpos
 		self.topleft = self.attrs.topleft
 
 	def Update(self, ForceUpdate: bool = False):
-		if self.scrollwheel.IsDown and pg.time.get_ticks() < self.scrollwheel.DownTime + 20:
-			# noinspection PyTupleAssignmentBalance
-			DownX, DownY, MouseX, MouseY = *self.scrollwheel.DownPos, *pg.mouse.get_pos()
-			self.XShift(((DownX - MouseX) / 200), TidyUpNeeded=False)
-			self.YShift((DownY - MouseY) / 200)
+		if self.scrollwheel.IsMoving():
+			XMove, YMove = self.scrollwheel.GetMovement()
+			self.XShift(XMove, TidyUpNeeded=False)
+			self.YShift(YMove)
 
 		self.fill()
 		SurfaceCoordinator.UpdateAll()
@@ -87,20 +64,24 @@ GameSurf object, an intermediate surf all things are blitted onto before being b
 	def fill(self):
 		if c := self.FillFade.GetColour():
 			self.colour = c
-		self.attrs.surf.fill(self.colour)
+		self.surf.fill(self.colour)
 
 	def TidyUp(self):
 		self.topleft = (self.x, self.y)
 		self.attrs.rect.topleft = self.topleft
-		self.surfandpos = (self.attrs.surf, self.attrs.rect)
+		self.surfandpos = (self.surf, self.attrs.rect)
 
-	def ArrowKeyMove(self, EvKey: int):
-		try:
-			self.MovementLookup[EvKey]()
-		except KeyError:
-			pass
+	def NudgeUp(self):
+		self.YShift(20, ArrowShift=True)
 
-		return self
+	def NudgeDown(self):
+		self.YShift(-20, ArrowShift=True)
+
+	def NudgeLeft(self):
+		self.XShift(-20, ArrowShift=True)
+
+	def NudgeRight(self):
+		self.XShift(20, ArrowShift=True)
 
 	def MouseMove(self, Motion: Position):
 		self.XShift(Motion[0], TidyUpNeeded=False).YShift(Motion[1])
@@ -120,9 +101,11 @@ GameSurf object, an intermediate surf all things are blitted onto before being b
 		self.x = NewCoordinate
 
 		if ArrowShift:
-			if pg.key.get_pressed()[pg.K_UP]:
+			KeysPressed = pg_key_get_pressed()
+
+			if KeysPressed[pg_locals.K_UP]:
 				self.YShift(20, TidyUpNeeded=False)
-			elif pg.key.get_pressed()[pg.K_DOWN]:
+			elif KeysPressed[pg_locals.K_DOWN]:
 				self.YShift(-20, TidyUpNeeded=False)
 
 		if TidyUpNeeded:
@@ -147,9 +130,11 @@ GameSurf object, an intermediate surf all things are blitted onto before being b
 			self.TidyUp()
 
 		if ArrowShift:
-			if pg.key.get_pressed()[pg.K_LEFT]:
+			KeysPressed = pg_key_get_pressed()
+
+			if KeysPressed[pg_locals.K_LEFT]:
 				self.XShift(20, TidyUpNeeded=False)
-			elif pg.key.get_pressed()[pg.K_RIGHT]:
+			elif KeysPressed[pg_locals.K_RIGHT]:
 				self.XShift(-20, TidyUpNeeded=False)
 
 		return self
@@ -192,3 +177,20 @@ GameSurf object, an intermediate surf all things are blitted onto before being b
 		self.SurfAndPos()
 
 		return NewWidth, NewHeight
+
+	def __repr__(self):
+		return f'''\
+GameSurf object, an intermediate surf all things are blitted onto before being blitted onto the screen. Current state:
+-x: {self.x}.
+-y: {self.y}.
+-Width: {self.Width}.
+-Height: {self.Height}.
+-WindowWidth: {self.WindowWidth}.
+-WindowHeight: {self.WindowHeight}.
+-MinRectWidth: {self.MinRectWidth}.
+-MinRectHeight: {self.MinRectHeight}.
+-Attrs: {self.attrs}
+-Surf: {self.surf}
+-Surfandpos: {self.surfandpos}
+
+'''

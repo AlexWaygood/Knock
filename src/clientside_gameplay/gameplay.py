@@ -1,18 +1,28 @@
-import random
+from __future__ import annotations
+
+from random import randint
 from traceback_with_variables import printing_exc
+from typing import TYPE_CHECKING
 
 from os import environ
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 from pygame.time import delay
 
+if TYPE_CHECKING:
+	from src.display.display_manager import DisplayManager
+	from src.display.input_context import InputContext
+	from src.display.typewriter import Typewriter
+	from src.players.players_client import ClientPlayer as Player, ClientGameplayers as Gameplayers
+	from src.game.client_game import ClientGame as Game
+	from src.network.client_class import Client
 
-def AttributeWait(Attribute, context, game, GameReset=False):
-	"""
-	@type Attribute: str
-	@type context: src.Display.InputContext.InputContext
-	@type game: src.Game.ClientGame.ClientGame
-	@type GameReset: bool
-	"""
+
+def AttributeWait(
+		Attribute: str,
+		context: InputContext,
+		game: Game,
+		GameReset: bool = False
+):
 
 	Args = {
 		'GameUpdatesNeeded': True,
@@ -31,34 +41,31 @@ def AttributeWait(Attribute, context, game, GameReset=False):
 		game.AttributeWait(Attribute)
 
 
-def Play(game, context, typewriter, player, client, BiddingSystem, displayManager):
-	"""
-	@type game: src.Game.ClientGame.ClientGame
-	@type context: src.Display.InputContext.InputContext
-	@type typewriter: src.Display.Typewriter.Typewriter
-	@type player: src.Players.ClientPlayers.ClientPlayer
-	@type client: src.Network.Client.Client
-	@type BiddingSystem: str
-	@type displayManager: src.Display.DisplayManager.DisplayManager
-	"""
+def Play(
+		game: Game,
+		context: InputContext,
+		typewriter: Typewriter,
+		player: Player,
+		client: Client,
+		BiddingSystem: str,
+		displayManager: DisplayManager
+):
 
 	with printing_exc():
 		PlayTournament(game, context, typewriter, player, client, BiddingSystem, displayManager)
 
 
-def PlayTournament(game, context, typewriter, player, client, BiddingSystem, displayManager):
-	"""
-	@type game: src.Game.ClientGame.ClientGame
-	@type context: src.Display.InputContext.InputContext
-	@type typewriter: src.Display.Typewriter.Typewriter
-	@type player: src.Players.ClientPlayers.ClientPlayer
-	@type client: src.Network.Client.Client
-	@type BiddingSystem: str
-	@type displayManager: src.Display.DisplayManager.DisplayManager
-	"""
+def PlayTournament(
+		game: Game,
+		context: InputContext,
+		typewriter: Typewriter,
+		player: Player,
+		client: Client,
+		BiddingSystem: str,
+		displayManager: DisplayManager
+):
 
 	# Menu sequence
-
 	with context(TypingNeeded=True, Message='Please enter your name', font='Massive'):
 		while isinstance(player.name, int):
 			delay(100)
@@ -81,17 +88,16 @@ def PlayTournament(game, context, typewriter, player, client, BiddingSystem, dis
 		game.GamesPlayed += 1
 
 
-def PlayGame(game, context, typewriter, GamesPlayed, player, client, BiddingSystem, dM):
-	"""
-	@type game: src.Game.ClientGame.ClientGame
-	@type context: src.Display.InputContext.InputContext
-	@type typewriter: src.Display.Typewriter.Typewriter
-	@type GamesPlayed: int
-	@type player: src.Players.ClientPlayers.ClientPlayer
-	@type client: src.Network.Client.Client
-	@type BiddingSystem: str
-	@type dM: src.Display.DisplayManager.DisplayManager
-	"""
+def PlayGame(
+		game: Game,
+		context: InputContext,
+		typewriter: Typewriter,
+		GamesPlayed: int,
+		player: Player,
+		client: Client,
+		BiddingSystem: str,
+		dM: DisplayManager
+):
 
 	GameInitialisation(game, context, typewriter, player, GamesPlayed, client, dM)
 	AttributeWait('StartNumberSet', context, game)
@@ -114,16 +120,15 @@ def PlayGame(game, context, typewriter, GamesPlayed, player, client, BiddingSyst
 	EndGame(game, context, typewriter, client, GamesPlayed, dM)
 
 
-def GameInitialisation(game, context, typewriter, player, GamesPlayed, client, displayManager):
-	"""
-	@type game: src.Game.ClientGame.ClientGame
-	@type context: src.Display.InputContext.InputContext
-	@type typewriter: src.Display.Typewriter.Typewriter
-	@type player: src.Players.ClientPlayers.ClientPlayer
-	@type GamesPlayed: int
-	@type client: src.Network.Client.Client
-	@type displayManager: src.Display.DisplayManager.DisplayManager
-	"""
+def GameInitialisation(
+		game: Game,
+		context: InputContext,
+		typewriter: Typewriter,
+		player: Player,
+		GamesPlayed: int,
+		client: Client,
+		displayManager: DisplayManager
+):
 
 	if GamesPlayed:
 		Message = 'NEW GAME STARTING:'
@@ -173,22 +178,19 @@ def GameInitialisation(game, context, typewriter, player, GamesPlayed, client, d
 	game.StartPlay = True
 
 
-def PlayRound(game, context, typewriter, player, RoundNumber, cardno,
-              RoundLeader, GamesPlayed, client, dM, BiddingSystem):
-
-	"""
-	@type game: src.Game.ClientGame.ClientGame
-	@type context: src.Display.InputContext.InputContext
-	@type typewriter: src.Display.Typewriter.Typewriter
-	@type GamesPlayed: int
-	@type player: src.Players.ClientPlayers.ClientPlayer
-	@type RoundNumber: int
-	@type cardno: int
-	@type RoundLeader: src.Players.ClientPlayers.ClientPlayer
-	@type client: src.Network.Client.Client
-	@type BiddingSystem: str
-	@type dM: src.Display.DisplayManager.DisplayManager
-	"""
+def PlayRound(
+		game: Game,
+		context: InputContext,
+		typewriter: Typewriter,
+		player: Player,
+		RoundNumber: int,
+		cardno: int,
+		RoundLeader: Player,
+		GamesPlayed: int,
+		client: Client,
+		dM: DisplayManager,
+		BiddingSystem: str
+):
 
 	game.StartRound(cardno, RoundLeader.playerindex, RoundNumber)
 
@@ -248,15 +250,14 @@ def PlayRound(game, context, typewriter, player, RoundNumber, cardno,
 	client.SendQueue.put('@A')
 
 
-def ClassicBidding(typewriter, gameplayers, player, context, RoundNumber, GamesPlayed):
-	"""
-	@type gameplayers: src.Players.ClientPlayers.ClientGameplayers
-	@type context: src.Display.InputContext.InputContext
-	@type typewriter: src.Display.Typewriter.Typewriter
-	@type GamesPlayed: int
-	@type player: src.Players.ClientPlayers.ClientPlayer
-	@type RoundNumber: int
-	"""
+def ClassicBidding(
+		typewriter: Typewriter,
+		gameplayers: Gameplayers,
+		player: Player,
+		context: InputContext,
+		RoundNumber: int,
+		GamesPlayed: int
+):
 
 	if RoundNumber == 1 and not GamesPlayed:
 		typewriter.Type('Cards for this round have been dealt; each player must decide what they will bid.')
@@ -283,17 +284,16 @@ def ClassicBidding(typewriter, gameplayers, player, context, RoundNumber, GamesP
 			context.Text = gameplayers.BidWaitingText(i)
 
 
-def RandomBidding(game, player, context, typewriter, RoundNumber, cardnumber, GamesPlayed, client):
-	"""
-	@type game: src.Game.ClientGame.ClientGame
-	@type context: src.Display.InputContext.InputContext
-	@type typewriter: src.Display.Typewriter.Typewriter
-	@type GamesPlayed: int
-	@type player: src.Players.ClientPlayers.ClientPlayer
-	@type RoundNumber: int
-	@type client: src.Network.Client.Client
-	@type cardnumber: int
-	"""
+def RandomBidding(
+		game: Game,
+		player: Player,
+		context: InputContext,
+		typewriter: Typewriter,
+		RoundNumber: int,
+		cardnumber: int,
+		GamesPlayed: int,
+		client: Client
+):
 
 	if RoundNumber == 1 and not GamesPlayed:
 		typewriter.Type('Cards for this round have been dealt; each player must now bid.')
@@ -303,7 +303,7 @@ def RandomBidding(game, player, context, typewriter, RoundNumber, cardnumber, Ga
 			"will be randomly generated rather than decided"
 		)
 
-	Bid = random.randint(0, cardnumber)
+	Bid = randint(0, cardnumber)
 	typewriter.Type(f'Your randomly generated bid for this round is {Bid}!')
 
 	with game:
@@ -317,19 +317,17 @@ def RandomBidding(game, player, context, typewriter, RoundNumber, cardnumber, Ga
 			context.Text = game.gameplayers.BidWaitingText(player.playerindex)
 
 
-def PlayTrick(game, context, typewriter, player, FirstPlayerIndex,
-              TrickNumber, CardNumberThisRound, client, displayManager):
-	"""
-	@type game: src.Game.ClientGame.ClientGame
-	@type context: src.Display.InputContext.InputContext
-	@type typewriter: src.Display.Typewriter.Typewriter
-	@type TrickNumber: int
-	@type player: src.Players.ClientPlayers.ClientPlayer
-	@type CardNumberThisRound: int
-	@type FirstPlayerIndex: int
-	@type client: src.Network.Client.Client
-	@type displayManager: src.Display.DisplayManager.DisplayManager
-	"""
+def PlayTrick(
+		game: Game,
+		context: InputContext,
+		typewriter: Typewriter,
+		player: Player,
+		FirstPlayerIndex: int,
+		TrickNumber: int,
+		CardNumberThisRound: int,
+		client: Client,
+		displayManager: DisplayManager
+):
 
 	PlayerOrder, PosInTrick = game.StartTrick(TrickNumber, FirstPlayerIndex, player)
 	client.SendQueue.put('@A')
@@ -360,15 +358,14 @@ def PlayTrick(game, context, typewriter, player, FirstPlayerIndex,
 	return Winner.playerindex
 
 
-def EndGame(game, context, typewriter, client,  GamesPlayed, displayManager):
-	"""
-	@type game: src.Game.ClientGame.ClientGame
-	@type context: src.Display.InputContext.InputContext
-	@type typewriter: src.Display.Typewriter.Typewriter
-	@type GamesPlayed: int
-	@type client: src.Network.Client.Client
-	@type displayManager: src.Display.DisplayManager.DisplayManager
-	"""
+def EndGame(
+		game: Game,
+		context: InputContext,
+		typewriter: Typewriter,
+		client: Client,
+		GamesPlayed: int,
+		displayManager: DisplayManager
+):
 
 	displayManager.HandSurf.Deactivate()
 

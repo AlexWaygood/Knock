@@ -1,88 +1,75 @@
 from __future__ import annotations
 
-import matplotlib.pyplot as plt
-import pandas as pd
-from itertools import product
-from PyQt5 import QtGui
+from matplotlib.pyplot import (
+	get_current_fig_manager,
+	subplots as plt_subplots,
+	rc as plt_rc,
+	show as plt_show
+)
+
 from typing import TYPE_CHECKING
+from itertools import product
+from PyQt5.QtGui import QIcon
+
+from src.Misc_locals import GetDate
+from src.display.abstract_surfaces.surface_coordinator import SurfaceCoordinator
 
 from os import path, environ
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
-from pygame import SYSTEM_CURSOR_WAIT
+from pygame.locals import SYSTEM_CURSOR_WAIT
 from pygame.mouse import set_cursor
 from pygame.time import get_ticks as GetTicks
 
 if TYPE_CHECKING:
-	from src.game.client_game import ClientGame as Game
+	from src.display.input_context import InputContext
 
 
-class InteractiveScoreboard:
-	__slots__ = 'LastClose', 'PlayerNoTimes4', 'ColumnNo', 'names', 'columns', 'StartNo', 'scoreboard', \
-	            'DisplayScoreboard', 'game'
+# noinspection PyAttributeOutsideInit
+class InteractiveScoreboard(SurfaceCoordinator):
+	__slots__ = 'LastClose', 'context', 'Data'
 
-	def __init__(self, game: Game):
-		self.game = game
+	IconFilePath = path.join('..', '..', 'Images', 'Cards', 'PyinstallerIcon.ico')
+
+	def __init__(self, context: InputContext):
 		self.LastClose = 0
-		self.PlayerNoTimes4 = self.game.PlayerNumber * 4
-		self.ColumnNo = self.PlayerNoTimes4 + 2
-		self.names = [f'{player}' for player in self.game.gameplayers]
-		self.columns = ['', ''] + sum((['', name, '', ''] for name in self.names), start=[])
-		self.StartNo = self.game.StartCardNumber
+		self.context = context
+		self.Data = self.game.Scoreboard
 
-		self.scoreboard = pd.DataFrame(
-			[['Round', 'Cards'] + sum((['Bid', 'Won', 'Points', 'Score'] for _ in self.names), start=[])],
-			columns=self.columns
-		)
-
-		self.DisplayScoreboard = self.FillBlanks(0)
-
-	def UpdateScores(self):
-		with self.game:
-			RoundNumber, CardNumber, players = self.game.GetAttributes((
-				'RoundNumber', 'CardNumberThisRound', 'gameplayers'
-			))
-
-		NewRow = pd.DataFrame(
-			[[RoundNumber, CardNumber] + sum((player.Scoreboard for player in players), start=[])],
-			columns=self.columns
-		)
-
-		self.scoreboard = pd.concat(self.scoreboard, NewRow, ignore_index=True)
-		self.DisplayScoreboard = self.FillBlanks(RoundNumber)
-
-	def FillBlanks(self, RoundNumber: int):
-		Blanks = pd.DataFrame([
-			([x, y] + [None for _ in range(self.PlayerNoTimes4)])
-
-			for x, y in zip(
-				range((RoundNumber + 1), (self.StartNo + 1)),
-				range((self.StartNo - RoundNumber), 0, -1)
-			)
-		])
-
-		return pd.concat((self.scoreboard, Blanks), ignore_index=True)
-
-	def show(self):
-		if GetTicks() < self.LastClose + 500:
+	def save(self):
+		if self.context.FireworksDisplay or not self.Data.Initialised:
 			return None
 
 		set_cursor(SYSTEM_CURSOR_WAIT)
-		fig, ax = plt.subplots()
+		self.Data.scoreboard.to_csv(f'Knock_scoreboard_{GetDate()}.csv')
+
+	def show(self):
+		Condition = (
+				self.client.ConnectionBroken
+				or self.context.FireworksDisplay
+				or (not self.Data.Initialised)
+				or (GetTicks() < self.LastClose + 500)
+		)
+
+		if Condition:
+			return None
+
+		set_cursor(SYSTEM_CURSOR_WAIT)
+		fig, ax = plt_subplots()
 
 		# hide axes
 		ax.axis('off')
 		ax.axis('tight')
-		plt.rc('font', family='Times New Roman')
+		plt_rc('font', family='Times New Roman')
 
 		fig.canvas.set_window_title('Knock scoreboard')
 		fig.patch.set_facecolor('xkcd:scarlet')
 
 		table = ax.table(
-			cellText=self.DisplayScoreboard.values,
-			colLabels=self.DisplayScoreboard.columns,
+			cellText=self.Data.DisplayScoreboard.values,
+			colLabels=self.Data.DisplayScoreboard.columns,
 			loc='center',
 			cellLoc='center',
-			colColours=['none' for _ in self.columns]
+			colColours=['none' for _ in self.Data.columns]
 		)
 
 		table.auto_set_font_size(False)
@@ -90,26 +77,26 @@ class InteractiveScoreboard:
 		for i, string in zip(range(2), ('B', 'BR')):
 			table[0, i].visible_edges = string
 
-		for (i, name), (j, string) in product(enumerate(self.names), zip(range(2, 6), ('TBL', 'TB', 'TB', 'TBR'))):
+		for (i, name), (j, string) in product(enumerate(self.Data.names), zip(range(2, 6), ('TBL', 'TB', 'TB', 'TBR'))):
 			table[0, ((i * 4) + j)].visible_edges = string
 
-		for i in range(self.ColumnNo):
+		for i in range(self.Data.ColumnNo):
 			table[1, i].set_facecolor(f'xkcd:burnt siena')
 
 			for j in range(2):
 				table[j, i].set_text_props(fontweight='bold')
 
-		for i in range(2, (self.DisplayScoreboard.index + 1)):
+		for i in range(2, (self.Data.DisplayScoreboard.index + 1)):
 			for j in range(2):
 				table[i, j].set_text_props(fontweight='bold')
 				table[i, j].set_facecolor(f'xkcd:{"dark beige" if i % 2 else "pale brown"}')
 
-			for j in range(2, self.ColumnNo):
+			for j in range(2, self.Data.ColumnNo):
 				if (j - 1) % 4:
 					colour = "very light green" if i % 2 else "very light blue"
 				else:
 					try:
-						Max = max(int(table[i, x].get_text().get_text()) for x in range(5, self.ColumnNo, 4))
+						Max = max(int(table[i, x].get_text().get_text()) for x in range(5, self.Data.ColumnNo, 4))
 						assert int(table[i, j].get_text().get_text()) == Max
 						colour = "periwinkle"
 					except (ValueError, AssertionError):
@@ -121,9 +108,9 @@ class InteractiveScoreboard:
 
 		fig.tight_layout()
 
-		manager = plt.get_current_fig_manager()
+		manager = get_current_fig_manager()
 		manager.window.showMaximized()
-		manager.window.setWindowIcon(QtGui.QIcon(path.join('..', '..', 'Images', 'Cards', 'PyinstallerIcon.ico')))
+		manager.window.setWindowIcon(QIcon(self.IconFilePath))
 
-		plt.show()
+		plt_show()
 		self.LastClose = GetTicks()

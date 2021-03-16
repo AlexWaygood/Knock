@@ -55,11 +55,8 @@ def _(TextAndPos: list, font: FontAndLinesize):
 
 
 @lru_cache
-def FontMachine(GameX, GameY):
-	"""
-	@type GameX: int
-	@type GameY: int
-	"""
+def FontMachine(GameX: int,
+                GameY: int):
 
 	x = 10
 	NormalFont = SysFont(Fonts.DefaultFont, x, bold=True)

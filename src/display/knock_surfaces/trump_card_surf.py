@@ -5,13 +5,10 @@ from src.display.faders import OpacityFader
 
 
 @lru_cache
-def TrumpCardDimensionsHelper(GameX, CardX, CardY, NormalLinesize):
-	"""
-	@type GameX: int
-	@type CardX int
-	@type CardY: int
-	@type NormalLinesize: int
-	"""
+def TrumpCardDimensionsHelper(GameX: int,
+                              CardX: int,
+                              CardY: int,
+                              NormalLinesize: int):
 
 	return (GameX - (CardX + 50)), (CardX + 2), (CardY + int(NormalLinesize * 2.5) + 10), (1, int(NormalLinesize * 2.5))
 

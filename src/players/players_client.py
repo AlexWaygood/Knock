@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import Iterable, TYPE_CHECKING, Optional
-from src.players.players_abstract import Gameplayers, Player
+from typing import Iterable, TYPE_CHECKING
 from itertools import groupby
-from src.display.interactive_scoreboard import InteractiveScoreboard
+
+from src.players.players_abstract import Gameplayers, Player
 
 if TYPE_CHECKING:
 	from src.special_knock_types import NumberInput
@@ -11,31 +11,13 @@ if TYPE_CHECKING:
 
 
 class ClientGameplayers(Gameplayers):
-	__slots__ = 'Scoreboard'
 
-	def __init__(self):
-		super().__init__()
-		self.Scoreboard: Optional[InteractiveScoreboard] = None
-
-	def __repr__(self):
-		L1 = f'''Object representing all players in the game, and information about them.'''
-		L2 = '\n---'.join(
-			f'{player!r}. Playerindex: {player.playerindex}. Hand {player.Hand}. '
-			f'Bid: {player.Bid}. ActionComplete: {player.ActionComplete}. '
-			f'PosInTrick: {player.PosInTrick}. Points: {player.Points}. Tricks: {player.Tricks}.'
-			f'PointsThisRound: {player.PointsThisRound}. PointsLastRound: {player.PointsLastRound}.'
-			f'GamesWon: {player.GamesWon}. RoundLeader: {player.RoundLeader}. '
-			for player in self.data
-		)
-
-		return '\n---'.join((L1, L2))
-
-	def InitialiseScoreboard(self, game: Game):
-		self.Scoreboard = InteractiveScoreboard(game)
+	# noinspection PyAttributeOutsideInit
+	def AddVars(self, game: Game):
+		self.PlayerNo = game.PlayerNumber
 
 	def RoundCleanUp(self):
 		self.data = [player.EndOfRound() for player in self.data]
-		self.Scoreboard.UpdateScores()
 
 	def HighestScoreFirst(self):
 		return sorted(self.data, key=ClientPlayer.GetPoints, reverse=True)
@@ -144,6 +126,19 @@ class ClientGameplayers(Gameplayers):
 				JoinedList = ", ".join(leader.name for leader in Leaders[:-1])
 				Last = Leaders[-1]
 				yield f'{JoinedList} and {Last} lead so far in this tournament, {GamesWonText} each!'
+
+	def __repr__(self):
+		L1 = f'''Object representing all players in the game, and information about them.'''
+		L2 = '\n---'.join(
+			f'{player!r}. Playerindex: {player.playerindex}. Hand {player.Hand}. '
+			f'Bid: {player.Bid}. ActionComplete: {player.ActionComplete}. '
+			f'PosInTrick: {player.PosInTrick}. Points: {player.Points}. Tricks: {player.Tricks}.'
+			f'PointsThisRound: {player.PointsThisRound}. PointsLastRound: {player.PointsLastRound}.'
+			f'GamesWon: {player.GamesWon}. RoundLeader: {player.RoundLeader}. '
+			for player in self.data
+		)
+
+		return '\n---'.join((L1, L2))
 
 
 class ClientPlayer(Player):

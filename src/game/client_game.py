@@ -1,23 +1,30 @@
 from __future__ import annotations
 
+from logging import getLogger
 from itertools import chain
 from queue import Queue
 from traceback_with_variables import printing_exc
 from time import time
-from typing import List, TYPE_CHECKING, Dict
+from typing import List, TYPE_CHECKING
+from os import environ
 
 from src.data_structures import DictLike
 from src.game.abstract_game import Game
 from src.players.players_client import ClientPlayer as Player
+from src.players.client_scoreboard_data import Scoreboard
 from src.cards.client_card import AllCardValues, ClientCard as Card
 from src.network.server_updaters import DoubleTrigger
 
+environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 from pygame.time import delay
 
 if TYPE_CHECKING:
-	from src.special_knock_types import NumberInput
+	from src.special_knock_types import NumberInput, UpdaterDict
 	from src.display.input_context import InputContext
 	from src.network.client_class import Client
+
+
+log = getLogger(__name__)
 
 
 class NewCardQueues:
@@ -31,13 +38,31 @@ class NewCardQueues:
 
 class ClientGame(Game, DictLike):
 	__slots__ = 'GamesPlayed', 'CardNumberThisRound', 'RoundNumber', 'TrickInProgress', 'TrickNumber', \
-	            'WhoseTurnPlayerIndex', 'PlayerOrder', 'RoundLeaderIndex', 'MaxCardNumber', 'NewCardQueues'
+	            'WhoseTurnPlayerIndex', 'PlayerOrder', 'RoundLeaderIndex', 'MaxCardNumber', 'NewCardQueues', \
+	            'FrozenState', 'Scoreboard'
 
-	def __init__(self, PlayerNumber: int):
-		super().__init__(PlayerNumber)
+	OnlyGame = None
+	PlayerNumber = 0
+
+	# This is only going to be called once, so we don't need to muck around with singleton patterns etc.
+	def __new__(cls,
+	            PlayerNumber: int,
+	            FrozenState: bool):
+
+		cls.OnlyGame = super(ClientGame, cls).__new__(cls)
+		cls.PlayerNumber = PlayerNumber
+		return cls.OnlyGame
+
+	def __init__(self,
+	             PlayerNumber: int,
+	             FrozenState: bool):
+
+		super().__init__()
+		self.FrozenState = FrozenState
 		self.Triggers = DoubleTrigger()
 		self.gameplayers = Player.AllPlayers
-		self.gameplayers.PlayerNo = PlayerNumber
+		self.gameplayers.AddVars(self)
+		self.Scoreboard = Scoreboard(self.gameplayers)
 		self.GamesPlayed = 0
 		self.CardNumberThisRound = -1
 		self.RoundNumber = 1
@@ -59,7 +84,7 @@ class ClientGame(Game, DictLike):
 	@StartCardNumber.setter
 	def StartCardNumber(self, number: NumberInput):
 		self._StartCardNumber = int(number)
-		self.gameplayers.InitialiseScoreboard(self)
+		self.Scoreboard.SetUp(self._StartCardNumber)
 
 	def AttributeWait(self, attr: str):
 		with self.Triggers as s:
@@ -115,6 +140,7 @@ class ClientGame(Game, DictLike):
 		self.WhoseTurnPlayerIndex = -1
 		self.TrickInProgress = False
 		self.gameplayers.RoundCleanUp(self.CardNumberThisRound, self.RoundNumber)
+		self.Scoreboard.UpdateScores(self.RoundNumber, self.CardNumberThisRound)
 		self.RoundCleanUp()
 
 		if self.RoundNumber != self.StartCardNumber:
@@ -140,18 +166,25 @@ class ClientGame(Game, DictLike):
 
 				if not client.ReceiveQueue.empty():
 					gameInfo = client.ReceiveQueue.get()
+
+					if not self.FrozenState:
+						log.debug(f'Obtained new message from Client, {gameInfo}.')
+
 					if gameInfo != 'pong':
 						with self.lock:
 							self.UpdateFromServer(gameInfo, player.playerindex)
 
+						if not self.FrozenState:
+							log.debug('Client-side game successfully updated.')
+
 				if client.SendQueue.empty():
 					if context.GameUpdatesNeeded:
-						client.ClientSend('@G')
+						client.send('@G')
 					elif client.LastUpdate < time() - 5:
-						client.ClientSend('ping')
+						client.send('ping')
 					continue
 
-				client.ClientSend(client.SendQueue.get())
+				client.send(client.SendQueue.get())
 
 	def __repr__(self):
 		String = super().__repr__()
@@ -230,6 +263,6 @@ def CardsFromString(L: str):
 	return [Card(*c) for c in cards]
 
 
-def UpdateDictFromString(D: Dict[str: int], String: str):
+def UpdateDictFromString(D: UpdaterDict, String: str):
 	for key, value in zip(D.keys(), String.split('--')):
 		D[key] = int(value)
