@@ -5,14 +5,14 @@ from logging import getLogger
 from os import environ
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 
-from pygame import quit as pg_quit
-from pygame import locals as pg_locals
+from pygame import (quit as pg_quit,
+                    locals as pg_locals)
 
-from pygame.display import get_init as pg_display_get_init
-from pygame.display import get_surface as pg_display_get_surface
+from pygame.display import (get_init as pg_display_get_init,
+                            get_surface as pg_display_get_surface)
 
-from pygame.mouse import get_pressed as pg_mouse_get_pressed
 from pygame.time import delay, get_ticks as GetTicks
+from pygame.mouse import get_pressed as pg_mouse_get_pressed
 from pygame.event import get as pg_event_get
 from pygame.key import get_mods as pg_key_get_mods
 

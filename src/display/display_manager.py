@@ -32,7 +32,10 @@ from src.data_structures import DictLike
 
 from os import environ, path
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
-from pygame import locals as pg_locals, display as pg_display
+
+from pygame import (locals as pg_locals,
+                    display as pg_display)
+
 from pygame.image import load as pg_image_load
 from pygame.time import delay, get_ticks as GetTicks
 from pygame.mouse import set_cursor

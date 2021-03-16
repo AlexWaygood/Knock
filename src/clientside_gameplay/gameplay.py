@@ -9,10 +9,12 @@ environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 from pygame.time import delay
 
 if TYPE_CHECKING:
+	from src.players.players_client import (ClientPlayer as Player,
+	                                        ClientGameplayers as Gameplayers)
+
 	from src.display.display_manager import DisplayManager
 	from src.display.input_context import InputContext
 	from src.display.typewriter import Typewriter
-	from src.players.players_client import ClientPlayer as Player, ClientGameplayers as Gameplayers
 	from src.game.client_game import ClientGame as Game
 	from src.network.client_class import Client
 
