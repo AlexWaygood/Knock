@@ -3,9 +3,9 @@ from src.display.abstract_surfaces.text_rendering import TextBlitsMixin
 from src.display.abstract_surfaces.surface_coordinator import SurfaceCoordinator
 
 
-@dataclass
+@dataclass(eq=False, unsafe_hash=True)
 class InputContext(TextBlitsMixin, SurfaceCoordinator):
-	# Repr filled in automatically because it's a dataclass!
+	# Repr & hash filled in automatically because it's a dataclass!
 
 	TrickClickNeeded: bool = False
 	ClickToStart: bool = False
@@ -46,6 +46,3 @@ class InputContext(TextBlitsMixin, SurfaceCoordinator):
 	def __exit__(self, exc_type, exc_val, exc_tb):
 		self.__init__()
 		return self
-
-	def __hash__(self):
-		return hash(repr(self))

@@ -24,8 +24,10 @@ def ErrorPosHelper(GameX: int,
 	return int(GameX * Fraction(550, 683)), int(GameY * Fraction(125, 192))
 
 
-@dataclass
+@dataclass(eq=False, unsafe_hash=True)
 class Errors(TextBlitsMixin, SurfaceCoordinator):
+	# Repr & hash automatically defined as it's a dataclass!
+
 	__slots__ = 'Messages', 'ThisPass', 'StartTime', 'Pos', 'Title', 'TitleFont', 'MessageFont'
 
 	Messages: deque[Blittable]

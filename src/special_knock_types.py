@@ -5,11 +5,13 @@ from typing import List, Callable, Tuple, TYPE_CHECKING, Union, Optional, Sequen
 
 if TYPE_CHECKING:
 	from pygame import Surface, Rect
+	from socket import socket
 	from src.cards.server_card import ServerCard
 	from src.cards.suit import Suit
 	from src.network.server_class import Server
 	from src.display.colour_scheme import ColourScheme
 	from src.players.players_abstract import Player
+	from src.players.players_server import ServerPlayer
 	from src.display.abstract_surfaces.knock_surface_with_cards import CoverRect
 
 	Blittable = Optional[Tuple[Surface, Rect]]
@@ -32,6 +34,7 @@ if TYPE_CHECKING:
 
 	NetworkFunction = Callable[[Server, *List[Any]], None]
 	ConnectionAddress = Tuple[str, int]
+	ConnectionDict = Dict[socket, ServerPlayer]
 
 	RankType = Union[int, str]
 	IndexOrKey = Union[int, str]

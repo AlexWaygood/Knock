@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from random import randint
 from functools import lru_cache
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 from queue import Queue
 from collections import deque
 from logging import getLogger
@@ -91,7 +91,6 @@ class DisplayManager(DictLike):
 			player: Player,
 			FrozenState: bool
 	):
-		log.debug('Starting DisplayManager __init__()')
 
 		try:
 			# Try to calculate the size of the client's computer screen
@@ -117,7 +116,7 @@ class DisplayManager(DictLike):
 		ColourFader.AddColourScheme()
 
 		self.BoardSurf = BoardSurface()  # Adds itself as a class variable to the SurfaceCoordinator in __init__
-		self.ScoreboardSurf: Optional[Scoreboard] = None  # Default placeholder value
+		self.ScoreboardSurf = Scoreboard()
 		self.HandSurf = HandSurface()
 		self.TrumpCardSurf = TrumpCardSurface()
 		SurfaceCoordinator.NewWindowSize2()
@@ -143,11 +142,10 @@ class DisplayManager(DictLike):
 		SurfaceCoordinator.AddSurfs()
 		self.GameSurf.GetSurf()
 		self.WindowCaption = self.DefaultWindowCaption
-
-		log.debug('Finished DisplayManager __init__().')
+		pg_display.set_caption(self.WindowCaption)
 
 	def InitialiseScoreboard(self):
-		self.ScoreboardSurf = Scoreboard()
+		self.ScoreboardSurf.RealInit()
 
 	def Blits(self, L: BlitsList):
 		self.GameSurf.surf.blits(L)

@@ -10,25 +10,19 @@ from src.display.input_context import InputContext
 from src.display.abstract_surfaces.text_rendering import TextBlitsMixin, GetCursor
 from src.display.abstract_surfaces.surface_coordinator import SurfaceCoordinator
 
-from os import environ
-environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
-from pygame.locals import K_RETURN, K_BACKSPACE, KMOD_CTRL, K_v
-from pygame.key import get_mods as pg_key_get_mods
-
 if TYPE_CHECKING:
 	from src.display.abstract_surfaces.text_rendering import FontAndLinesize
-	from pygame.event import Event
 
 
-@dataclass
+@dataclass(eq=False, unsafe_hash=True)
 class TextInput(TextBlitsMixin, SurfaceCoordinator):
-	# Repr automatically defined as it's a dataclass!
+	# Repr & hash automatically defined as it's a dataclass!
 
-	__slots__ = 'Text', 'font', 'InputContext'
+	__slots__ = 'Text', 'font', 'context'
 
 	Text: str
 	font: Optional[FontAndLinesize]
-	InputContext: InputContext
+	context: InputContext
 
 	def __post_init__(self):
 		self.AllSurfaces.append(self)
@@ -37,45 +31,42 @@ class TextInput(TextBlitsMixin, SurfaceCoordinator):
 	def Initialise(self):
 		self.font = self.Fonts['UserInputFont']
 
-	def AddInputText(self, event: Event):
-		if event.key == K_v and (pg_key_get_mods() & KMOD_CTRL):
+	def PasteEvent(self):
+		if self.context.TypingNeeded:
 			t = paste()
 			try:
 				assert all(letter in PrintableCharactersPlusSpace for letter in t)
 				self.Text += t
 			except:
 				copy(t)
-			return None
 
-		if (EvUnicode := event.unicode) in PrintableCharactersPlusSpace:
+	def ControlBackspaceEvent(self):
+		if self.Text and self.context.TypingNeeded:
+			self.Text = ' '.join(self.Text.split(' ')[:-1])
+
+	def NormalBackspaceEvent(self):
+		if self.Text and self.context.TypingNeeded:
+			self.Text = self.Text[:-1]
+
+	def EnterEvent(self):
+		if self.Text and self.context.TypingNeeded:
+			Text = self.Text
+			self.Text = ''
+			return Text
+
+	def AddTextEvent(self, EventUnicode: str):
+		if self.context.TypingNeeded and EventUnicode in PrintableCharactersPlusSpace:
 			try:
-				self.Text += EvUnicode
-			finally:
-				return None
-
-		if self.Text:
-			if (EvKey := event.key) == K_BACKSPACE:
-				if pg_key_get_mods() & KMOD_CTRL:
-					self.Text = ' '.join(self.Text.split(' ')[:-1])
-				else:
-					self.Text = self.Text[:-1]
-
-			elif EvKey == K_RETURN:
-				Text = self.Text
-				self.Text = ''
-				return Text
+				self.Text += EventUnicode
+			except:
+				pass
 
 	# Need to keep **kwargs in as it might be passed ForceUpdate=True
 	def Update(self, **kwargs):
-		if not self.InputContext.TypingNeeded:
-			return None
+		if self.context.TypingNeeded:
+			with self.game as g:
+				PlayStarted = g.StartPlay
 
-		with self.game as g:
-			PlayStarted = g.StartPlay
-
-		center = self.PlayStartedInputPos if PlayStarted else self.PreplayInputPos
-		L = [self.GetTextHelper(self.Text, self.font, (0, 0, 0), center=center)] if self.Text else center
-		self.GameSurf.surf.blits(GetCursor(L, self.font))
-
-	def __hash__(self):
-		return hash(repr(self))
+			center = self.PlayStartedInputPos if PlayStarted else self.PreplayInputPos
+			L = [self.GetTextHelper(self.Text, self.font, (0, 0, 0), center=center)] if self.Text else center
+			self.GameSurf.surf.blits(GetCursor(L, self.font))

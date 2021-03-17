@@ -45,3 +45,6 @@ class TrumpCardSurface(KnockSurfaceWithCards, TextBlitsMixin):
 		L = super().GetSurfBlits()
 		font, LineSize = self.font, self.font.linesize
 		return L + [self.GetText('TrumpCard', font, center=((self.attrs.centre[0] / 2), (LineSize / 2)))]
+
+	def __hash__(self):
+		return hash(repr(self))

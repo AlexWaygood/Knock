@@ -22,6 +22,7 @@ class KnockSurface(BaseKnockSurface, SurfaceCoordinator):
 	def Initialise(self):
 		self.SurfDimensions()
 		self.SurfAndPos()
+		return self
 
 	def Update(self, ForceUpdate: bool = False):
 		if not self.OnScreen:

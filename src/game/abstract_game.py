@@ -94,3 +94,21 @@ class Game:
 -TrumpCard = {self.TrumpCard!r}
 -trumpsuit = {self.trumpsuit!r}
 -self.PlayedCards = {[repr(card) for card in self.PlayedCards]}'''
+
+
+def EventsDict():
+	return {
+		'GameInitialisation': 0,
+		'RoundStart': 0,
+		'NewPack': 0,
+		'CardsDealt': 0,
+		'TrickStart': 0,
+		'TrickWinnerLogged': 0,
+		'TrickEnd': 0,
+		'RoundEnd': 0,
+		'PointsAwarded': 0,
+		'WinnersAnnounced': 0,
+		'TournamentLeaders': 0,
+		'NewGameReset': 0,
+		'StartNumberSet': 0
+	}

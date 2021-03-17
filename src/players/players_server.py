@@ -1,18 +1,19 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+from queue import Queue
 from src.players.players_abstract import Gameplayers, Player
 from os import environ
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 from pygame.time import delay
 
 if TYPE_CHECKING:
-	from src.special_knock_types import CardList, NumberInput
+	from src.special_knock_types import CardList, NumberInput, ConnectionAddress
 	from src.cards.suit import Suit
 
 
 class ServerGameplayers(Gameplayers):
-	__slots__ = ()
+	__slots__ = tuple()
 
 	def NextStage(self):
 		self.data = [player.NextStage() for player in self.data]
@@ -35,6 +36,13 @@ class ServerGameplayers(Gameplayers):
 
 
 class ServerPlayer(Player):
+	__slots__ = 'SendQ', 'addr'
+
+	def __init__(self, playerindex):
+		super().__init__(playerindex)
+		self.SendQ = Queue()
+		self.addr: ConnectionAddress = tuple()
+
 	AllPlayers = ServerGameplayers()
 
 	def NextStage(self):

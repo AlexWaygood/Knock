@@ -122,3 +122,6 @@ class BoardSurface(KnockSurfaceWithCards, TextBlitsMixin):
 		Positions = self.PlayerTextPositions
 		T = sum([player.BoardText(*Args, *Positions[i]) for i, player in enumerate(players)], start=[])
 		return super().GetSurfBlits() + [self.GetText(t[0], t[1], center=t[2]) for t in T]
+
+	def __hash__(self):
+		return hash(repr(self))

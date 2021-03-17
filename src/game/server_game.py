@@ -3,8 +3,7 @@ from __future__ import annotations
 from random import shuffle
 from typing import TYPE_CHECKING
 
-from src.game.abstract_game import Game
-from src.network.server_updaters import Triggers
+from src.game.abstract_game import Game, EventsDict
 from src.players.players_server import ServerPlayer as Player
 from src.cards.server_card import ServerCard as Card
 
@@ -13,7 +12,7 @@ environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 from pygame.time import delay
 
 if TYPE_CHECKING:
-	from src.special_knock_types import CardList, NumberInput, UpdaterDict
+	from src.special_knock_types import CardList, NumberInput
 
 
 class ServerGame(Game):
@@ -24,7 +23,7 @@ class ServerGame(Game):
 		self.PlayerNumber = PlayerNumber
 		self.gameplayers = Player.AllPlayers
 		self.gameplayers.PlayerNo = PlayerNumber
-		self.Triggers = Triggers()
+		self.Triggers = EventsDict()
 
 		[Player(i) for i in range(PlayerNumber)]
 
@@ -138,8 +137,7 @@ class ServerGame(Game):
 		self.WaitForPlayers('TrickEnd')
 
 	def Export(self, playerindex: int):
-		EventsString = DictToString(self.Triggers.Events)
-		SurfaceTriggerString = DictToString(self.Triggers.Surfaces)
+		EventsString = '--'.join(f'{v}' for v in self.Triggers.values())
 
 		PlayerString = '--'.join(
 			f'{player.name}-{B if (B := player.Bid) > -1 else "*1"}' for player in self.gameplayers
@@ -152,16 +150,11 @@ class ServerGame(Game):
 
 		return '---'.join((
 			EventsString,
-			SurfaceTriggerString,
 			PlayerString,
 			PlayerHandString,
 			CardsOnBoardString,
 			TournamentStatus
 		))
-
-
-def DictToString(D: UpdaterDict):
-	return '--'.join(f'{v}' for v in D.values())
 
 
 def CardsToString(L: CardList):

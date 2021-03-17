@@ -19,14 +19,12 @@ from src.initialisation.server_user_inputs import UserInputs
 from src.initialisation.logging_config import LoggingConfig
 
 from src.game.server_game import ServerGame as Game
-from src.players.players_server import ServerPlayer as Player
 
 from os import environ
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 from pygame.time import delay
 
 if TYPE_CHECKING:
-	from src.special_knock_types import ConnectionAddress
 	from socket import socket
 
 
@@ -38,16 +36,15 @@ game = Game(NumberOfPlayers)
 
 
 def CommsWithClient(S: Server,
-                    player: Player,
                     conn: socket,
-                    addr: ConnectionAddress,
                     game: Game = game) -> None:
 
 	data = S.receive(conn)
 	Result = game.Operations[data[:2]](data)
+	player = S.ConnectionInfo[conn]
 
 	if not data or Result == 'Terminate':
-		print(f'Connection with {addr} was broken at {GetTime()}.\n')
+		print(f'Connection with {player.addr} was broken at {GetTime()}.\n')
 
 		try:
 			game.gameplayers.remove(player)
@@ -62,21 +59,7 @@ def CommsWithClient(S: Server,
 		with game:
 			ToExport = game.Export(player.playerindex)
 
-	S.ConnectionInfo[conn]['SendQueue'].put(ToExport)
-
-
-def ClientConnect(S: Server,
-                  playerindex: int,
-                  conn: socket,
-                  addr: ConnectionAddress,
-                  BiddingSystem: str = BiddingSystem,
-                  game: Game = game) -> None:
-
-	# We want the whole server script to fail if a single thread goes down,
-	# since there's no point continuing a game if one of the players has left
-	S.ConnectionInfo[conn]['SendQueue'].put(f'{game.PlayerNumber}{playerindex}{BiddingSystem}')
-	print(f'Game sent to client {addr} at {GetTime()}.\n')
-	S.ConnectionInfo[conn]['player'] = Player.AllPlayers[playerindex]
+	player.SendQ.put(ToExport)
 
 
 def EternalGameLoop(game: Game = game,
@@ -110,7 +93,7 @@ Server_object = Server(
 	IP='127.0.0.1',
 	port=5555,
 	ManuallyVerify=(ManuallyVerify == 'yes'),
-	ClientConnectFunction=ClientConnect,
+	BiddingSystem=BiddingSystem,
 	NumberOfPlayers=NumberOfPlayers,
 	AccessToken=AccessToken,
 	password=password,

@@ -3,13 +3,13 @@ from __future__ import annotations
 from select import select
 from logging import getLogger
 from typing import TYPE_CHECKING
-from queue import Queue
 from pyinputplus import inputYesNo
 
 from src.network.network_abstract_class import Network, GetTime
+from src.players.players_server import ServerPlayer as Player
 
 if TYPE_CHECKING:
-	from src.special_knock_types import NetworkFunction
+	from src.special_knock_types import NetworkFunction, ConnectionDict
 	from ipinfo.handler import Handler
 	from socket import socket
 
@@ -26,7 +26,7 @@ class Server(Network):
 			IP: str,
 			port: int,
 			ManuallyVerify: bool,
-			ClientConnectFunction: NetworkFunction,
+			BiddingSystem: str,
 			NumberOfPlayers: int,
 			AccessToken: str,
 			password: str,
@@ -34,7 +34,7 @@ class Server(Network):
 	):
 
 		super().__init__(log)
-		self.ConnectionInfo = {}
+		self.ConnectionInfo: ConnectionDict = {}
 		self.conn.bind((IP, port))
 		self.conn.listen()
 
@@ -69,11 +69,12 @@ class Server(Network):
 					# so the server will know to check if that connection is ready to have data sent to it.
 
 					NewConn = self.Connect(
-						ClientConnectFunction,
 						Handler_object,
 						NumberOfClients,
 						password,
-						ManuallyVerify
+						ManuallyVerify,
+						NumberOfPlayers,
+						BiddingSystem
 					)
 
 					Inputs.append(NewConn)
@@ -83,10 +84,10 @@ class Server(Network):
 					if NumberOfClients == NumberOfPlayers:
 						print('Maximum number of connections received; no longer open for connections.')
 				else:
-					CommsFunction(self, self.ConnectionInfo[s]['player'], s, self.ConnectionInfo[s]['addr'])
+					CommsFunction(self, s)
 
 			for s in writable:
-				if not (Q := self.ConnectionInfo[s]['SendQueue']).empty():
+				if not (Q := self.ConnectionInfo[s].SendQ).empty():
 					Message = Q.get()
 					self.send(Message, conn=s)
 
@@ -94,11 +95,12 @@ class Server(Network):
 				raise Exception('Exception in one of the client threads!')
 
 	def Connect(self,
-	            ClientConnectFunction: NetworkFunction,
 	            Handler_object: Handler,
 	            NumberOfClients: int,
 	            password: str,
-	            ManuallyVerify: bool):
+	            ManuallyVerify: bool,
+	            NumberOfPlayers: int,
+	            BiddingSystem: str):
 
 		conn, addr = self.conn.accept()
 
@@ -131,8 +133,11 @@ class Server(Network):
 				self.CloseConnection(conn)
 				return 0
 
-		self.ConnectionInfo[conn] = {'SendQueue': Queue(), 'addr': addr}
-		ClientConnectFunction(self, NumberOfClients, conn, addr)
+		player = Player.AllPlayers[NumberOfClients]
+		player.addr = addr
+		self.ConnectionInfo[conn] = player
+		self.ConnectionInfo[conn].SendQ.put(f'{NumberOfPlayers}{NumberOfClients}{BiddingSystem}')
+		print(f'Connection info to client {addr} was placed on the send-queue at {GetTime()}.\n')
 		return conn
 
 	@staticmethod

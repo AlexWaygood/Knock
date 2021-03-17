@@ -37,13 +37,14 @@ class BaseKnockSurface:
 	def SurfAndPos(self):
 		self.attrs = self.Dimensions(self.x, self.y, self.Width, self.Height)
 
+	# Static method, but kept in this namespace for lrucaching reasons
 	@lru_cache
-	def GetSurfHelper(self):
-		surf = Surface(self.attrs.dimensions)
-		return surf, (surf, self.attrs.rect)
+	def GetSurfHelper(self, dimensions, rect):
+		surf = Surface(dimensions)
+		return surf, (surf, rect)
 
 	def GetSurf(self):
-		self.surf, self.surfandpos = self.GetSurfHelper()
+		self.surf, self.surfandpos = self.GetSurfHelper(self.attrs.dimensions, self.attrs.rect)
 		self.fill()
 
 	def fill(self):

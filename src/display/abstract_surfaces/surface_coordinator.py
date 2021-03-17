@@ -98,7 +98,7 @@ class SurfaceCoordinator:
 	@classmethod
 	def NewWindowSize2(cls):
 		for surf in cls.AllSurfaces:
-			surf.Initialise()
+			surf.Initialise().GetSurf()
 
 		cls.BoardCentre = BoardX, BoardY = cls.BoardSurf.NonrelativeBoardCentre
 		cls.PreplayInputPos = (cls.GameSurf.attrs.centre[0], (cls.GameSurf.attrs.centre[1] + 50))
@@ -123,7 +123,7 @@ class SurfaceCoordinator:
 				surf.Update(ForceUpdate=ForceUpdate)
 
 	def Initialise(self):
-		pass
+		return self
 
 	def Update(self, ForceUpdate: bool = False):
 		pass

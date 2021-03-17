@@ -9,19 +9,18 @@ from typing import List, TYPE_CHECKING
 from os import environ
 
 from src.data_structures import DictLike
-from src.game.abstract_game import Game
+from src.game.abstract_game import Game, EventsDict
 from src.players.players_client import ClientPlayer as Player
 from src.players.client_scoreboard_data import Scoreboard
 from src.cards.client_card import AllCardValues, ClientCard as Card
-from src.network.server_updaters import DoubleTrigger
+from src.network.client_class import Client
 
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 from pygame.time import delay
 
 if TYPE_CHECKING:
-	from src.special_knock_types import NumberInput, UpdaterDict
+	from src.special_knock_types import NumberInput
 	from src.display.input_context import InputContext
-	from src.network.client_class import Client
 
 
 log = getLogger(__name__)
@@ -36,10 +35,24 @@ class NewCardQueues:
 		self.TrumpCard = Queue()
 
 
+class DoubleTrigger:
+	__slots__ = 'Client', 'Server'
+
+	def __init__(self):
+		self.Client = EventsDict()
+		self.Server = EventsDict()
+
+	def __enter__(self):
+		return self
+
+	def __exit__(self, exc_type, exc_val, exc_tb):
+		return True
+
+
 class ClientGame(Game, DictLike):
 	__slots__ = 'GamesPlayed', 'CardNumberThisRound', 'RoundNumber', 'TrickInProgress', 'TrickNumber', \
 	            'WhoseTurnPlayerIndex', 'PlayerOrder', 'RoundLeaderIndex', 'MaxCardNumber', 'NewCardQueues', \
-	            'FrozenState', 'Scoreboard'
+	            'FrozenState', 'Scoreboard', 'client'
 
 	OnlyGame = None
 	PlayerNumber = 0
@@ -59,6 +72,7 @@ class ClientGame(Game, DictLike):
 
 		super().__init__()
 		self.FrozenState = FrozenState
+		self.client = Client.OnlyClient
 		self.Triggers = DoubleTrigger()
 		self.gameplayers = Player.AllPlayers
 		self.gameplayers.AddVars(self)
@@ -77,6 +91,10 @@ class ClientGame(Game, DictLike):
 		[Player(i) for i in range(PlayerNumber)]
 		[Card(*value) for value in AllCardValues]
 
+	def TimeToStart(self):
+		self.StartPlay = True
+		self.client.SendQueue.put('@S')
+
 	@property
 	def StartCardNumber(self):
 		return self._StartCardNumber
@@ -88,11 +106,11 @@ class ClientGame(Game, DictLike):
 
 	def AttributeWait(self, attr: str):
 		with self.Triggers as s:
-			while s.Server.Events[attr] == s.Client.Events[attr]:
+			while s.Server[attr] == s.Client[attr]:
 				delay(100)
 
 			with self:
-				s.Client.Events[attr] = s.Server.Events[attr]
+				s.Client[attr] = s.Server[attr]
 
 	def StartRound(self,
 	               cardnumber: int,
@@ -126,6 +144,14 @@ class ClientGame(Game, DictLike):
 					delay(100)
 					context.TrickClickNeeded = (CardsOnBoard == Pos)
 
+	def ExecutePlay(
+			self,
+			cardID: str,
+			playerindex: int
+	):
+		super().ExecutePlay(cardID, playerindex)
+		self.client.SendQueue.put(f'@C{cardID}{playerindex}')
+
 	def EndTrick(self):
 		WinningCard = max(self.PlayedCards, key=lambda card: card.GetWinValue(self.PlayedCards[0].Suit, self.trumpsuit))
 		(Winner := self.gameplayers[WinningCard.PlayedBy]).WinsTrick()
@@ -156,7 +182,6 @@ class ClientGame(Game, DictLike):
 	def UpdateLoop(
 			self,
 			context: InputContext,
-			client: Client,
 			player: Player
 	):
 
@@ -164,8 +189,8 @@ class ClientGame(Game, DictLike):
 			while True:
 				delay(100)
 
-				if not client.ReceiveQueue.empty():
-					gameInfo = client.ReceiveQueue.get()
+				if not self.client.ReceiveQueue.empty():
+					gameInfo = self.client.ReceiveQueue.get()
 
 					if not self.FrozenState:
 						log.debug(f'Obtained new message from Client, {gameInfo}.')
@@ -177,14 +202,14 @@ class ClientGame(Game, DictLike):
 						if not self.FrozenState:
 							log.debug('Client-side game successfully updated.')
 
-				if client.SendQueue.empty():
+				if self.client.SendQueue.empty():
 					if context.GameUpdatesNeeded:
-						client.send('@G')
-					elif client.LastUpdate < time() - 5:
-						client.send('ping')
+						self.client.send('@G')
+					elif self.client.LastUpdate < time() - 5:
+						self.client.send('ping')
 					continue
 
-				client.send(client.SendQueue.get())
+				self.client.send(self.client.SendQueue.get())
 
 	def __repr__(self):
 		String = super().__repr__()
@@ -210,10 +235,10 @@ MaxCardNumber = {self.MaxCardNumber}
 
 		StringList = String.split('---')
 
-		for i, attr in enumerate(('Events', 'Surfaces')):
-			UpdateDictFromString(self.Triggers.Server[attr], StringList[i])
+		for key, value in zip(self.Triggers.Server.keys(), StringList[0].split('--')):
+			self.Triggers.Server[key] = int(value)
 
-		PlayerInfoList = StringList[2].split('--')
+		PlayerInfoList = StringList[1].split('--')
 
 		if any(isinstance(player.name, int) for player in self.gameplayers):
 			for player, playerinfo in zip(self.gameplayers, PlayerInfoList):
@@ -228,15 +253,15 @@ MaxCardNumber = {self.MaxCardNumber}
 				else:
 					player.Bid = int(bid)
 
-		if (Hand := StringList[3]) != 'None' and not self.gameplayers[playerindex].Hand:
+		if (Hand := StringList[2]) != 'None' and not self.gameplayers[playerindex].Hand:
 			self.gameplayers[playerindex].ReceiveCards(CardsFromString(Hand))
 			self.NewCardQueues.Hand.put(1)
 
-		if (PlayedCards := StringList[4]) != 'None':
+		if (PlayedCards := StringList[3]) != 'None':
 			self.PlayedCards = CardsFromString(PlayedCards)
 			self.NewCardQueues.PlayedCards.put(1)
 
-		FinalString = StringList[6]
+		FinalString = StringList[4]
 		self.StartPlay, self.RepeatGame = [bool(int(FinalString[i])) for i in range(2)]
 		self.StartCardNumber = int(FinalString[2])
 
@@ -261,8 +286,3 @@ def CardsFromString(L: str):
 	cards = [s.split('-') for s in L.split('--')]
 	cards = [[AttemptToInt(c[0][0]), c[0][1], c[1]] for c in cards]
 	return [Card(*c) for c in cards]
-
-
-def UpdateDictFromString(D: UpdaterDict, String: str):
-	for key, value in zip(D.keys(), String.split('--')):
-		D[key] = int(value)

@@ -79,12 +79,15 @@ def GameplayLoop(
 		delay(500)
 		return None
 
-	if context.ClicksNeeded() and mouse.click:
-		HandleClicks(context, game, client, player, mouse)
+	if mouse.click:
+		if context.ClickToStart:
+			game.TimeToStart()
+
+		elif context.TrickClickNeeded and mouse.cursor == 'Hand' and player.PosInTrick == len(game.PlayedCards):
+			game.ExecutePlay(mouse.CardHoverID, player.playerindex)
 
 
 WindowResizeKeys = (pg_locals.K_ESCAPE, pg_locals.K_TAB)
-GameRematchKeys = (pg_locals.K_SPACE, pg_locals.K_RETURN)
 
 
 def HandleEvent(
@@ -100,58 +103,40 @@ def HandleEvent(
 		errors: Errors,
 		player: Player,
 		scoreboard: InteractiveScoreboard,
-		WindowResizeKeys: KeyTuple = WindowResizeKeys,
-		GameRematchKeys: KeyTuple = GameRematchKeys
+		WindowResizeKeys: KeyTuple = WindowResizeKeys
 ):
 
 	ControlKeyFunctions = {
-		pg_locals.K_q: QuitGame,
 		pg_locals.K_c: gamesurf.MoveToCentre,
+		pg_locals.K_q: QuitGame,
 		pg_locals.K_s: scoreboard.save,
 		pg_locals.K_t: scoreboard.show,
+		pg_locals.K_v: userInput.PasteEvent,
+		pg_locals.K_BACKSPACE: userInput.ControlBackspaceEvent,
 		pg_locals.K_PLUS: displayManager.ZoomIn,
 		pg_locals.K_EQUALS: displayManager.ZoomIn,
 		pg_locals.K_MINUS: displayManager.ZoomOut,
 		pg_locals.K_UNDERSCORE: displayManager.ZoomOut
 	}
 
-	ArrowKeyFunctions = {
-		4: gamesurf.NudgeUp,
-		5: gamesurf.NudgeDown,
-		pg_locals.K_UP: gamesurf.NudgeUp,
-		pg_locals.K_DOWN: gamesurf.NudgeDown,
-		pg_locals.K_LEFT: gamesurf.NudgeLeft,
-		pg_locals.K_RIGHT: gamesurf.NudgeRight
-	}
-
 	if (EvType := event.type) == pg_locals.QUIT:
 		QuitGame()
 
 	elif EvType == pg_locals.KEYDOWN:
-		if (EvKey := event.key) in WindowResizeKeys:
+		if scrollwheel.IsDown:
+			scrollwheel.ComesUp()
+
+		elif (EvKey := event.key) in WindowResizeKeys:
 			displayManager.NewWindowSize(EvKey, ToggleFullscreen=True)
 
 		elif ControlKeyDown():
-			if EvKey in (pg_locals.K_BACKSPACE, pg_locals.K_v):
-				AddInputText(event, context, game, player, client, errors, userInput)
-			else:
-				try:
-					ControlKeyFunctions[EvKey]()
-				except KeyError:
-					pass
-
-		elif not context.FireworksDisplay:
 			try:
-				ArrowKeyFunctions[EvKey]()
+				ControlKeyFunctions[EvKey]()
 			except KeyError:
-				pass
+				KeyDownEvents(event, EvKey, context, gamesurf, client, game, userInput, player, errors)
 
-		elif not client.ConnectionBroken:
-			if context.GameReset and EvKey in GameRematchKeys:
-				game.RepeatGame = True
-				client.SendQueue.put('@1')
-			else:
-				AddInputText(event, context, game, player, client, errors, userInput)
+		else:
+			KeyDownEvents(event, EvKey, context, gamesurf, client, game, userInput, player, errors)
 
 	elif EvType == pg_locals.VIDEORESIZE:
 		displayManager.VideoResizeEvent(event.size)
@@ -159,32 +144,33 @@ def HandleEvent(
 	elif EvType == pg_locals.MOUSEBUTTONDOWN:
 		Button = event.button
 
-		if Button == 3 and scrollwheel.IsDown:
+		# pushing the scrollwheel down will click the scrollwheel, no matter what else is going on
+		if Button == 2:
+			scrollwheel.clicked()
+
+		# if the scrollwheel is down, any button on the mouse being pushed will cause it to come up.
+		elif scrollwheel.IsDown:
 			scrollwheel.ComesUp()
 
-		elif ControlKeyDown():
-			if scrollwheel.IsDown:
-				scrollwheel.ComesUp()
-			elif Button == 4:
-				displayManager.ZoomIn()
-			elif Button == 5:
-				displayManager.ZoomOut()
-
-		elif Button > 3:
-			if scrollwheel.IsDown:
-				scrollwheel.ComesUp()
-			elif not context.FireworksDisplay:
-				ArrowKeyFunctions[Button]()
-
-		elif not context.FireworksDisplay and not client.ConnectionBroken:
-			if Button == 1:
-				if scrollwheel.IsDown:
-					scrollwheel.ComesUp()
-				elif context.ClicksNeeded() and not pg_mouse_get_pressed(5)[2]:
+		# This only applies if it ISN'T  scrollwheel press and the scrollwheel is NOT currently down.
+		elif not context.FireworksDisplay:
+			if ControlKeyDown():
+				if Button == 4:
+					displayManager.ZoomIn()
+				elif Button == 5:
+					displayManager.ZoomOut()
+				elif not client.ConnectionBroken and Button == 1 and not pg_mouse_get_pressed(5)[2]:
 					mouse.click = True
 
-			elif Button == 2:
-				scrollwheel.clicked()
+			elif Button == 4:
+				gamesurf.NudgeUp()
+
+			elif Button == 5:
+				gamesurf.NudgeDown()
+
+			# Whether or not clicks are needed is tested in the Gameplay Loop function
+			elif not client.ConnectionBroken and Button == 1 and not pg_mouse_get_pressed(5)[2]:
+				mouse.click = True
 
 	elif not context.FireworksDisplay:
 		if EvType == pg_locals.MOUSEBUTTONUP:
@@ -197,19 +183,54 @@ def HandleEvent(
 			gamesurf.MouseMove(event.rel)
 
 
-def AddInputText(
+GameRematchKeys = (pg_locals.K_SPACE, pg_locals.K_RETURN)
+ArrowKeys = (pg_locals.K_UP, pg_locals.K_DOWN, pg_locals.K_LEFT, pg_locals.K_RIGHT)
+
+
+def KeyDownEvents(
 		event: Event,
+		EvKey: int,
 		context: InputContext,
+		gamesurf: GameSurface,
+		client: Client,
+		game: Game,
+		userInput: TextInput,
+		player: Player,
+		errors: Errors,
+		ArrowKeys: KeyTuple = ArrowKeys,
+		GameRematchKeys: KeyTuple = GameRematchKeys
+):
+
+	ArrowKeyFunctions = {
+		pg_locals.K_UP: gamesurf.NudgeUp,
+		pg_locals.K_DOWN: gamesurf.NudgeDown,
+		pg_locals.K_LEFT: gamesurf.NudgeLeft,
+		pg_locals.K_RIGHT: gamesurf.NudgeRight
+	}
+
+	if not context.FireworksDisplay and EvKey in ArrowKeys:
+		ArrowKeyFunctions[EvKey]()
+
+	elif not client.ConnectionBroken:
+		if context.GameReset and EvKey in GameRematchKeys:
+			game.RepeatGame = True
+			client.SendQueue.put('@1')
+		elif EvKey == pg_locals.K_BACKSPACE:
+			userInput.NormalBackspaceEvent()
+		elif EvKey == pg_locals.K_RETURN:
+			HandleTextInput(userInput.EnterEvent(), game, player, client, errors)
+		else:
+			userInput.AddTextEvent(event.unicode)
+
+
+def HandleTextInput(
+		Input,
 		game: Game,
 		player: Player,
 		client: Client,
-		errors: Errors,
-		userInput: TextInput
+		errors: Errors
 ):
-	if not context.TypingNeeded:
-		return None
-
-	if not (Input := userInput.AddInputText(event)):
+	if not Input:
 		return None
 
 	if isinstance(player.name, int):
@@ -240,20 +261,3 @@ def AddInputText(
 			client.SendQueue.put(''.join((f'@B', f'{f"{Input}" : 0>2}', f'{player.playerindex}')))
 		except:
 			errors.ThisPass.append(f'Your bid must be an integer between 0 and {Count}.')
-
-
-def HandleClicks(
-		context: InputContext,
-		game: Game,
-		client: Client,
-		player: Player,
-		mouse: Mouse
-):
-
-	if context.ClickToStart:
-		game.StartPlay = True
-		client.SendQueue.put('@S')
-
-	elif mouse.cursor == 'Hand' and player.PosInTrick == len(game.PlayedCards):
-		game.ExecutePlay(mouse.CardHoverID, player.playerindex)
-		client.SendQueue.put(f'@C{mouse.CardHoverID}{player.playerindex}')

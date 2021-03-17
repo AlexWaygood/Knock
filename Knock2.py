@@ -35,12 +35,12 @@ from src.display.colour_scheme import ColourScheme
 from src.initialisation.logging_config import LoggingConfig
 from src.initialisation.client_user_inputs import UserInputs
 from src.initialisation.ascii_suits import PrintIntroMessage
+from src.initialisation.set_blocked_events import SetBlockedEvents
 
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
-from pygame import QUIT, KEYDOWN, MOUSEBUTTONDOWN, MOUSEBUTTONUP, VIDEORESIZE, MOUSEMOTION, init as pg_init
+from pygame import init as pg_init
 from pygame.time import Clock
 from pygame.key import set_repeat as set_pg_key_repeat
-from pygame.event import set_allowed as set_allowed_events
 
 if TYPE_CHECKING:
 	from src.players.players_client import ClientPlayer as Player
@@ -51,14 +51,13 @@ current_thread().name = 'Display'
 LoggingConfig(True)
 debug('\n\nNEW RUN OF PROGRAMME STARTING\n\n')
 
-
 PrintIntroMessage()
 IP, Port, password, Theme = UserInputs()
 ColourScheme(Theme)
 
 pg_init()
 set_pg_key_repeat(1000, 50)
-set_allowed_events((QUIT, KEYDOWN, MOUSEBUTTONDOWN, MOUSEBUTTONUP, VIDEORESIZE, MOUSEMOTION))
+SetBlockedEvents()
 
 clock = Clock()
 client = Client(FrozenState, IP, Port, password)
@@ -66,17 +65,24 @@ Message: str = client.ReceiveQueue.get()
 PlayerNo, playerindex, BiddingSystem = int(Message[0]), int(Message[1]), Message[2:]
 game = Game(PlayerNo, FrozenState)
 player: Player = game.gameplayers[playerindex]
+
+debug('Starting DisplayManager __init__()')
 dM = DisplayManager(player, FrozenState)
+debug('Finished DisplayManager __init__().')
 
 gamesurf, context, userInput, mouse, typewriter, errors, scoreboard = dM.GetAttributes((
-	'GameSurf', 'InputContext', 'UserInput', 'Mouse', 'Typewriter', 'Errors', 'Scoreboard'
+	'GameSurf', 'InputContext', 'UserInput', 'Mouse', 'Typewriter', 'Errors', 'InteractiveScoreboard'
 ))
 
 scrollwheel: Scrollwheel = mouse.Scrollwheel
 
+debug('Launching gameplay thread and server-comms threads.')
+
 Thread(target=Play, name='Gameplay', args=(game, context, typewriter, player, client, BiddingSystem, dM)).start()
-Thread(target=game.UpdateLoop, name='ServerComms', args=(context, client, player)).start()
+Thread(target=game.UpdateLoop, name='ServerComms', args=(context, player)).start()
 
 with printing_exc():
+	debug('Starting main pygame loop.')
+
 	while True:
 		GameplayLoop(clock, game, client, dM, mouse, gamesurf, context, userInput, scrollwheel, errors, player, scoreboard)

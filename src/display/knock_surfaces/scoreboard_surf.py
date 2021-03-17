@@ -9,18 +9,23 @@ if TYPE_CHECKING:
 	from src.special_knock_types import BlitsList, ScoreboardGenerator
 
 
-# noinspection PyAttributeOutsideInit
+# noinspection PyAttributeOutsideInit,PyMissingConstructor
 class Scoreboard(KnockSurface, TextBlitsMixin):
-	__slots__ = 'LeftMargin', 'title', 'FillFade', 'NormalFont', 'UnderlinedFont'
+	__slots__ = 'LeftMargin', 'title', 'FillFade', 'NormalFont', 'UnderlinedFont', 'Initialised'
 
 	def __init__(self):
+		self.Initialised = False
+
+	def RealInit(self):
 		super().__init__()    # calls SurfDimensions()
 		self.FillFade = ColourFader()
+		self.Initialised = True
 
 	def Initialise(self):
-		super().Initialise()
-		self.NormalFont = self.Fonts['NormalScoreboardFont']
-		self.UnderlinedFont = self.Fonts['UnderlinedScoreboardFont']
+		if self.Initialised:
+			super().Initialise()
+			self.NormalFont = self.Fonts['NormalScoreboardFont']
+			self.UnderlinedFont = self.Fonts['UnderlinedScoreboardFont']
 
 	def fill(self):
 		if c := self.FillFade.GetColour():
@@ -91,3 +96,6 @@ class Scoreboard(KnockSurface, TextBlitsMixin):
 			ScoreboardBlits, y = self.TextBlitsHelper(y, ScoreboardBlits, self.ScoreboardText2())
 
 		return ScoreboardBlits
+
+	def __hash__(self):
+		return hash(repr(self))
