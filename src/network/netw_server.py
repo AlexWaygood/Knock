@@ -5,7 +5,7 @@ from logging import getLogger
 from typing import TYPE_CHECKING
 from pyinputplus import inputYesNo
 
-from src.network.network_abstract_class import Network, GetTime
+from src.network.netw_abstract import Network, GetTime
 from src.players.players_server import ServerPlayer as Player
 
 if TYPE_CHECKING:
@@ -46,7 +46,7 @@ class Server(Network):
 				from ipinfo import getHandler
 				Handler_object = getHandler(AccessToken)
 			except:
-				print("Encountered an error import ipinfo; won't be able to provide info on IP addresses.")
+				print("Encountered an error importing ipinfo; won't be able to provide info on IP addresses.")
 		else:
 			print('Not checking IP addresses as no access token was supplied.')
 
@@ -94,13 +94,15 @@ class Server(Network):
 			if exceptional:
 				raise Exception('Exception in one of the client threads!')
 
-	def Connect(self,
-	            Handler_object: Handler,
-	            NumberOfClients: int,
-	            password: str,
-	            ManuallyVerify: bool,
-	            NumberOfPlayers: int,
-	            BiddingSystem: str):
+	def Connect(
+			self,
+			Handler_object: Handler,
+	        NumberOfClients: int,
+	        password: str,
+	        ManuallyVerify: bool,
+	        NumberOfPlayers: int,
+	        BiddingSystem: str
+	):
 
 		conn, addr = self.conn.accept()
 
@@ -125,7 +127,7 @@ class Server(Network):
 				return 0
 
 		if password:
-			from src.network.password_checker_server import ServerPasswordChecker as PasswordChecker
+			from src.password_checker.pass_server import ServerPasswordChecker as PasswordChecker
 			Checker = PasswordChecker(self, conn)
 
 			if not Checker.CheckPassword(conn, password):

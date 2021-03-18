@@ -11,8 +11,8 @@ from typing import TYPE_CHECKING
 from logging import debug
 from socket import SHUT_RDWR
 
-from src.network.network_abstract_class import GetTime
-from src.network.server_class import Server, AccessToken
+from src.network.netw_abstract import GetTime
+from src.network.netw_server import Server, AccessToken
 
 from src.initialisation.ascii_suits import PrintIntroMessage
 from src.initialisation.server_user_inputs import UserInputs
@@ -35,9 +35,10 @@ NumberOfPlayers, BiddingSystem, password, ManuallyVerify = UserInputs()
 game = Game(NumberOfPlayers)
 
 
-def CommsWithClient(S: Server,
-                    conn: socket,
-                    game: Game = game) -> None:
+def CommsWithClient(
+		S: Server,
+		conn: socket,
+		game: Game = game) -> None:
 
 	data = S.receive(conn)
 	Result = game.Operations[data[:2]](data)
@@ -53,17 +54,14 @@ def CommsWithClient(S: Server,
 		finally:
 			raise Exception('Connection was terminated.')
 
-	elif Result == 'pong':
-		ToExport = Result
-	else:
-		with game:
-			ToExport = game.Export(player.playerindex)
-
-	player.SendQ.put(ToExport)
+	elif Result == 'pong' or player.SendQ.empty():
+		player.SendQ.put('pong')
 
 
-def EternalGameLoop(game: Game = game,
-                    NumberOfPlayers: int = NumberOfPlayers):
+def EternalGameLoop(
+		game: Game = game,
+		NumberOfPlayers: int = NumberOfPlayers
+):
 
 	global Server_object
 
@@ -87,7 +85,7 @@ print('Initialising server...')
 # (Warning does not apply if you are playing within one local area network.)
 # Remember to take the port out when publishing this code online.
 
-(thread := Thread(target=EternalGameLoop, name='Server gameplay thread', daemon=True)).start()
+(thread := Thread(target=EternalGameLoop, name='ServerGameplay', daemon=True)).start()
 
 Server_object = Server(
 	IP='127.0.0.1',

@@ -1,23 +1,24 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List
 
 from functools import lru_cache
 from fractions import Fraction
 from math import ceil
 
 from src.display.abstract_surfaces.text_rendering import Fonts
-from src.display.colour_scheme import ColourScheme
+from src.display.colours import ColourScheme
+
 from src.cards.client_card import ClientCard as Card
 from src.game.client_game import ClientGame as Game
-from src.network.client_class import Client
+from src.network.netw_client import Client
 
 if TYPE_CHECKING:
 	from src.players.players_client import (ClientPlayer as Player,
 	                                        ClientGameplayers as Gameplayers)
 
-	from src.display.knock_surfaces.game_surf import GameSurface
-	from src.display.knock_surfaces.board_surf import BoardSurface
-	from src.special_knock_types import Position, OptionalColours, DimensionTuple
+	from src.display.knock_surfaces.game import GameSurface
+	from src.display.knock_surfaces.board import BoardSurface
+	from src.special_knock_types import Position, DimensionTuple
 
 
 @lru_cache
@@ -47,14 +48,14 @@ class SurfaceCoordinator:
 	GameSurf: GameSurface = None  # Will add itself as a class attribute in its own __init__()
 	BoardSurf: BoardSurface = None  # Will add itself as a class attribute in its own __init__()
 	Fonts: Fonts = None
-	client: Optional[Client] = None
-	ColourScheme: OptionalColours = None
+	client: Client = None
+	ColourScheme: ColourScheme = None
 	PlayerNo = 0
 
 	WindowMargin = 0
 	CardX = 0
 	CardY = 0
-	RequiredResizeRatio: Optional[Fraction] = None
+	RequiredResizeRatio: Fraction = None
 
 	BoardCentre: Position = tuple()
 	PlayStartedInputPos: Position = tuple()

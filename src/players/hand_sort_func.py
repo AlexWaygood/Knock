@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional
-from src.cards.suit import Suit
+from src.cards.server_card_suit_rank import Suit
 from itertools import groupby
 
 if TYPE_CHECKING:
@@ -12,26 +12,26 @@ Blacks = (Suit('♣'), Suit('♠'))
 Reds = (Suit('♡'), Suit('♢'))
 
 
-def OtherOfColour(suit: Suit):
-	if suit.IsBlack:
-		return Suit('♣') if f'{suit!r}' == '♠' else Suit('♠')
-	return Suit('♢') if f'{suit!r}' == '♡' else Suit('♡')
-
-
-def ListOfCardValues(grouped: Grouped_Type,
-                     suit: Suit):
+def ListOfCardValues(
+		grouped: Grouped_Type,
+		suit: Suit
+):
 
 	return [card.Rank for card in grouped[suit]]
 
 
-def MaxOfColour(Colour: SuitTupleType,
-                grouped: Grouped_Type):
+def MaxOfColour(
+		Colour: SuitTupleType,
+		grouped: Grouped_Type
+):
 	
 	return max((suit for suit in grouped if suit in Colour), key=lambda suit: ListOfCardValues(grouped, suit))
 
 
-def WhicheverSuitPresent(Colour: SuitTupleType,
-                         grouped: Grouped_Type):
+def WhicheverSuitPresent(
+		Colour: SuitTupleType,
+		grouped: Grouped_Type
+):
 	
 	return Colour[0 if Colour[0] in grouped else 1]
 
@@ -40,12 +40,14 @@ def MaxSuit(grouped: Grouped_Type):
 	return max(grouped, key=lambda suit: ListOfCardValues(grouped, suit))
 
 
-def SortHand(Hand: CardList,
-             trumpsuit: Suit,
-             PlayedSuit: Optional[Suit] = None,
-             SuitTuple: SuitTupleType = (None, None),
-             Blacks=Blacks, 
-             Reds=Reds):
+def SortHand(
+		Hand: CardList,
+		trumpsuit: Suit,
+		PlayedSuit: Optional[Suit] = None,
+        SuitTuple: SuitTupleType = (None, None),
+        Blacks=Blacks,
+        Reds=Reds
+):
 
 	if PlayedSuit:
 		if PlayedSuit in SuitTuple:
@@ -102,8 +104,8 @@ def SortHand(Hand: CardList,
 	SuitDict = {
 		Suit1: 4,
 		Suit2: 3,
-		OtherOfColour(Suit1): 2,
-		OtherOfColour(Suit2): 1
+		Suit1.OtherOfColour(): 2,
+		Suit2.OtherOfColour(): 1
 	}
 
 	return sorted(Hand, key=lambda card: (SuitDict[card.Suit], card.Rank), reverse=True)

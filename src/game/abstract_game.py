@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from itertools import cycle
-from threading import RLock
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -11,13 +10,15 @@ if TYPE_CHECKING:
 class Game:
 	"""Class for encoding order of gameplay, in coordination with the client script."""
 
-	__slots__ = 'StartPlay', 'RepeatGame', 'gameplayers', 'PlayerNumber', 'lock', '_StartCardNumber', 'PlayedCards', \
+	__slots__ = 'StartPlay', 'RepeatGame', 'gameplayers', 'PlayerNumber', '_StartCardNumber', 'PlayedCards', \
 	            'TrumpCard', 'trumpsuit', 'Triggers'
 
 	def __init__(self):
+		# The PlayerNumber is set as an instance variable on the server side but a class variable on the client side.
+		# So we don't bother with it here.
+
 		self.StartPlay = False
 		self.RepeatGame = True
-		self.lock = RLock()
 		self._StartCardNumber = 0
 		self.TrumpCard: OptionalTrump = tuple()
 		self.trumpsuit = ''
@@ -53,12 +54,11 @@ class Game:
 			playerindex: int
 	):
 
-		with self.lock:
-			player = self.gameplayers[playerindex]
-			card = player.Hand[cardID]
-			player.PlayCard(card, self.trumpsuit)
-			self.PlayedCards.append(card)
-			self.IncrementTriggers('Board')
+		player = self.gameplayers[playerindex]
+		card = player.Hand[cardID]
+		player.PlayCard(card, self.trumpsuit)
+		self.PlayedCards.append(card)
+		self.IncrementTriggers('Board')
 
 	def GetGameParameters(self):
 		WhichRound = range(1, (self.StartCardNumber + 1))
@@ -76,14 +76,6 @@ class Game:
 		self.gameplayers.NewGame()
 		self.IncrementTriggers('Scoreboard')
 		self.StartPlay = False
-
-	def __enter__(self):
-		self.lock.acquire()
-		return self
-
-	def __exit__(self, exc_type, exc_val, exc_tb):
-		self.lock.release()
-		return True
 
 	def __repr__(self):
 		return f'''Object representing the current state of gameplay. Current state:

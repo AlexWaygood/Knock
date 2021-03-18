@@ -2,7 +2,7 @@
 
 from logging import basicConfig, DEBUG
 from os import path
-from src.Misc_locals import GetDate
+from src.misc import GetDate
 
 
 # noinspection PyArgumentList

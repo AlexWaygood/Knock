@@ -10,11 +10,11 @@ from logging import getLogger
 from src.display.abstract_surfaces.surface_coordinator import SurfaceCoordinator
 from src.display.abstract_surfaces.text_rendering import TextBlitsMixin
 
-from src.display.knock_surfaces.game_surf import GameSurface
-from src.display.knock_surfaces.scoreboard_surf import Scoreboard
-from src.display.knock_surfaces.trump_card_surf import TrumpCardSurface
-from src.display.knock_surfaces.hand_surf import HandSurface
-from src.display.knock_surfaces.board_surf import BoardSurface
+from src.display.knock_surfaces.game import GameSurface
+from src.display.knock_surfaces.scoreboard import Scoreboard
+from src.display.knock_surfaces.trump_card import TrumpCardSurface
+from src.display.knock_surfaces.hand import HandSurface
+from src.display.knock_surfaces.board import BoardSurface
 
 from src.display.fireworks.firework_vars import FireworkVars
 from src.display.fireworks.particle import Particle
@@ -25,10 +25,10 @@ from src.display.faders import OpacityFader, ColourFader
 from src.display.error_tracker import Errors
 from src.display.input_context import InputContext
 from src.display.mouse.mouse import Mouse
-from src.display.interactive_scoreboard import InteractiveScoreboard
+from src.display.matplotlib_scoreboard import InteractiveScoreboard
 
-from src.network.client_class import Client
-from src.data_structures import DictLike
+from src.network.netw_client import Client
+from src.misc import DictLike
 
 from os import environ, path
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"

@@ -4,15 +4,15 @@ from typing import TYPE_CHECKING, Optional
 from src.display.abstract_surfaces.base_knock_surface import BaseKnockSurface
 from src.display.abstract_surfaces.surface_coordinator import SurfaceCoordinator
 from src.display.faders import ColourFader
-from src.display.colour_scheme import ColourScheme
+from src.display.colours import ColourScheme
 
 from os import environ
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
-from pygame import locals as pg_locals
+from pygame.locals import K_UP, K_DOWN, K_LEFT, K_RIGHT
 from pygame.key import get_pressed as pg_key_get_pressed
 
 if TYPE_CHECKING:
-	from src.players.hand import Hand
+	from src.players.players_abstract import Hand
 	from src.special_knock_types import Colour, Position
 	from src.display.mouse.mouse import Scrollwheel
 
@@ -22,11 +22,15 @@ class GameSurface(BaseKnockSurface, SurfaceCoordinator):
 	__slots__ = 'WindowWidth', 'WindowHeight', 'MinRectWidth', 'MinRectHeight', 'MovementLookup', 'FillFade', \
 	            'scrollwheel', 'Hand', 'surfandpos', 'topleft'
 
-	def __init__(self,
-	             WindowWidth: int,
-	             WindowHeight: int,
-	             MinRectWidth: int,
-	             MinRectHeight: int):
+	ArrowKeyNudgeAmount = 20
+
+	def __init__(
+			self,
+			WindowWidth: int,
+			WindowHeight: int,
+			MinRectWidth: int,
+			MinRectHeight: int
+	):
 
 		self.colour: Colour = ColourScheme.OnlyColourScheme.MenuScreen
 		super().__init__()
@@ -71,26 +75,28 @@ class GameSurface(BaseKnockSurface, SurfaceCoordinator):
 		self.attrs.rect.topleft = self.topleft
 		self.surfandpos = (self.surf, self.attrs.rect)
 
-	def NudgeUp(self):
-		self.YShift(20, ArrowShift=True)
+	def NudgeUp(self, ArrowShift: bool = True, TidyUpNeeded: bool = True):
+		self.YShift(self.ArrowKeyNudgeAmount, ArrowShift=ArrowShift,  TidyUpNeeded=TidyUpNeeded)
 
-	def NudgeDown(self):
-		self.YShift(-20, ArrowShift=True)
+	def NudgeDown(self, ArrowShift: bool = True, TidyUpNeeded: bool = True):
+		self.YShift(-self.ArrowKeyNudgeAmount, ArrowShift=ArrowShift,  TidyUpNeeded=TidyUpNeeded)
 
-	def NudgeLeft(self):
-		self.XShift(-20, ArrowShift=True)
+	def NudgeLeft(self, ArrowShift: bool = True, TidyUpNeeded: bool = True):
+		self.XShift(-self.ArrowKeyNudgeAmount, ArrowShift=ArrowShift,  TidyUpNeeded=TidyUpNeeded)
 
-	def NudgeRight(self):
-		self.XShift(20, ArrowShift=True)
+	def NudgeRight(self, ArrowShift: bool = True, TidyUpNeeded: bool = True):
+		self.XShift(self.ArrowKeyNudgeAmount, ArrowShift=ArrowShift, TidyUpNeeded=TidyUpNeeded)
 
 	def MouseMove(self, Motion: Position):
 		self.XShift(Motion[0], TidyUpNeeded=False).YShift(Motion[1])
 		return self
 
-	def XShift(self,
-	           Amount: float,
-	           ArrowShift: bool = False,
-	           TidyUpNeeded: bool = True):
+	def XShift(
+			self,
+			Amount: float,
+			ArrowShift: bool = False,
+			TidyUpNeeded: bool = True
+	):
 
 		NewCoordinate = self.x + Amount
 		NewCoordinate = min(self.WindowWidth, NewCoordinate) if Amount > 0 else max(-self.Width, NewCoordinate)
@@ -103,20 +109,22 @@ class GameSurface(BaseKnockSurface, SurfaceCoordinator):
 		if ArrowShift:
 			KeysPressed = pg_key_get_pressed()
 
-			if KeysPressed[pg_locals.K_UP]:
-				self.YShift(20, TidyUpNeeded=False)
-			elif KeysPressed[pg_locals.K_DOWN]:
-				self.YShift(-20, TidyUpNeeded=False)
+			if KeysPressed[K_UP]:
+				self.NudgeUp(ArrowShift=False, TidyUpNeeded=False)
+			elif KeysPressed[K_DOWN]:
+				self.NudgeDown(ArrowShift=False, TidyUpNeeded=False)
 
 		if TidyUpNeeded:
 			self.TidyUp()
 
 		return self
 
-	def YShift(self,
-	           Amount: float,
-	           ArrowShift: bool = False,
-	           TidyUpNeeded: bool = True):
+	def YShift(
+			self,
+			Amount: float,
+			ArrowShift: bool = False,
+			TidyUpNeeded: bool = True
+	):
 
 		NewCoordinate = self.y + Amount
 		NewCoordinate = min(self.WindowHeight, NewCoordinate) if Amount > 0 else max(-self.Height, NewCoordinate)
@@ -126,16 +134,16 @@ class GameSurface(BaseKnockSurface, SurfaceCoordinator):
 
 		self.y = NewCoordinate
 
-		if TidyUpNeeded:
-			self.TidyUp()
-
 		if ArrowShift:
 			KeysPressed = pg_key_get_pressed()
 
-			if KeysPressed[pg_locals.K_LEFT]:
-				self.XShift(20, TidyUpNeeded=False)
-			elif KeysPressed[pg_locals.K_RIGHT]:
-				self.XShift(-20, TidyUpNeeded=False)
+			if KeysPressed[K_LEFT]:
+				self.NudgeRight(ArrowShift=False, TidyUpNeeded=False)
+			elif KeysPressed[K_RIGHT]:
+				self.NudgeLeft(ArrowShift=False, TidyUpNeeded=False)
+
+		if TidyUpNeeded:
+			self.TidyUp()
 
 		return self
 
@@ -175,6 +183,7 @@ class GameSurface(BaseKnockSurface, SurfaceCoordinator):
 		self.WindowHeight = NewHeight
 
 		self.SurfAndPos()
+		self.GetSurf()
 
 		return NewWidth, NewHeight
 

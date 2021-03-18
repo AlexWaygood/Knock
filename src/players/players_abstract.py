@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-from src.players.hand import Hand
+from typing import TYPE_CHECKING, Optional
 from collections import UserList
+from src.players.hand_sort_func import SortHand
 
 if TYPE_CHECKING:
-	from src.special_knock_types import CardList, IndexOrKey, PlayerDict
-	from src.cards.server_card import ServerCard as Card
-	from src.cards.suit import Suit
+	from src.special_knock_types import CardList, IndexOrKey, PlayerDict, SuitTuple
+	from src.cards.server_card_suit_rank import ServerCard as Card
+	from src.cards.server_card_suit_rank import Suit
 
 
 class Gameplayers(UserList):
@@ -42,7 +42,7 @@ class Player(object):
 		self._name = playerindex
 		self.playerindex = playerindex
 		self.AllPlayers.append(self)
-		self.Hand = Hand(self)
+		self.Hand = Hand()
 		self.Bid = -1
 		self.ActionComplete = False
 
@@ -53,6 +53,7 @@ class Player(object):
 	@name.setter
 	def name(self, n: str):
 		self._name = n
+		self.Hand.playername = n
 		self.AllPlayers.Dict[n] = self
 
 	def ReceiveCards(
@@ -63,7 +64,6 @@ class Player(object):
 
 		# Must receive an argument in the form of a list
 		self.Hand.NewHand(cards, TrumpSuit)
-		self.Hand.Iteration += 1
 		return self
 
 	def PlayCard(
@@ -85,3 +85,51 @@ class Player(object):
 	def __eq__(self, other: object):
 		assert isinstance(other, Player), "Can't compare a player with a non-player object"
 		return self.name == other.name and self.Hand.Iteration == other.Hand.Iteration
+
+
+class Hand(UserList):
+	__slots__ = 'Iteration', 'playername'
+
+	def __init__(self):
+		super().__init__()
+		self.Iteration = 0
+		self.playername = ''  # Is set when the player's name is set -- see the Player class
+
+	# noinspection PyAttributeOutsideInit
+	def NewHand(
+			self,
+			cards: CardList,
+			TrumpSuit: Suit
+	):
+
+		self.data = cards
+		self.sort(TrumpSuit)
+		self.data = [card.AddToHand(self.playername) for card in self.data]
+		self.Iteration += 1
+
+	def RemoveCard(
+			self,
+			card: Card,
+			TrumpSuit: Suit
+	):
+
+		suitTuple = (self.data[0].Suit, self.data[-1].Suit)
+		self.data.remove(card)
+		self.sort(TrumpSuit, PlayedSuit=card.Suit, suit_tuple=suitTuple)
+
+	def sort(
+			self,
+			TrumpSuit: Suit,
+			PlayedSuit: Optional[Suit] = None,
+			suit_tuple: SuitTuple = (None, None)
+	):
+		self.data = SortHand(self.data, TrumpSuit, PlayedSuit=PlayedSuit, SuitTuple=SuitTuple)
+
+	def __getitem__(self, item: IndexOrKey):
+		try:
+			return super().__getitem__(item)
+		except:
+			return next(card for card in self.data if repr(card) == item)
+
+	def __iter__(self):
+		return iter(self.data)

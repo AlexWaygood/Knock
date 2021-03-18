@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from src.game.abstract_game import Game, EventsDict
 from src.players.players_server import ServerPlayer as Player
-from src.cards.server_card import ServerCard as Card
+from src.cards.server_card_suit_rank import AllCardValues, ServerCard as Card
 
 from os import environ
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
@@ -20,12 +20,15 @@ class ServerGame(Game):
 
 	def __init__(self, PlayerNumber: int):
 		super().__init__()
+
+		# The PlayerNumber is set as an instance variable on the server side but a class variable on the client side.
 		self.PlayerNumber = PlayerNumber
 		self.gameplayers = Player.AllPlayers
 		self.gameplayers.PlayerNo = PlayerNumber
 		self.Triggers = EventsDict()
 
 		[Player(i) for i in range(PlayerNumber)]
+		[Card(*value) for value in AllCardValues]
 
 		self.Operations = {
 			# if the client is just asking for an updated copy of the game
@@ -73,6 +76,7 @@ class ServerGame(Game):
 
 	def WaitForPlayers(self, attribute: str):
 		self.Triggers.Events[attribute] += 1
+		self.Export()
 		self.gameplayers.WaitForPlayers()
 
 	def PlayGame(self):
@@ -82,8 +86,11 @@ class ServerGame(Game):
 			delay(1)
 
 		self.gameplayers.NextStage()
+		self.Export()
+
 		self.WaitForPlayers('GameInitialisation')
 		self.Triggers.Events['StartNumberSet'] += 1
+		self.Export()
 
 		for cardnumber in range(self.StartCardNumber, 0, -1):
 			self.PlayRound(cardnumber)
@@ -93,6 +100,7 @@ class ServerGame(Game):
 		while not self.RepeatGame:
 			delay(1)
 
+		self.Export()
 		self.NewGameReset()
 
 		# Wait until all players have logged their new playerindex.
@@ -100,17 +108,15 @@ class ServerGame(Game):
 
 	def PlayRound(self, cardnumber: int):
 		# Make a new pack of cards, set the trumpsuit.
-		Pack = Card.AllCards.copy()
+		Pack = Card.AllCardsList.copy()
 		shuffle(Pack)
-		with self.lock:
-			self.TrumpCard = ((TrumpCard := Pack.pop()),)
-			self.trumpsuit = (trumpsuit := TrumpCard.Suit)
-			self.Triggers.Events['NewPack'] += 1
+		self.TrumpCard = ((TrumpCard := Pack.pop()),)
+		self.trumpsuit = (trumpsuit := TrumpCard.Suit)
+		self.Triggers.Events['NewPack'] += 1
 
 		# Deal cards
-		with self.lock:
-			self.gameplayers.ReceiveCards(Pack, cardnumber, trumpsuit)
-			self.IncrementTriggers('TrumpCard', 'Board', 'Scoreboard')
+		self.gameplayers.ReceiveCards(Pack, cardnumber, trumpsuit)
+		self.IncrementTriggers('TrumpCard', 'Board', 'Scoreboard')
 		self.WaitForPlayers('CardsDealt')
 
 		# Play tricks
@@ -118,9 +124,8 @@ class ServerGame(Game):
 			self.PlayTrick()
 
 		# Reset players for the next round.
-		with self.lock:
-			self.gameplayers.RoundCleanUp()
-			self.RoundCleanUp()
+		self.gameplayers.RoundCleanUp()
+		self.RoundCleanUp()
 
 	def PlayTrick(self):
 		self.WaitForPlayers('TrickStart')
@@ -136,28 +141,31 @@ class ServerGame(Game):
 		self.IncrementTriggers('Board')
 		self.WaitForPlayers('TrickEnd')
 
-	def Export(self, playerindex: int):
+	def Export(self):
 		EventsString = '--'.join(f'{v}' for v in self.Triggers.values())
 
 		PlayerString = '--'.join(
 			f'{player.name}-{B if (B := player.Bid) > -1 else "*1"}' for player in self.gameplayers
 		)
 
-		PlayerHandString = CardsToString(self.gameplayers[playerindex].Hand)
 		CardsOnBoardString = CardsToString(self.PlayedCards)
 		TournamentStatus = f'{int(self.StartPlay)}{int(self.RepeatGame)}{self.StartCardNumber}' \
 		                   f'{repr(self.TrumpCard) if self.TrumpCard else ""}'
 
-		return '---'.join((
-			EventsString,
-			PlayerString,
-			PlayerHandString,
-			CardsOnBoardString,
-			TournamentStatus
-		))
+		for player in self.gameplayers:
+			PlayerHandString = CardsToString(player.Hand)
+			player.SendQ.put(
+				'---'.join((
+					EventsString,
+					PlayerString,
+					PlayerHandString,
+					CardsOnBoardString,
+					TournamentStatus
+				))
+			)
 
 
 def CardsToString(L: CardList):
 	if not L:
 		return 'None'
-	return '--'.join([f'{card!r}-{card.PlayedBy}' for card in L])
+	return '--'.join([f'{Card.AllCardsList.index(card)}-{card.PlayedBy}' for card in L])

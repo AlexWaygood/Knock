@@ -9,7 +9,7 @@ from pygame.time import delay
 
 if TYPE_CHECKING:
 	from src.special_knock_types import CardList, NumberInput, ConnectionAddress
-	from src.cards.suit import Suit
+	from src.cards.server_card_suit_rank import Suit
 
 
 class ServerGameplayers(Gameplayers):
@@ -27,10 +27,12 @@ class ServerGameplayers(Gameplayers):
 	def RoundCleanUp(self):
 		self.data = [player.EndOfRound() for player in self.data]
 
-	def ReceiveCards(self,
-	                 Pack: CardList,
-	                 CardNo: int,
-	                 trumpsuit: Suit):
+	def ReceiveCards(
+			self,
+			Pack: CardList,
+			CardNo: int,
+			trumpsuit: Suit
+	):
 
 		self.data = [player.ReceiveCards([Pack.pop() for _ in range(CardNo)], trumpsuit) for player in self.data]
 
@@ -40,7 +42,7 @@ class ServerPlayer(Player):
 
 	def __init__(self, playerindex):
 		super().__init__(playerindex)
-		self.SendQ = Queue()
+		self.SendQ = Queue(maxsize=1)
 		self.addr: ConnectionAddress = tuple()
 
 	AllPlayers = ServerGameplayers()

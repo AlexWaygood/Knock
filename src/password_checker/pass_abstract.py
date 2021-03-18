@@ -7,11 +7,10 @@ from secrets import choice
 from Crypto.Cipher.AES import MODE_CBC, new as AES_new
 from Crypto.Util.number import getPrime
 
-from src.data_structures import DictLike
-from src.Misc_locals import PrintableCharacters
+from src.misc import PrintableCharacters, DictLike
 
 if TYPE_CHECKING:
-	from src.network.network_abstract_class import Network
+	from src.network.netw_abstract import Network
 	from socket import socket
 	# noinspection PyProtectedMember
 	from Crypto.Cipher._mode_cbc import CbcMode as CipherType

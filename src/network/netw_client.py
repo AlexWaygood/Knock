@@ -1,7 +1,7 @@
 from logging import getLogger
 from queue import Queue
 from time import time
-from src.network.network_abstract_class import Network, GetTime
+from src.network.netw_abstract import Network, GetTime
 
 from os import environ
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
@@ -57,7 +57,7 @@ class Client(Network):
 				self.conn.connect(self.addr)
 
 				if password:
-					from src.network.password_checker_client import ClientPasswordChecker as PasswordChecker
+					from src.password_checker.pass_client import ClientPasswordChecker as PasswordChecker
 					PasswordChecker(self, self.conn, password)  # Sends the password to the server in __init__()
 
 				print(f'Connected at {GetTime()}.')

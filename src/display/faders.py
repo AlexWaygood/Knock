@@ -4,7 +4,7 @@ from typing import Sequence, TYPE_CHECKING
 from os import environ
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 from pygame.time import delay, get_ticks as GetTicks
-from src.display.colour_scheme import ColourScheme
+from src.display.colours import ColourScheme
 
 if TYPE_CHECKING:
 	from src.special_knock_types import Colour, OptionalColours

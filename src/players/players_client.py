@@ -11,8 +11,6 @@ if TYPE_CHECKING:
 
 
 class ClientGameplayers(Gameplayers):
-
-	# noinspection PyAttributeOutsideInit
 	def AddVars(self, game: Game):
 		self.PlayerNo = game.PlayerNumber
 
@@ -93,7 +91,7 @@ class ClientGameplayers(Gameplayers):
 
 		if (WinnerNo := len(Winners)) > 1:
 			if WinnerNo == 2:
-				ListOfWinners = f'{Winners[0] and Winners[1]}'
+				ListOfWinners = f'{Winners[0]} and {Winners[1]}'
 			else:
 				ListOfWinners = f'{", ".join(Winner.name for Winner in Winners[:-1])} and {Winners[-1]}'
 

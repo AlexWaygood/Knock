@@ -1,78 +1,66 @@
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
-from PIL import Image
-from functools import lru_cache
-from itertools import product
-
-from src.cards.server_card import ServerCard as Card
-from src.cards.rank import Rank
-from src.cards.suit import Suit
-
 from os import environ, path
+from typing import TYPE_CHECKING
+from functools import lru_cache
+from PIL import Image
+
+from src.cards.server_card_suit_rank import Suit, AllCardIDs, ServerCard
+
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
-from pygame import Rect
 from pygame.transform import rotozoom
 from pygame.image import fromstring as pg_image_fromstring
 
 if TYPE_CHECKING:
-	from pygame import Surface
-	from src.special_knock_types import RankType, Position, CardImageDict, TupledImageDict
 	from fractions import Fraction
+	from pygame import Rect
+	from src.special_knock_types import RankType, Position, CardImageDict, TupledImageDict, OptionalSurface, OptionalRect
 
 
-def OpenImage(ID: str,
-              ResizeRatio: Fraction):
-
+def OpenImage(
+		ID: str,
+		ResizeRatio: Fraction
+):
 	im = Image.open(path.join(ClientCard.PathToImages, f'{ID}.jpg')).convert("RGB")
 	im = im.resize((int(im.size[0] / ResizeRatio), int(im.size[1] / ResizeRatio)))
 	return pg_image_fromstring(im.tobytes(), im.size, im.mode).convert()
 
 
 @lru_cache
-def CardResizer(ResizeRatio: Fraction,
-                BaseCardImages: TupledImageDict):
-
+def CardResizer(
+		ResizeRatio: Fraction,
+		BaseCardImages: TupledImageDict
+):
 	return {ID: rotozoom(cardimage, 0, (1 / ResizeRatio)) for ID, cardimage in BaseCardImages}
 
 
-# Imported by ClientGame script.
-AllCardValues = product(Rank.AllRanks, Suit.CardSuits)
-AllCardIDs = [f'{ID[0]}{ID[1]}' for ID in AllCardValues]
-
-
-class ClientCard(Card):
+class ClientCard(ServerCard):
 	__slots__ = 'rect', 'colliderect', 'image', 'surfandpos'
 
 	BaseCardImages: CardImageDict = {}
 	CardImages: CardImageDict = {}
-	OriginalImageDimensions = (691, 1056)
+	OriginalImageDimensions = (691, 1056)  # Used in the SurfaceCoordinator script
 	PathToImages = path.join('Images', 'Cards', 'Compressed')
 
-	def __new__(cls,
-	            rank: RankType,
-	            suit: str,
-	            PlayedBy: str = ''):
-
-		new = super(ClientCard, cls).__new__(cls, rank, suit)
-		new.PlayedBy = PlayedBy
-		return new
-
-	def __init__(self,
-	             rank: RankType,
-	             suit: str):
+	def __init__(
+			self,
+			rank: RankType,
+			suit: str
+	):
 
 		super().__init__(rank, suit)
-		self.rect = Rect(0, 0, 1, 1)
+		self.rect: OptionalRect = None
 		self.colliderect = self.rect
-		self.image: Optional[Surface] = None
+		self.image: OptionalSurface = None
 		self.surfandpos = tuple()
 
-	def ReceiveRect(self,
-	                rect: Rect,
-	                SurfPos: Position = None,
-	                GameSurfPos: Position = None,
-	                CardInHand: bool = False):
+	def ReceiveRect(
+			self,
+			rect: Rect,
+			SurfPos: Position = None,
+			GameSurfPos: Position = None,
+			CardInHand: bool = False
+	):
 
 		self.rect = rect
 		self.surfandpos = (self.image, self.rect)
@@ -80,9 +68,11 @@ class ClientCard(Card):
 		if CardInHand:
 			self.colliderect = rect.move(*SurfPos).move(*GameSurfPos)
 
-	def GetWinValue(self,
-	                playedsuit: Suit,
-	                trumpsuit: Suit):
+	def GetWinValue(
+			self,
+			playedsuit: Suit,
+			trumpsuit: Suit
+	):
 
 		if self.Suit == playedsuit:
 			return self.Rank.Value
@@ -90,14 +80,8 @@ class ClientCard(Card):
 
 	@classmethod
 	def UpdateAtrributes(cls):
-		for card in cls.AllCards:
-			try:
-				card.image = cls.CardImages[repr(card)]
-			except Exception as e:
-				print(f'Path is {path.abspath(cls.PathToImages)}')
-				print(cls.BaseCardImages)
-				print(AllCardValues)
-				raise e
+		for card in cls.AllCardsList:
+			card.image = cls.CardImages[repr(card)]
 			card.surfandpos = (card.image, card.rect)
 
 	@classmethod

@@ -36,7 +36,7 @@ class KnockSurface(BaseKnockSurface, SurfaceCoordinator):
 			self.fill()
 			self.surf.blits(self.GetSurfBlits(), False)
 
-		self.GameSurf.surf.blit(self.surfandpos)
+		self.GameSurf.surf.blit(*self.surfandpos)
 
 	# Two placeholder methods, to be overriden higher up in the inheritance chain
 	def SurfDimensions(self, *args, **kwargs):

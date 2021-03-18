@@ -3,13 +3,13 @@ from __future__ import annotations
 from functools import lru_cache, singledispatch
 from fractions import Fraction
 from time import time
-from typing import overload, Union, TYPE_CHECKING
+from typing import overload, TYPE_CHECKING
 
-from src.data_structures import DictLike
+from src.misc import DictLike
 from src.display.faders import ColourFader
 
 if TYPE_CHECKING:
-	from src.special_knock_types import BlitsList, Position, Colour
+	from src.special_knock_types import BlitsList, Colour, PositionOrBlitsList
 
 from os import environ
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
@@ -21,11 +21,14 @@ class FontAndLinesize:
 	"""Class for holding data about various fonts that will be used frequently in the game"""
 	__slots__ = 'font', 'linesize', 'Cursor'
 
+	DefaultCursorColour = (0, 0, 0)
+	DefaultCursorWidth = 3
+
 	def __init__(self, font: SysFont):
 		self.font = font
 		self.linesize = font.get_linesize()
-		self.Cursor = Surface((3, self.linesize))
-		self.Cursor.fill((0, 0, 0))
+		self.Cursor = Surface((self.DefaultCursorWidth, self.linesize))
+		self.Cursor.fill(self.DefaultCursorColour)
 
 	def __repr__(self):
 		return f'FontAndLinesize object, style={Fonts.DefaultFont}, linesize={self.linesize}'
@@ -38,7 +41,7 @@ class FontAndLinesize:
 
 
 @overload
-def GetCursor(TextAndPos: Union[Position, BlitsList], font: FontAndLinesize) -> BlitsList:
+def GetCursor(TextAndPos: PositionOrBlitsList, font: FontAndLinesize) -> BlitsList:
 	pass
 
 
@@ -55,9 +58,12 @@ def _(TextAndPos: list, font: FontAndLinesize):
 
 
 @lru_cache
-def FontMachine(GameX: int,
-                GameY: int):
-
+def FontMachine(
+		GameX: int,
+		GameY: int,
+		DefaultTitleFontSize: int,
+		DefaultMassiveFontSize: int
+):
 	x = 10
 	NormalFont = SysFont(Fonts.DefaultFont, x, bold=True)
 	UnderLineFont = SysFont(Fonts.DefaultFont, x, bold=True)
@@ -80,8 +86,9 @@ def FontMachine(GameX: int,
 		FontAndLinesize(font) for font in (
 			NormalFont,
 			UnderLineFont,
-			SysFont(Fonts.DefaultFont, 20, bold=True),
-			SysFont(Fonts.DefaultFont, 40, bold=True))
+			SysFont(Fonts.DefaultFont, DefaultTitleFontSize, bold=True),
+			SysFont(Fonts.DefaultFont, DefaultMassiveFontSize, bold=True)
+		)
 	]
 
 
@@ -91,12 +98,17 @@ class Fonts(DictLike):
 	            'NormalScoreboardFont', 'UnderlinedScoreboardFont'
 
 	DefaultFont = 'Times New Roman'
+	DefaultTitleFontSize = 20
+	DefaultMassiveFontSize = 40
+	# The size for the standard font is determined dynamically based on the user's screensize
 
-	def __init__(self,
-	             GameX: int,
-	             GameY: int):
+	def __init__(
+			self,
+			GameX: int,
+			GameY: int
+	):
 
-		Normal, UnderLine, Title, Massive = FontMachine(GameX, GameY)
+		Normal, UnderLine, Title, Massive = FontMachine(GameX, GameY, 20, 40)
 
 		self.Normal = Normal
 		self.UnderLine = UnderLine
@@ -154,6 +166,3 @@ class TextBlitsMixin:
 		if c := self.TextFadeManager.GetColour():
 			self.TextColour = c
 		return self.GetTextHelper(text, font, self.TextColour, **kwargs)
-
-	def __hash__(self):
-		return hash(repr(self))

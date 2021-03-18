@@ -1,20 +1,23 @@
 from __future__ import annotations
 
+from typing import List, TYPE_CHECKING
+from threading import RLock
 from logging import getLogger
 from itertools import chain
 from queue import Queue
-from traceback_with_variables import printing_exc
 from time import time
-from typing import List, TYPE_CHECKING
-from os import environ
 
-from src.data_structures import DictLike
+from traceback_with_variables import printing_exc
+
+from src.misc import DictLike
 from src.game.abstract_game import Game, EventsDict
 from src.players.players_client import ClientPlayer as Player
-from src.players.client_scoreboard_data import Scoreboard
-from src.cards.client_card import AllCardValues, ClientCard as Card
-from src.network.client_class import Client
+from src.game.client_scoreboard_data import Scoreboard
+from src.cards.server_card_suit_rank import AllCardValues
+from src.cards.client_card import ClientCard as Card
+from src.network.netw_client import Client
 
+from os import environ
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 from pygame.time import delay
 
@@ -52,26 +55,30 @@ class DoubleTrigger:
 class ClientGame(Game, DictLike):
 	__slots__ = 'GamesPlayed', 'CardNumberThisRound', 'RoundNumber', 'TrickInProgress', 'TrickNumber', \
 	            'WhoseTurnPlayerIndex', 'PlayerOrder', 'RoundLeaderIndex', 'MaxCardNumber', 'NewCardQueues', \
-	            'FrozenState', 'Scoreboard', 'client'
+	            'FrozenState', 'Scoreboard', 'client', 'lock'
 
-	OnlyGame = None
+	# The PlayerNumber is set as an instance variable on the server side but a class variable on the client side.
 	PlayerNumber = 0
+	OnlyGame = None
 
 	# This is only going to be called once, so we don't need to muck around with singleton patterns etc.
-	def __new__(cls,
-	            PlayerNumber: int,
-	            FrozenState: bool):
-
+	def __new__(
+			cls,
+			PlayerNumber: int,
+			FrozenState: bool
+	):
 		cls.OnlyGame = super(ClientGame, cls).__new__(cls)
 		cls.PlayerNumber = PlayerNumber
 		return cls.OnlyGame
 
-	def __init__(self,
-	             PlayerNumber: int,
-	             FrozenState: bool):
-
+	def __init__(
+			self,
+			PlayerNumber: int,
+			FrozenState: bool
+	):
 		super().__init__()
 		self.FrozenState = FrozenState
+		self.lock = RLock()
 		self.client = Client.OnlyClient
 		self.Triggers = DoubleTrigger()
 		self.gameplayers = Player.AllPlayers
@@ -112,37 +119,40 @@ class ClientGame(Game, DictLike):
 			with self:
 				s.Client[attr] = s.Server[attr]
 
-	def StartRound(self,
-	               cardnumber: int,
-	               RoundLeaderIndex: int,
-	               RoundNumber: int):
-
+	def StartRound(
+			self,
+			cardnumber: int,
+			RoundLeaderIndex: int,
+			RoundNumber: int
+	):
 		self.CardNumberThisRound = cardnumber
 		self.RoundLeaderIndex = RoundLeaderIndex
 		self.RoundNumber = RoundNumber
 
-	def StartTrick(self,
-	               TrickNumber: int,
-	               FirstPlayerIndex: int,
-	               player: Player):
-
+	def StartTrick(
+			self,
+			TrickNumber: int,
+			FirstPlayerIndex: int,
+			player: Player
+	):
 		self.TrickInProgress = True
 		self.TrickNumber = TrickNumber
 		self.PlayerOrder = list(chain(range(FirstPlayerIndex, self.PlayerNumber), range(FirstPlayerIndex)))
 		player.PosInTrick = self.PlayerOrder.index(player.playerindex)
 		return self.PlayerOrder, player.PosInTrick
 
-	def PlayTrick(self,
-	              context: InputContext,
-	              Pos: int):
-
+	def PlayTrick(
+			self,
+			context: InputContext,
+			Pos: int
+	):
 		with context(GameUpdatesNeeded=True):
 			for i, val in enumerate(self.PlayerOrder):
 				self.WhoseTurnPlayerIndex = val
+				context.TrickClickNeeded = (len(self.PlayedCards) == Pos)
 
-				while (CardsOnBoard := len(self.PlayedCards)) == i:
+				while len(self.PlayedCards) == i:
 					delay(100)
-					context.TrickClickNeeded = (CardsOnBoard == Pos)
 
 	def ExecutePlay(
 			self,
@@ -211,6 +221,14 @@ class ClientGame(Game, DictLike):
 
 				self.client.send(self.client.SendQueue.get())
 
+	def __enter__(self):
+		self.lock.acquire()
+		return self
+
+	def __exit__(self, exc_type, exc_val, exc_tb):
+		self.lock.release()
+		return True
+
 	def __repr__(self):
 		String = super().__repr__()
 		Added = f'''gameplayers = {self.gameplayers}
@@ -254,7 +272,7 @@ MaxCardNumber = {self.MaxCardNumber}
 					player.Bid = int(bid)
 
 		if (Hand := StringList[2]) != 'None' and not self.gameplayers[playerindex].Hand:
-			self.gameplayers[playerindex].ReceiveCards(CardsFromString(Hand))
+			self.gameplayers[playerindex].Hand.NewHand(CardsFromString(Hand))
 			self.NewCardQueues.Hand.put(1)
 
 		if (PlayedCards := StringList[3]) != 'None':
@@ -267,7 +285,6 @@ MaxCardNumber = {self.MaxCardNumber}
 
 		if not self.TrumpCard:
 			try:
-				# noinspection PyTypeChecker
 				self.TrumpCard = (Card(AttemptToInt(FinalString[3]), FinalString[4]),)
 				self.trumpsuit = self.TrumpCard[0].Suit
 				self.NewCardQueues.TrumpCard.put(1)
@@ -284,5 +301,5 @@ def AttemptToInt(string: str):
 
 def CardsFromString(L: str):
 	cards = [s.split('-') for s in L.split('--')]
-	cards = [[AttemptToInt(c[0][0]), c[0][1], c[1]] for c in cards]
+	cards = [AllCardValues[int[c[0]]] for c in cards]
 	return [Card(*c) for c in cards]

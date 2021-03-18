@@ -1,25 +1,29 @@
 from __future__ import annotations
-
 from typing import List, Callable, Tuple, TYPE_CHECKING, Union, Optional, Sequence, Dict, Any, Generator
 
 
 if TYPE_CHECKING:
 	from pygame import Surface, Rect
 	from socket import socket
-	from src.cards.server_card import ServerCard
-	from src.cards.suit import Suit
-	from src.network.server_class import Server
-	from src.display.colour_scheme import ColourScheme
+
+	from src.display.abstract_surfaces.knock_surface_with_cards import CoverRect
+	from src.display.colours import ColourScheme
+
 	from src.players.players_abstract import Player
 	from src.players.players_server import ServerPlayer
-	from src.display.abstract_surfaces.knock_surface_with_cards import CoverRect
+
+	from src.cards.server_card_suit_rank import ServerCard, Suit
+	from src.network.netw_server import Server
 
 	Blittable = Optional[Tuple[Surface, Rect]]
 	BlitsList = Union[List[Blittable], Sequence[Blittable]]
 
-	RectList = List[Optional[Rect]]
+	OptionalRect = Optional[Rect]
+	RectList = List[OptionalRect]
 	CoverRectList = List[Optional[CoverRect]]
-	SurfaceList = List[Optional[Surface]]
+
+	OptionalSurface = Optional[Surface]
+	SurfaceList = List[OptionalSurface]
 
 	CardList = List[Optional[ServerCard]]
 	Grouped_Type = Dict[Suit: CardList]
@@ -28,6 +32,8 @@ if TYPE_CHECKING:
 	Position = Optional[Tuple[float, float]]
 	DimensionTuple = Optional[Tuple[float, float]]
 	SuitTuple = Tuple[Optional[Suit], Optional[Suit]]
+
+	PositionOrBlitsList = Union[Position, BlitsList]
 
 	Colour = Sequence[int, int, int]
 	OptionalColours = Optional[ColourScheme]
@@ -47,4 +53,4 @@ if TYPE_CHECKING:
 
 	CardImageDict = Dict[str, Surface]
 	TupledImageDict = Sequence[Tuple[str, Surface]]
-	KeyTuple = Tuple[int, ...]
+	KeyTuple = Sequence[int]

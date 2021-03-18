@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 	from src.display.input_context import InputContext
 	from src.display.typewriter import Typewriter
 	from src.game.client_game import ClientGame as Game
-	from src.network.client_class import Client
+	from src.network.netw_client import Client
 
 
 def AttributeWait(

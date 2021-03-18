@@ -24,15 +24,15 @@ if TYPE_CHECKING:
 	from src.special_knock_types import KeyTuple
 	from src.game.client_game import ClientGame as Game
 	from src.players.players_client import ClientPlayer as Player
-	from src.network.client_class import Client
+	from src.network.netw_client import Client
 
 	from src.display.display_manager import DisplayManager
 	from src.display.mouse.mouse import Mouse, Scrollwheel
-	from src.display.knock_surfaces.game_surf import GameSurface
+	from src.display.knock_surfaces.game import GameSurface
 	from src.display.input_context import InputContext
 	from src.display.text_input import TextInput
 	from src.display.error_tracker import Errors
-	from src.display.interactive_scoreboard import InteractiveScoreboard
+	from src.display.matplotlib_scoreboard import InteractiveScoreboard
 
 
 log = getLogger(__name__)

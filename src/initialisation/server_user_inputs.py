@@ -1,5 +1,5 @@
 from pyinputplus import inputInt, inputMenu, inputCustom, inputYesNo
-from src.network.password_checker_abstract import GeneratePassword, PasswordInput
+from src.password_checker.pass_abstract import GeneratePassword, PasswordInput
 
 
 def UserInputs():

@@ -28,14 +28,14 @@ from src.clientside_gameplay.gameplay import Play
 from src.clientside_gameplay.event_loop import GameplayLoop
 
 from src.game.client_game import ClientGame as Game
-from src.network.client_class import Client
+from src.network.netw_client import Client
 from src.display.display_manager import DisplayManager
-from src.display.colour_scheme import ColourScheme
+from src.display.colours import ColourScheme
 
 from src.initialisation.logging_config import LoggingConfig
 from src.initialisation.client_user_inputs import UserInputs
 from src.initialisation.ascii_suits import PrintIntroMessage
-from src.initialisation.set_blocked_events import SetBlockedEvents
+from src.initialisation.client_set_blocked_events import SetBlockedEvents
 
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 from pygame import init as pg_init

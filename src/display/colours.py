@@ -1,5 +1,5 @@
 from src.display.fireworks.firework_vars import FireworkVars
-from src.data_structures import DictLike
+from src.misc import DictLike
 
 
 # noinspection PyAttributeOutsideInit

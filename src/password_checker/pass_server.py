@@ -4,11 +4,11 @@ from typing import TYPE_CHECKING
 from Crypto.Util.Padding import unpad
 from Crypto.Cipher.AES import block_size as AES_block_size
 
-from src.network.password_checker_abstract import PasswordChecker, PasswordLength
+from src.password_checker.pass_abstract import PasswordChecker, PasswordLength
 
 if TYPE_CHECKING:
 	from socket import socket
-	from src.network.server_class import Server
+	from src.network.netw_server import Server
 
 
 # noinspection PyAttributeOutsideInit

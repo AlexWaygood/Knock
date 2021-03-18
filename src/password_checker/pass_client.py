@@ -4,10 +4,10 @@ from typing import TYPE_CHECKING
 from Crypto.Util.Padding import pad
 from Crypto.Cipher.AES import block_size as AES_block_size
 
-from src.network.password_checker_abstract import PasswordChecker
+from src.password_checker.pass_abstract import PasswordChecker
 
 if TYPE_CHECKING:
-	from src.network.client_class import Client
+	from src.network.netw_client import Client
 	from socket import socket
 
 

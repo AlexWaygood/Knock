@@ -5,7 +5,7 @@ from typing import Optional, TYPE_CHECKING
 
 from pyperclip import copy, paste
 
-from src.Misc_locals import PrintableCharactersPlusSpace
+from src.misc import PrintableCharactersPlusSpace
 from src.display.input_context import InputContext
 from src.display.abstract_surfaces.text_rendering import TextBlitsMixin, GetCursor
 from src.display.abstract_surfaces.surface_coordinator import SurfaceCoordinator
