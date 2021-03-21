@@ -18,13 +18,16 @@ class Network:
 	"""Class object for encoding communication protocols between the server and client."""
 	__slots__ = 'conn'
 
+	DefaultTinyMessageSize = 10
+
 	def __init__(self, *args, **kwargs):
 		self.conn = socket(AF_INET, SOCK_STREAM)
 
 	@staticmethod
-	def SubReceive(AmountToReceive: int,
-	               conn: socket):
-
+	def SubReceive(
+			AmountToReceive: int,
+			conn: socket
+	):
 		response = []
 
 		while AmountToReceive > 0:
@@ -38,3 +41,19 @@ class Network:
 	def CloseConnection(conn: socket):
 		conn.shutdown(SHUT_RDWR)
 		conn.close()
+
+	def send(
+			self,
+			message: str,
+	        conn: socket
+	):
+		# Create a header telling the other computer the size of the data we want to send.
+		# Turn the header into a fixed-length message using f-string left-alignment, encode it, send it.
+		# Then send the main message itself.
+		n = self.DefaultTinyMessageSize
+
+		if len(message) > n:
+			conn.sendall(f'{len(message):-<{n}}'.encode())
+			conn.sendall(message.encode())
+		else:
+			conn.sendall(f'{message:-<{n}}'.encode())

@@ -1,6 +1,6 @@
 # This file imported by the server script and the client script
 
-from logging import basicConfig, DEBUG
+from logging import basicConfig, DEBUG, debug
 from os import path
 from src.misc import GetDate
 
@@ -14,3 +14,5 @@ def LoggingConfig(ClientSide: bool):
 		datefmt='%H:%M:%S',
 		style='{'
 	)
+
+	debug('\n\nNEW RUN OF PROGRAMME STARTING\n\n')

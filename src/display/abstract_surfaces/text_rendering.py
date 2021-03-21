@@ -9,7 +9,7 @@ from src.misc import DictLike
 from src.display.faders import ColourFader
 
 if TYPE_CHECKING:
-	from src.special_knock_types import BlitsList, Colour, PositionOrBlitsList
+	from src.special_knock_types import BlitsList, Colour, PositionOrBlitsList, OptionalColourFader
 
 from os import environ
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
@@ -115,7 +115,7 @@ class Fonts(DictLike):
 		self.Title = Title
 		self.Massive = Massive
 
-		self.TypewriterFont = self.Normal
+		self.TypewriterFont = self.Title
 		self.UserInputFont = self.Normal
 		self.TrumpcardFont = self.Normal
 
@@ -131,7 +131,7 @@ class Fonts(DictLike):
 	def __repr__(self):
 		return ''.join((
 			f'Fonts-theme object: \n--',
-			'\n--'.join(f"{f}: {self[f]}" for f in self.__slots__),
+			'; '.join(f"{f}: {self[f]}" for f in self.__slots__),
 			'\n\n')
 		)
 
@@ -140,7 +140,11 @@ class Fonts(DictLike):
 class TextBlitsMixin:
 	__slots__ = tuple()
 
-	TextFade = ColourFader()
+	TextFade: OptionalColourFader = None
+
+	@classmethod
+	def AddTextFader(cls):
+		cls.TextFade = ColourFader('TextDefault')
 
 	@lru_cache
 	def GetTextHelper(
@@ -162,7 +166,8 @@ class TextBlitsMixin:
 			font: FontAndLinesize,
 			**kwargs
 	):
+		return self.GetTextHelper(text, font, self.TextFade.GetColour(), **kwargs)
 
-		if c := self.TextFadeManager.GetColour():
-			self.TextColour = c
-		return self.GetTextHelper(text, font, self.TextColour, **kwargs)
+	# This method can't be inherited by dataclasses, which have to explicitly redefine __hash__()
+	def __hash__(self):
+		return id(self)

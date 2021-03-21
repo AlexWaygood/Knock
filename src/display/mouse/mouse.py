@@ -14,9 +14,10 @@ from pygame.locals import SYSTEM_CURSOR_HAND, SYSTEM_CURSOR_NO, SYSTEM_CURSOR_WA
 
 if TYPE_CHECKING:
 	from src.special_knock_types import Position
+	from src.display.input_context import InputContext
 
 
-@dataclass
+@dataclass(eq=False, unsafe_hash=True)
 class Scrollwheel:
 	# Repr automatically defined as it's a dataclass!
 
@@ -46,7 +47,7 @@ class Scrollwheel:
 
 
 class Mouse(SurfaceCoordinator):
-	__slots__ = 'Scrollwheel', 'cursor', 'ScoreboardButton', 'CardHoverID', 'click', 'CardsInHand'
+	__slots__ = 'Scrollwheel', 'cursor', 'ScoreboardButton', 'CardHoverID', 'click', 'CardsInHand', 'context'
 
 	N   =   ((128, 40), (64, 0),    *compile(UpArrow))
 	NE  =   ((128, 40), (97, 8),    *compile(NEArrow))
@@ -63,7 +64,12 @@ class Mouse(SurfaceCoordinator):
 	IllegalMove = (SYSTEM_CURSOR_NO,)
 	Wait        = (SYSTEM_CURSOR_WAIT,)
 
-	def __init__(self, ScoreboardButton):
+	def __init__(
+			self,
+			ScoreboardButton,
+			context: InputContext
+	):
+		self.context = context
 		self.Scrollwheel = Scrollwheel(False, tuple(), 0, 0)
 		self.cursor = 'default'
 		self.ScoreboardButton = ScoreboardButton
@@ -72,11 +78,22 @@ class Mouse(SurfaceCoordinator):
 		self.CardsInHand = self.player.Hand
 		self.AllSurfaces.append(self)
 
-	# NOT called by the SurfaceCoordinator class method
-	def UpdateCursor(self):
+	# **kwargs included because it might be passed ForceUpdate=True
+	def Update(self, **kwargs):
 		if (cur := self.CursorValue()) != self.cursor:
 			self.cursor = cur
 			set_cursor(*cur)
+
+		if self.click:
+			if self.context.ClickToStart:
+				self.game.TimeToStart()
+
+			elif (
+					self.context.TrickClickNeeded
+					and self.cursor == 'Hand'
+					and self.player.PosInTrick == len(self.game.PlayedCards)
+			):
+				self.game.ExecutePlay(self.CardHoverID, self.player.playerindex)
 
 	def CursorValue(self):
 		if self.client.ConnectionBroken:

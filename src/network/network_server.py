@@ -5,13 +5,13 @@ from logging import getLogger
 from typing import TYPE_CHECKING
 from pyinputplus import inputYesNo
 
-from src.network.netw_abstract import Network, GetTime
+from src.network.network_abstract import Network, GetTime
 from src.players.players_server import ServerPlayer as Player
 
 if TYPE_CHECKING:
 	from src.special_knock_types import NetworkFunction, ConnectionDict
-	from ipinfo.handler import Handler
 	from socket import socket
+	from src.game.server_game import ServerGame as Game
 
 
 log = getLogger(__name__)
@@ -19,40 +19,40 @@ AccessToken = '62e82f844db51d'
 
 
 class Server(Network):
-	__slots__ = 'ConnectionInfo'
+	__slots__ = 'ConnectionInfo', 'ip_handler'
 
-	def __init__(
-			self,
-			IP: str,
-			port: int,
-			ManuallyVerify: bool,
-			BiddingSystem: str,
-			NumberOfPlayers: int,
-			AccessToken: str,
-			password: str,
-			CommsFunction: NetworkFunction
-	):
-
-		super().__init__(log)
+	def __init__(self, AccessToken: str):
+		super().__init__()
 		self.ConnectionInfo: ConnectionDict = {}
-		self.conn.bind((IP, port))
-		self.conn.listen()
-
-		NumberOfClients = 0
-		Handler_object = None
+		self.ip_handler = None
 
 		if AccessToken:
 			try:
 				from ipinfo import getHandler
-				Handler_object = getHandler(AccessToken)
+				self.ip_handler = getHandler(AccessToken)
 			except:
 				print("Encountered an error importing ipinfo; won't be able to provide info on IP addresses.")
 		else:
 			print('Not checking IP addresses as no access token was supplied.')
 
+	def Run(
+			self,
+			IP: str,
+			port: int,
+			ManuallyVerify: bool,
+			BiddingSystem: str,
+			password: str,
+			CommsFunction: NetworkFunction,
+			game: Game
+	):
+		print('Initialising server...')
+		self.conn.bind((IP, port))
+		self.conn.listen()
+		NumberOfClients = 0
 		print(f'Ready to accept connections to the server (time {GetTime()}).\n')
 
 		Inputs, Outputs = [self.conn], []
+		NumberOfPlayers = game.PlayerNumber
 
 		while True:
 			readable, writable, exceptional = select(Inputs, Outputs, Inputs)
@@ -69,7 +69,6 @@ class Server(Network):
 					# so the server will know to check if that connection is ready to have data sent to it.
 
 					NewConn = self.Connect(
-						Handler_object,
 						NumberOfClients,
 						password,
 						ManuallyVerify,
@@ -84,19 +83,18 @@ class Server(Network):
 					if NumberOfClients == NumberOfPlayers:
 						print('Maximum number of connections received; no longer open for connections.')
 				else:
-					CommsFunction(self, s)
+					CommsFunction(self, s, game)
 
 			for s in writable:
-				if not (Q := self.ConnectionInfo[s].SendQ).empty():
-					Message = Q.get()
-					self.send(Message, conn=s)
+				with self.ConnectionInfo[s].SendQ as q:
+					self.send(q.get(), s)
+					log.debug(f'Message sent to client: {q.LastUpdate}.')
 
 			if exceptional:
 				raise Exception('Exception in one of the client threads!')
 
 	def Connect(
 			self,
-			Handler_object: Handler,
 	        NumberOfClients: int,
 	        password: str,
 	        ManuallyVerify: bool,
@@ -106,10 +104,10 @@ class Server(Network):
 
 		conn, addr = self.conn.accept()
 
-		if Handler_object:
+		if self.ip_handler:
 			try:
 				# Should change this to addr[0] when other computers need to connect
-				details = Handler_object.getDetails('86.14.41.223')
+				details = self.ip_handler.getDetails('86.14.41.223')
 
 				print(
 					f'Attempted connection from {details.city}, '
@@ -121,13 +119,13 @@ class Server(Network):
 			except:
 				print(f"Couldn't get requested info for this IP address {addr}.")
 
-		if Handler_object and ManuallyVerify:
+		if self.ip_handler and ManuallyVerify:
 			if inputYesNo('\nAccept this connection? ') == 'no':
 				self.CloseConnection(conn)
 				return 0
 
 		if password:
-			from src.password_checker.pass_server import ServerPasswordChecker as PasswordChecker
+			from src.password_checker.password_server import ServerPasswordChecker as PasswordChecker
 			Checker = PasswordChecker(self, conn)
 
 			if not Checker.CheckPassword(conn, password):
@@ -142,23 +140,8 @@ class Server(Network):
 		print(f'Connection info to client {addr} was placed on the send-queue at {GetTime()}.\n')
 		return conn
 
-	@staticmethod
-	def send(message: str,
-	         conn: socket):
-
-		# Create a header telling the other computer the size of the data we want to send.
-		# Turn the header into a fixed-length message using f-string left-alignment, encode it, send it.
-		# Then send the main message itself.
-		if len(message) > 10:
-			conn.sendall(f'{len(message):-<10}'.encode())
-			conn.sendall(message.encode())
-		else:
-			conn.sendall(f'{message:-<10}'.encode())
-
-		log.debug(f'Message sent to client: {message}.')
-
 	def receive(self, conn: socket):
-		Message = self.SubReceive(10, conn)
+		Message = self.SubReceive(self.DefaultTinyMessageSize, conn)
 		Message = Message.split('-')[0]
 
 		if Message[0].isdigit() and Message[1].isdigit():

@@ -1,20 +1,26 @@
-from logging import getLogger
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 from queue import Queue
 from time import time
-from src.network.netw_abstract import Network, GetTime
+from traceback_with_variables import printing_exc
+
+from src.network.network_abstract import Network, GetTime
+from src.misc import GetLogger
 
 from os import environ
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 from pygame.time import delay, get_ticks as GetTicks
 
-
-log = getLogger(__name__)
+if TYPE_CHECKING:
+	from src.display.input_context import InputContext
+	from src.special_knock_types import OptionalClient
 
 
 class Client(Network):
-	__slots__ = 'addr', 'ConnectionMessage', 'SendQueue', 'ReceiveQueue', 'LastUpdate', 'ConnectionBroken', 'FrozenState'
+	__slots__ = 'addr', 'ConnectionMessage', 'SendQueue', 'ReceiveQueue', 'LastUpdate', 'ConnectionBroken', 'log'
 
-	OnlyClient = None
+	OnlyClient: OptionalClient = None
 
 	# This is only going to be called once, so we don't need to muck around with singleton patterns etc.
 	def __new__(
@@ -36,12 +42,12 @@ class Client(Network):
 			password: str,
 	):
 		super().__init__()
-		self.FrozenState = FrozenState
 		self.addr = (IP, port)
 		self.SendQueue = Queue()
 		self.ReceiveQueue = Queue(maxsize=1)
 		self.LastUpdate = 0
 		self.ConnectionBroken = False
+		self.log = GetLogger(FrozenState)
 
 		print(f'Starting attempt to connect at {GetTime()}, loading data...')
 
@@ -57,7 +63,7 @@ class Client(Network):
 				self.conn.connect(self.addr)
 
 				if password:
-					from src.password_checker.pass_client import ClientPasswordChecker as PasswordChecker
+					from src.password_checker.password_client import ClientPasswordChecker as PasswordChecker
 					PasswordChecker(self, self.conn, password)  # Sends the password to the server in __init__()
 
 				print(f'Connected at {GetTime()}.')
@@ -84,66 +90,61 @@ class Client(Network):
 
 				Time = CurrentTime
 
-	def ConnectionIsBroken(self):
-		IsBroken = (self.LastUpdate < GetTicks() - 100000)
+	def Update(self):
+		if (IsBroken := (self.LastUpdate < GetTicks() - 100000)) is self.ConnectionBroken:
+			pass
 
-		if IsBroken is self.ConnectionBroken:
-			return self.ConnectionBroken
-
-		if IsBroken:
+		elif IsBroken:
 			print(f'Connection to the server lost at {GetTime()}!')
-
-			if not self.FrozenState:
-				log.debug('Connection to the server lost')
-
+			self.log.debug('Connection to the server lost')
 			self.ConnectionBroken = True
-			return True
 
-		print(f'Connection to the server restored at {GetTime()}!')
+		else:
+			print(f'Connection to the server restored at {GetTime()}!')
+			self.log.debug('Connection to the server restored.')
+			self.ConnectionBroken = False
 
-		if not self.FrozenState:
-			log.debug('Connection to the server restored.')
-
-		self.ConnectionBroken = False
-		return False
+		return (None if self.ReceiveQueue.empty() else self.ReceiveQueue.get()), self.ConnectionBroken
 
 	def receive(self, connecting: bool = False):
-		Message = self.SubReceive(10, self.conn)
+		Message = self.SubReceive(self.DefaultTinyMessageSize, self.conn)
 		Message = Message.split('-')[0]
 
 		if Message[0].isdigit() and Message[1].isdigit() and not connecting:
 			Message = self.SubReceive(int(Message), self.conn)
 
 		self.LastUpdate = GetTicks()
-
-		if not self.FrozenState:
-			log.debug(f'Message received from server, {Message}.')
-
+		self.log.debug(f'Message received from server, {Message}.')
 		self.ReceiveQueue.put(Message)
 
-	def BlockingMessageToServer(self, message: str = '@G'):
+	def BlockingMessageToServer(self, message: str = 'ping'):
 		if message:
 			self.SendQueue.put(message)
 
 		while not self.SendQueue.empty():
 			delay(100)
 
-	# Called ClientSend to distinguish from method in parent class
-	def send(self, message: str):
-		if len(message) > 10:
-			self.conn.sendall(f'{len(message):-<10}'.encode())
-			self.conn.sendall(message.encode())
-		else:
-			self.conn.sendall(f'{message}:-<10'.encode())
-
-		if not self.FrozenState:
-			log.debug(f'Message sent to server, {message}.')
-
+	def ClientSend(self, message: str):
+		self.send(message, self.conn)
+		self.log.debug(f'Message sent to server, {message}.')
 		self.receive()
 
-	def CloseDown(self):
-		if not self.FrozenState:
-			log.debug('Attempting to close connection')
+	def UpdateLoop(self, context: InputContext):
+		with printing_exc():
+			while True:
+				delay(100)
 
-		self.send('@T')
+				if self.SendQueue.empty():
+					if context.GameUpdatesNeeded or self.LastUpdate < (time() - 5):
+						self.ClientSend('ping')
+					continue
+
+				self.ClientSend(self.SendQueue.get())
+
+	def QueueMessage(self, message: str):
+		self.SendQueue.put(message)
+
+	def CloseDown(self):
+		self.log.debug('Attempting to close connection')
+		self.ClientSend('@T')
 		self.CloseConnection(self.conn)

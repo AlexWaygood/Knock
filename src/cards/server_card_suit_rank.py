@@ -49,8 +49,10 @@ class Rank(IntEnum):
 
 Blacks = ('♣', '♠')
 
+# Mixing in 'str' as a class means that we'll be able to sort Suit instances by value.
 
-class Suit(Enum):
+
+class Suit(str, Enum):
     Diamonds = '♢'
     Clubs = '♣'
     Spades = '♠'

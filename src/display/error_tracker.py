@@ -17,16 +17,18 @@ if TYPE_CHECKING:
 	from src.special_knock_types import Blittable
 
 
+# Magic numbers based on the principle of "what looks good on my laptop."
 @lru_cache
-def ErrorPosHelper(GameX: int,
-                   GameY: int):
-
+def ErrorPosHelper(
+		GameX: int,
+		GameY: int
+):
 	return int(GameX * Fraction(550, 683)), int(GameY * Fraction(125, 192))
 
 
-@dataclass(eq=False, unsafe_hash=True)
+@dataclass(eq=False)
 class Errors(TextBlitsMixin, SurfaceCoordinator):
-	# Repr & hash automatically defined as it's a dataclass!
+	# Repr automatically defined as it's a dataclass!
 
 	__slots__ = 'Messages', 'ThisPass', 'StartTime', 'Pos', 'Title', 'TitleFont', 'MessageFont'
 
@@ -44,6 +46,7 @@ class Errors(TextBlitsMixin, SurfaceCoordinator):
 		self.Pos = ErrorPosHelper(self.GameSurf.Width, self.GameSurf.Height)
 		self.TitleFont = self.Fonts['ErrorTitleFont']
 		self.MessageFont = self.Fonts['ErrorMessagesFont']
+		return self
 
 	def Update(self, ForceUpdate: bool = False):
 		self.ErrorMessages()
@@ -55,6 +58,9 @@ class Errors(TextBlitsMixin, SurfaceCoordinator):
 			self.Messages.popleft()
 
 		self.GameSurf.surf.blits(self.Messages)
+
+	def Add(self, message):
+		self.ThisPass.append(message)
 
 	def ErrorMessages(self):
 		if not self.ThisPass:
@@ -78,3 +84,7 @@ class Errors(TextBlitsMixin, SurfaceCoordinator):
 		for Error in self.ThisPass:
 			self.Messages.append(self.GetText(Error, self.MessageFont, center=(x, y)))
 			y += self.MessageFont.linesize
+
+	# Must define hash even though it's in the parent class, because it's a dataclass
+	def __hash__(self):
+		return id(self)

@@ -10,14 +10,12 @@ from src.display.colours import ColourScheme
 
 from src.cards.client_card import ClientCard as Card
 from src.game.client_game import ClientGame as Game
-from src.network.netw_client import Client
+from src.network.network_client import Client
 
 if TYPE_CHECKING:
-	from src.players.players_client import (ClientPlayer as Player,
-	                                        ClientGameplayers as Gameplayers)
-
-	from src.display.knock_surfaces.game import GameSurface
-	from src.display.knock_surfaces.board import BoardSurface
+	from src.players.players_client import (ClientPlayer as Player)
+	from src.display.knock_surfaces.game_surf import GameSurface
+	from src.display.knock_surfaces.board_surf import BoardSurface
 	from src.special_knock_types import Position, DimensionTuple
 
 
@@ -44,7 +42,6 @@ class SurfaceCoordinator:
 
 	game: Game = None
 	player: Player = None
-	gameplayers: Gameplayers = None
 	GameSurf: GameSurface = None  # Will add itself as a class attribute in its own __init__()
 	BoardSurf: BoardSurface = None  # Will add itself as a class attribute in its own __init__()
 	Fonts: Fonts = None
@@ -69,7 +66,6 @@ class SurfaceCoordinator:
 		cls.client = Client.OnlyClient
 		cls.ColourScheme = ColourScheme.OnlyColourScheme
 		cls.player = player
-		cls.gameplayers = cls.game.gameplayers
 		cls.PlayerNo = Game.PlayerNumber
 		cls.GameSurf.Hand = cls.player.Hand
 		GameX, GameY = cls.GameSurf.Width, cls.GameSurf.Height

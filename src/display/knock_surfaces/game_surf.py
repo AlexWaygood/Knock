@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Optional
 from src.display.abstract_surfaces.base_knock_surface import BaseKnockSurface
 from src.display.abstract_surfaces.surface_coordinator import SurfaceCoordinator
 from src.display.faders import ColourFader
-from src.display.colours import ColourScheme
 
 from os import environ
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
@@ -13,29 +12,30 @@ from pygame.key import get_pressed as pg_key_get_pressed
 
 if TYPE_CHECKING:
 	from src.players.players_abstract import Hand
-	from src.special_knock_types import Colour, Position
+	from src.special_knock_types import Position, Colour
 	from src.display.mouse.mouse import Scrollwheel
 
 
 # noinspection PyAttributeOutsideInit
-class GameSurface(BaseKnockSurface, SurfaceCoordinator):
+class GameSurface(BaseKnockSurface):
 	__slots__ = 'WindowWidth', 'WindowHeight', 'MinRectWidth', 'MinRectHeight', 'MovementLookup', 'FillFade', \
-	            'scrollwheel', 'Hand', 'surfandpos', 'topleft'
+	            'scrollwheel', 'Hand', 'surfandpos', 'topleft', 'colour'
 
 	ArrowKeyNudgeAmount = 20
 
 	def __init__(
 			self,
+			StartColour: Colour,
 			WindowWidth: int,
 			WindowHeight: int,
 			MinRectWidth: int,
 			MinRectHeight: int
 	):
 
-		self.colour: Colour = ColourScheme.OnlyColourScheme.MenuScreen
 		super().__init__()
+		self.colour = StartColour
 		SurfaceCoordinator.GameSurf = self
-		self.FillFade = ColourFader()
+		self.FillFade = ColourFader('MenuScreen')
 		self.scrollwheel: Optional[Scrollwheel] = None
 
 		self.x = 0
@@ -55,19 +55,16 @@ class GameSurface(BaseKnockSurface, SurfaceCoordinator):
 		super().SurfAndPos()
 		self.topleft = self.attrs.topleft
 
-	def Update(self, ForceUpdate: bool = False):
+	def Update(self):
 		if self.scrollwheel.IsMoving():
-			XMove, YMove = self.scrollwheel.GetMovement()
-			self.XShift(XMove, TidyUpNeeded=False)
-			self.YShift(YMove)
+			self.MouseMove(self.scrollwheel.GetMovement())
 
 		self.fill()
 		SurfaceCoordinator.UpdateAll()
 		return self.surfandpos
 
 	def fill(self):
-		if c := self.FillFade.GetColour():
-			self.colour = c
+		self.colour = self.FillFade.GetColour()
 		self.surf.fill(self.colour)
 
 	def TidyUp(self):

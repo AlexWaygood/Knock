@@ -10,7 +10,7 @@ from Crypto.Util.number import getPrime
 from src.misc import PrintableCharacters, DictLike
 
 if TYPE_CHECKING:
-	from src.network.netw_abstract import Network
+	from src.network.network_abstract import Network
 	from socket import socket
 	# noinspection PyProtectedMember
 	from Crypto.Cipher._mode_cbc import CbcMode as CipherType

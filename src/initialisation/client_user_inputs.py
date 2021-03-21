@@ -1,7 +1,7 @@
 from socket import gethostbyname
 from pyinputplus import inputCustom, inputMenu
 from ipaddress import ip_address
-from src.password_checker.pass_abstract import PasswordInput
+from src.password_checker.password_abstract import PasswordInput
 
 
 def IPValidation(InputText: str):

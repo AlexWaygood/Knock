@@ -1,82 +1,149 @@
 from __future__ import annotations
 
-from typing import Iterable, TYPE_CHECKING
+from typing import TYPE_CHECKING
+from operator import attrgetter
 from itertools import groupby
 
 from src.players.players_abstract import Gameplayers, Player
 
 if TYPE_CHECKING:
-	from src.special_knock_types import NumberInput
 	from src.game.client_game import ClientGame as Game
 
 
-class ClientGameplayers(Gameplayers):
-	def AddVars(self, game: Game):
-		self.PlayerNo = game.PlayerNumber
+class ClientPlayer(Player):
+	__slots__ = 'Points', 'GamesWon', 'PointsThisRound', 'Tricks', 'RoundLeader', 'PointsLastRound', 'PosInTrick', \
+	            'Scoreboard'
 
-	def RoundCleanUp(self):
-		self.data = [player.EndOfRound() for player in self.data]
+	AllPlayers: Gameplayers[ClientPlayer]
 
-	def HighestScoreFirst(self):
-		return sorted(self.data, key=ClientPlayer.GetPoints, reverse=True)
+	def __init__(self, playerindex: int):
+		super().__init__(playerindex)
+		self.PosInTrick = -1
+		self.Scoreboard = []
+		self.Points = 0
+		self.Tricks = 0
+		self.PointsThisRound = 0
+		self.PointsLastRound = 0
+		self.GamesWon = 0
+		self.RoundLeader = False
 
-	def MostGamesWonFirst(self):
-		return sorted(self.data, reverse=True, key=lambda player: player.GamesWon)
+	@classmethod
+	def AllEqualByAttribute(cls, attr: str):
+		g = groupby(cls.AllPlayers, key=attrgetter(attr))
+		return next(g, True) and not next(g, False)
 
-	def AllPlayersHaveJoinedTheGame(self):
-		return all(isinstance(player.name, str) for player in self.data) and len(self.data) == self.PlayerNo
+	@classmethod
+	def GetNames(cls):
+		return [f'{player}' for player in cls.AllPlayers]
 
-	def AllBid(self):
-		return all(player.Bid != -1 for player in self.data)
+	@classmethod
+	def GetScoreboard(cls):
+		return sum((player.Scoreboard for player in cls.AllPlayers), start=[])
 
-	def GameWinner(self):
-		return max(self.data, key=ClientPlayer.GetPoints)
+	@classmethod
+	def AddVars(cls, game: Game):
+		cls.PlayerNo = game.PlayerNumber
 
-	def BidWaitingText(self, playerindex: int):
-		if self.PlayerNo != 2:
-			if (PlayersNotBid := sum(1 for player in self.data if player.Bid == -1)) > 1:
+	@classmethod
+	def RoundCleanUp(cls):
+		for player in cls.AllPlayers:
+			player.EndOfRound()
+
+	@classmethod
+	def HighestScoreFirst(cls):
+		return sorted(cls.AllPlayers, key=attrgetter('Points'), reverse=True)
+
+	@classmethod
+	def MostGamesWonFirst(cls):
+		return sorted(cls.AllPlayers, reverse=True, key=attrgetter('GamesWon'))
+
+	@classmethod
+	def AllBid(cls):
+		return all(player.Bid != -1 for player in cls.AllPlayers)
+
+	@classmethod
+	def GameWinner(cls):
+		return max(cls.AllPlayers, key=attrgetter('Points'))
+
+	@classmethod
+	def ScoreboardText(
+			cls,
+			Linesize: int,
+			StartY: int,
+			SurfWidth: int,
+			LMargin: int,
+			attr: str
+	):
+		gen = cls.HighestScoreFirst if attr == 'point' else cls.MostGamesWonFirst
+		RightAlignX = SurfWidth - LMargin
+
+		return sum(
+			(plr.scoreboardhelp((StartY + (Linesize * i)), LMargin, RightAlignX, attr) for i, plr in enumerate(gen())),
+			start=[]
+		)
+
+	def scoreboardhelp(
+			self,
+			y: int,
+			LeftAlignX: int,
+			RightAlignX: int,
+			attribute: str
+	):
+		value = self.Points if attribute == 'point' else self.GamesWon
+
+		return [
+			(f'{self}:', {'topleft': (LeftAlignX, y)}),
+			(f'{value} {attribute}{"s" if value != 1 else ""}', {'topright': (RightAlignX, y)})
+		]
+
+	@classmethod
+	def BidWaitingText(cls, playerindex: int):
+		if cls.PlayerNo != 2:
+			if (PlayersNotBid := sum(1 for player in cls.AllPlayers if player.Bid == -1)) > 1:
 				WaitingText = f'{PlayersNotBid} remaining players'
 			else:
-				WaitingText = next(f'{player}' for player in self.data if player.Bid == -1)
+				WaitingText = next(f'{player}' for player in cls.AllPlayers if player.Bid == -1)
 		else:
-			WaitingText = f'{self.data[0 if playerindex else 1]}'
+			WaitingText = f'{cls.AllPlayers[0 if playerindex else 1]}'
 
 		return f'Waiting for {WaitingText} to bid'
 
-	def BidText(self):
-		yield f'{"All" if self.PlayerNo != 2 else "Both"} players have now bid.'
+	@classmethod
+	def BidText(cls):
+		yield f'{"All" if cls.PlayerNo != 2 else "Both"} players have now bid.'
 
-		if AllEqual(player.Bid for player in self.data):
-			BidNumber = self.data[0].Bid
-			FirstWord = 'Both' if self.PlayerNo == 2 else 'All'
+		if cls.AllEqualByAttribute('Bid'):
+			BidNumber = cls.AllPlayers[0].Bid
+			FirstWord = 'Both' if cls.PlayerNo == 2 else 'All'
 			yield f'{FirstWord} players bid {BidNumber}.'
 		else:
-			SortedPlayers = sorted(self.data, key=lambda player: player.Bid, reverse=True)
+			SortedPlayers = sorted(cls.AllPlayers, key=attrgetter('Bid'), reverse=True)
 			for i, player in enumerate(SortedPlayers):
 				yield f'{player}{" also" if i and player.Bid == SortedPlayers[i - 1].Bid else ""} bids {player.Bid}.'
 
-	def EndRoundText(self, FinalRound: bool):
+	@classmethod
+	def EndRoundText(cls, FinalRound: bool):
 		yield 'Round has ended.'
 
-		if AllEqual(player.PointsLastRound for player in self.data):
-			Points = self.data[0].PointsLastRound
+		if cls.AllEqualByAttribute('PointsLastRound'):
+			Points = cls.AllPlayers[0].PointsLastRound
 
-			yield f'{"Both" if self.PlayerNo == 2 else "All"} players won ' \
+			yield f'{"Both" if cls.PlayerNo == 2 else "All"} players won ' \
 			      f'{Points} point{"s" if Points != 1 else ""}.'
 
 		else:
-			for player in sorted(self.data, key=lambda player: player.PointsLastRound, reverse=True):
+			for player in sorted(cls.AllPlayers, key=attrgetter('PointsLastRound'), reverse=True):
 				yield f'{player} won {(Points := player.PointsLastRound)} point{"s" if Points != 1 else ""}.'
 
 		if FinalRound:
 			yield '--- END OF GAME SCORES ---'
 
-			for i, player in enumerate(SortedPlayers := self.HighestScoreFirst()):
+			for i, player in enumerate(SortedPlayers := cls.HighestScoreFirst()):
 				Points = player.Points
 
 				if not i and Points != SortedPlayers[i + 1].Points:
 					Verb = 'leads with'
-				elif i == self.PlayerNo - 1 and Points != SortedPlayers[i - 1].Points:
+				elif i == cls.PlayerNo - 1 and Points != SortedPlayers[i - 1].Points:
 					Verb = 'brings up the rear with'
 				else:
 					Verb = 'has'
@@ -85,9 +152,10 @@ class ClientGameplayers(Gameplayers):
 				Ending = "s" if Points != 1 else ""
 				yield f'{player} {"also " if AlsoNeeded else ""}{Verb} {Points} point{Ending}.'
 
-	def GameCleanUp(self):
-		MaxPoints = max(player.Points for player in self.data)
-		Winners = [player.WinsGame() for player in self.data if player.Points == MaxPoints]
+	@classmethod
+	def GameCleanUp(cls):
+		MaxPoints = max(player.Points for player in cls.AllPlayers)
+		Winners = [player.WinsGame() for player in cls.AllPlayers if player.Points == MaxPoints]
 
 		if (WinnerNo := len(Winners)) > 1:
 			if WinnerNo == 2:
@@ -101,17 +169,18 @@ class ClientGameplayers(Gameplayers):
 		else:
 			yield f'{Winners[0].name} won the game!'
 
-	def TournamentLeaders(self):
-		MaxGamesWon = max(player.GamesWon for player in self.data)
-		Leaders = [player for player in self.data if player.GamesWon == MaxGamesWon]
+	@classmethod
+	def TournamentLeaders(cls):
+		MaxGamesWon = max(player.GamesWon for player in cls.AllPlayers)
+		Leaders = [player for player in cls.AllPlayers if player.GamesWon == MaxGamesWon]
 
-		for p, player in enumerate(SortedPlayers := self.MostGamesWonFirst()):
+		for p, player in enumerate(SortedPlayers := cls.MostGamesWonFirst()):
 			Part1 = "In this tournament, " if not p else ""
 			Part2 = "also " if p and player.GamesWon == SortedPlayers[p - 1].GamesWon else ""
 			Plural = "s" if player.GamesWon != 1 else ""
 			yield f'{Part1}{player} has {Part2}won {player.GamesWon} game{Plural} so far.'
 
-		if len(Leaders) != self.PlayerNo:
+		if len(Leaders) != cls.PlayerNo:
 			GamesWonText = f'having won {MaxGamesWon} game{"s" if MaxGamesWon > 1 else ""}'
 
 			if (WinnerNumber := len(Leaders)) == 1:
@@ -125,41 +194,6 @@ class ClientGameplayers(Gameplayers):
 				Last = Leaders[-1]
 				yield f'{JoinedList} and {Last} lead so far in this tournament, {GamesWonText} each!'
 
-	def __repr__(self):
-		L1 = f'''Object representing all players in the game, and information about them.'''
-		L2 = '\n---'.join(
-			f'{player!r}. Playerindex: {player.playerindex}. Hand {player.Hand}. '
-			f'Bid: {player.Bid}. ActionComplete: {player.ActionComplete}. '
-			f'PosInTrick: {player.PosInTrick}. Points: {player.Points}. Tricks: {player.Tricks}.'
-			f'PointsThisRound: {player.PointsThisRound}. PointsLastRound: {player.PointsLastRound}.'
-			f'GamesWon: {player.GamesWon}. RoundLeader: {player.RoundLeader}. '
-			for player in self.data
-		)
-
-		return '\n---'.join((L1, L2))
-
-
-class ClientPlayer(Player):
-	__slots__ = 'Points', 'GamesWon', 'PointsThisRound', 'Tricks', 'RoundLeader', 'PointsLastRound', 'PosInTrick', \
-	            'Scoreboard'
-
-	AllPlayers = ClientGameplayers()
-
-	def __init__(self, playerindex: int):
-		super().__init__(playerindex)
-		self.PosInTrick = -1
-		self.Scoreboard = []
-		self.Points = 0
-		self.Tricks = 0
-		self.PointsThisRound = 0
-		self.PointsLastRound = 0
-		self.GamesWon = 0
-		self.RoundLeader = False
-
-	def MakeBid(self, number: NumberInput):
-		self.Bid = int(number)
-		return self
-
 	def WinsTrick(self):
 		self.PointsThisRound += 1
 		self.Tricks += 1
@@ -168,9 +202,6 @@ class ClientPlayer(Player):
 	def WinsGame(self):
 		self.GamesWon += 1
 		return self
-
-	def GetPoints(self):
-		return self.Points
 
 	def ResetPlayer(self, PlayerNo: int):
 		super().ResetPlayer(PlayerNo)
@@ -226,8 +257,10 @@ class ClientPlayer(Player):
 
 		return PlayerText
 
-
-def AllEqual(It: Iterable):
-	"""Does what it says on the tin"""
-	g = groupby(It)
-	return next(g, True) and not next(g, False)
+	def ReprInfo(self):
+		return '\n'.join((
+			super().ReprInfo(),
+			f'PosInTrick: {self.PosInTrick}.Points: {self.Points}.Tricks: {self.Tricks}.',
+			f'PointsThisRound: {self.PointsThisRound}. PointsLastRound: {self.PointsLastRound}.'
+			f'GamesWon: {self.GamesWon}. RoundLeader: {self.RoundLeader}. '
+		))

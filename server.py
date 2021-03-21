@@ -1,99 +1,21 @@
 #! Python3
 
 """This script must be run by exactly one machine for a game to take place."""
-from __future__ import annotations
 
-from src.initialisation.maximise_window import MaximiseWindow
-MaximiseWindow()
-
+from src.initialisation.server_startup_sequence import StartupSequence
+from src.network.server_helper_functions import EternalGameLoop, CommsWithClient
 from threading import Thread
-from typing import TYPE_CHECKING
-from logging import debug
-from socket import SHUT_RDWR
+from traceback_with_variables import printing_exc
 
-from src.network.netw_abstract import GetTime
-from src.network.netw_server import Server, AccessToken
-
-from src.initialisation.ascii_suits import PrintIntroMessage
-from src.initialisation.server_user_inputs import UserInputs
-from src.initialisation.logging_config import LoggingConfig
-
-from src.game.server_game import ServerGame as Game
-
-from os import environ
-environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
-from pygame.time import delay
-
-if TYPE_CHECKING:
-	from socket import socket
-
-
-LoggingConfig(False)
-debug('\n\nNEW RUN OF PROGRAMME STARTING\n\n')
-PrintIntroMessage()
-NumberOfPlayers, BiddingSystem, password, ManuallyVerify = UserInputs()
-game = Game(NumberOfPlayers)
-
-
-def CommsWithClient(
-		S: Server,
-		conn: socket,
-		game: Game = game) -> None:
-
-	data = S.receive(conn)
-	Result = game.Operations[data[:2]](data)
-	player = S.ConnectionInfo[conn]
-
-	if not data or Result == 'Terminate':
-		print(f'Connection with {player.addr} was broken at {GetTime()}.\n')
-
-		try:
-			game.gameplayers.remove(player)
-			conn.shutdown(SHUT_RDWR)
-			conn.close()
-		finally:
-			raise Exception('Connection was terminated.')
-
-	elif Result == 'pong' or player.SendQ.empty():
-		player.SendQ.put('pong')
-
-
-def EternalGameLoop(
-		game: Game = game,
-		NumberOfPlayers: int = NumberOfPlayers
-):
-
-	global Server_object
-
-	while len(game.gameplayers) < NumberOfPlayers or any(not player.name for player in game.gameplayers):
-		delay(100)
-
-	try:
-		while True:
-			game.PlayGame()
-	finally:
-		try:
-			Server_object.CloseDown()
-		except:
-			pass
-
-
-print('Initialising server...')
+with printing_exc():
+	server, game, BiddingSystem, password, ManuallyVerify = StartupSequence()
 
 # The server will accept new connections until the expected number of players have connected to the server.
 # Remember - this part of the code will fail if the server's network router does not have port forwarding set up.
 # (Warning does not apply if you are playing within one local area network.)
 # Remember to take the port out when publishing this code online.
 
-(thread := Thread(target=EternalGameLoop, name='ServerGameplay', daemon=True)).start()
+(thread := Thread(target=EternalGameLoop, name='ServerGameplay', daemon=True, args=(game, server))).start()
 
-Server_object = Server(
-	IP='127.0.0.1',
-	port=5555,
-	ManuallyVerify=(ManuallyVerify == 'yes'),
-	BiddingSystem=BiddingSystem,
-	NumberOfPlayers=NumberOfPlayers,
-	AccessToken=AccessToken,
-	password=password,
-	CommsFunction=CommsWithClient
-)
+with printing_exc():
+	server.Run('127.0.0.1', 5555, ManuallyVerify, BiddingSystem, password, CommsWithClient, game)

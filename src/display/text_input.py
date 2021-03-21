@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Optional, TYPE_CHECKING
-
-from pyperclip import copy, paste
+from pyperclip import paste
 
 from src.misc import PrintableCharactersPlusSpace
 from src.display.input_context import InputContext
@@ -14,7 +13,7 @@ if TYPE_CHECKING:
 	from src.display.abstract_surfaces.text_rendering import FontAndLinesize
 
 
-@dataclass(eq=False, unsafe_hash=True)
+@dataclass(eq=False)
 class TextInput(TextBlitsMixin, SurfaceCoordinator):
 	# Repr & hash automatically defined as it's a dataclass!
 
@@ -30,6 +29,7 @@ class TextInput(TextBlitsMixin, SurfaceCoordinator):
 
 	def Initialise(self):
 		self.font = self.Fonts['UserInputFont']
+		return self
 
 	def PasteEvent(self):
 		if self.context.TypingNeeded:
@@ -38,7 +38,7 @@ class TextInput(TextBlitsMixin, SurfaceCoordinator):
 				assert all(letter in PrintableCharactersPlusSpace for letter in t)
 				self.Text += t
 			except:
-				copy(t)
+				pass
 
 	def ControlBackspaceEvent(self):
 		if self.Text and self.context.TypingNeeded:
@@ -70,3 +70,7 @@ class TextInput(TextBlitsMixin, SurfaceCoordinator):
 			center = self.PlayStartedInputPos if PlayStarted else self.PreplayInputPos
 			L = [self.GetTextHelper(self.Text, self.font, (0, 0, 0), center=center)] if self.Text else center
 			self.GameSurf.surf.blits(GetCursor(L, self.font))
+
+	# Must define hash even though it's in the parent class, because it's a dataclass
+	def __hash__(self):
+		return id(self)

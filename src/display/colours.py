@@ -12,6 +12,11 @@ class ColourScheme(DictLike):
 	LightGrey = (204, 204, 204)
 	Black_fade = (0, 0, 0, FireworkVars.FadeRate)
 	Orange = (255, 136, 0)
+
+	# Opacities are given as single-item tuples to ensure consistency
+	OpaqueOpacity = (255,)
+	TranslucentOpacity = (0,)
+
 	OnlyColourScheme = None
 
 	# This is only going to be called once, so we don't need to muck around with singleton patterns etc.

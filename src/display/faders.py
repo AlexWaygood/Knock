@@ -11,14 +11,17 @@ if TYPE_CHECKING:
 
 
 class Fader:
-	__slots__ = 'Fade', 'StartTime', 'EndTime', 'Colour1', 'Colour2', 'TimeToTake', 'lock'
+	__slots__ = 'Fade', 'StartTime', 'EndTime', 'FadeColour1', 'FadeColour2', 'colour', 'TimeToTake', 'lock'
 
-	def __init__(self, *args, **kwargs):
+	colour_scheme: OptionalColours = None
+
+	def __init__(self, colour: str, *args, **kwargs):
 		self.Fade = False
 		self.StartTime = 0
 		self.EndTime = 0
-		self.Colour1 = tuple()
-		self.Colour2 = tuple()
+		self.colour = self.colour_scheme[colour]
+		self.FadeColour1 = tuple()
+		self.FadeColour2 = tuple()
 		self.TimeToTake = 0
 
 	def DoFade(self,
@@ -28,8 +31,8 @@ class Fader:
 
 		self.Fade = True
 		self.StartTime = GetTicks()
-		self.Colour1 = colour1
-		self.Colour2 = colour2
+		self.FadeColour1 = colour1
+		self.FadeColour2 = colour2
 		self.TimeToTake = TimeToTake
 		self.EndTime = GetTicks() + TimeToTake
 
@@ -38,8 +41,7 @@ class Fader:
 			ElapsedTime: int,
 			i: int
 	):
-
-		Step = self.Colour1[i] + (((self.Colour2[i] - self.Colour1[i]) / self.TimeToTake) * ElapsedTime)
+		Step = self.FadeColour1[i] + (((self.FadeColour2[i] - self.FadeColour1[i]) / self.TimeToTake) * ElapsedTime)
 		if Step < 0:
 			return 0
 		if Step > 255:
@@ -48,23 +50,23 @@ class Fader:
 
 	def GetColour(self):
 		if not self.Fade:
-			return False
+			return self.colour
 
 		if (Time := GetTicks()) > self.EndTime:
 			self.Fade = False
-			return self.Colour2
+			self.colour = self.FadeColour2
+			return self.FadeColour2
 
 		Elapsed = Time - self.StartTime
-		return [self.GetColourHelper(Elapsed, i) for i, _ in enumerate(self.Colour1)]
+		return [self.GetColourHelper(Elapsed, i) for i, _ in enumerate(self.FadeColour1)]
 
-	def __bool__(self):
-		return self.Fade
+	@classmethod
+	def AddColourScheme(cls):
+		cls.colour_scheme: OptionalColours = ColourScheme.OnlyColourScheme
 
 
 class ColourFader(Fader):
 	__slots__ = tuple()
-
-	colour_scheme: OptionalColours = None
 
 	def __call__(
 			self,
@@ -78,22 +80,25 @@ class ColourFader(Fader):
 		while self.Fade:
 			delay(50)
 
-	@classmethod
-	def AddColourScheme(cls):
-		cls.colour_scheme: OptionalColours = ColourScheme.OnlyColourScheme
-
 
 class OpacityFader(Fader):
 	__slots__ = tuple()
 
 	AllOpacityFaders = {}
 
-	def __init__(self, name: str):
-		super().__init__()
+	def __init__(
+			self,
+			StartOpacity: str,
+			name: str
+	):
+		super().__init__(StartOpacity)
 		self.AllOpacityFaders[name] = self
 
+	def FadeInProgress(self):
+		return self.GetColour()[0] if self.Fade else False
+
 	def GetOpacity(self):
-		return op if not (op := self.GetColour()) else op[0]
+		return self.GetColour()[0]
 
 	@classmethod
 	def CardFade(
@@ -106,7 +111,7 @@ class OpacityFader(Fader):
 		Opacity1, Opacity2 = (255, 0) if FadeIn else (0, 255)
 
 		for s in Surfaces:
-			cls.AllOpacityFaders[s].DoFade([Opacity1], [Opacity2], TimeToTake)
+			cls.AllOpacityFaders[s].DoFade((Opacity1,), (Opacity2,), TimeToTake)
 
 		delay(TimeToTake)
 

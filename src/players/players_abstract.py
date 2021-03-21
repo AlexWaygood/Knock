@@ -11,16 +11,11 @@ if TYPE_CHECKING:
 
 
 class Gameplayers(UserList):
-	__slots__ = 'PlayerNo', 'Dict'
+	__slots__ = 'Dict'
 
 	def __init__(self):
 		super().__init__()
-		self.PlayerNo = 0
 		self.Dict: PlayerDict = {}
-
-	def NewGame(self):
-		self.data = self.data[1:] + self.data[:1]
-		self.data = [player.ResetPlayer(self.PlayerNo) for player in self.data]
 
 	def __getitem__(self, index_or_key: IndexOrKey):
 		try:
@@ -31,12 +26,19 @@ class Gameplayers(UserList):
 	def __iter__(self):
 		return iter(self.data)
 
+	def __repr__(self):
+		return '\n'.join((
+			f'Object representing all players in the game, and information about them.',
+			'\n'.join([player.ReprInfo() for player in self.data])
+		))
+
 
 class Player(object):
 	"""Class object for representing a single player in the game."""
-	__slots__ = '_name', 'playerindex', 'Hand', 'Bid', 'ActionComplete'
+	__slots__ = '_name', 'playerindex', 'Hand', 'Bid'
 
-	AllPlayers = Gameplayers()
+	AllPlayers: Gameplayers[Player] = Gameplayers()
+	PlayerNo = 0
 
 	def __init__(self, playerindex: int):
 		self._name = playerindex
@@ -44,7 +46,6 @@ class Player(object):
 		self.AllPlayers.append(self)
 		self.Hand = Hand()
 		self.Bid = -1
-		self.ActionComplete = False
 
 	@property
 	def name(self):
@@ -55,6 +56,17 @@ class Player(object):
 		self._name = n
 		self.Hand.playername = n
 		self.AllPlayers.Dict[n] = self
+
+	@classmethod
+	def AllPlayersHaveJoinedTheGame(cls):
+		return all(isinstance(player.name, str) for player in cls.AllPlayers) and len(cls.AllPlayers) == cls.PlayerNo
+
+	@classmethod
+	def NewGame(cls):
+		cls.AllPlayers = cls.AllPlayers[1:] + cls.AllPlayers[:1]
+
+		for player in cls.AllPlayers:
+			player.ResetPlayer(cls.PlayerNo)
 
 	def ReceiveCards(
 			self,
@@ -78,6 +90,9 @@ class Player(object):
 	def ResetPlayer(self, PlayerNo: int):
 		self.playerindex = (self.playerindex + 1) if self.playerindex < (PlayerNo - 1) else 0
 		return self
+
+	def ReprInfo(self):
+		return f'{self!r}. Playerindex: {self.playerindex}. Hand {self.Hand}. Bid: {self.Bid}.'
 
 	def __repr__(self):
 		return self.name if isinstance(self.name, str) else f'Player with index {self.playerindex}, as yet unnamed'

@@ -2,12 +2,9 @@ from __future__ import annotations
 
 from typing import List, TYPE_CHECKING
 from threading import RLock
-from logging import getLogger
 from itertools import chain
 from queue import Queue
-from time import time
-
-from traceback_with_variables import printing_exc
+from operator import methodcaller
 
 from src.misc import DictLike
 from src.game.abstract_game import Game, EventsDict
@@ -15,18 +12,15 @@ from src.players.players_client import ClientPlayer as Player
 from src.game.client_scoreboard_data import Scoreboard
 from src.cards.server_card_suit_rank import AllCardValues
 from src.cards.client_card import ClientCard as Card
-from src.network.netw_client import Client
+from src.network.network_client import Client
 
 from os import environ
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 from pygame.time import delay
 
 if TYPE_CHECKING:
-	from src.special_knock_types import NumberInput
+	from src.special_knock_types import NumberInput, OptionalClientGame
 	from src.display.input_context import InputContext
-
-
-log = getLogger(__name__)
 
 
 class NewCardQueues:
@@ -59,7 +53,7 @@ class ClientGame(Game, DictLike):
 
 	# The PlayerNumber is set as an instance variable on the server side but a class variable on the client side.
 	PlayerNumber = 0
-	OnlyGame = None
+	OnlyGame: OptionalClientGame = None
 
 	# This is only going to be called once, so we don't need to muck around with singleton patterns etc.
 	def __new__(
@@ -81,9 +75,8 @@ class ClientGame(Game, DictLike):
 		self.lock = RLock()
 		self.client = Client.OnlyClient
 		self.Triggers = DoubleTrigger()
-		self.gameplayers = Player.AllPlayers
-		self.gameplayers.AddVars(self)
-		self.Scoreboard = Scoreboard(self.gameplayers)
+		Player.AddVars(self)
+		self.Scoreboard = Scoreboard()
 		self.GamesPlayed = 0
 		self.CardNumberThisRound = -1
 		self.RoundNumber = 1
@@ -100,7 +93,7 @@ class ClientGame(Game, DictLike):
 
 	def TimeToStart(self):
 		self.StartPlay = True
-		self.client.SendQueue.put('@S')
+		self.client.QueueMessage('@S')
 
 	@property
 	def StartCardNumber(self):
@@ -160,11 +153,11 @@ class ClientGame(Game, DictLike):
 			playerindex: int
 	):
 		super().ExecutePlay(cardID, playerindex)
-		self.client.SendQueue.put(f'@C{cardID}{playerindex}')
+		self.client.QueueMessage(f'@C{cardID}{playerindex}')
 
 	def EndTrick(self):
-		WinningCard = max(self.PlayedCards, key=lambda card: card.GetWinValue(self.PlayedCards[0].Suit, self.trumpsuit))
-		(Winner := self.gameplayers[WinningCard.PlayedBy]).WinsTrick()
+		WinningCard = max(self.PlayedCards, key=methodcaller('GetWinValue', self.PlayedCards[0].Suit, self.trumpsuit))
+		(Winner := Player.AllPlayers[WinningCard.PlayedBy]).WinsTrick()
 
 		if self.TrickNumber != self.CardNumberThisRound:
 			self.WhoseTurnPlayerIndex = -1
@@ -175,7 +168,7 @@ class ClientGame(Game, DictLike):
 	def EndRound(self):
 		self.WhoseTurnPlayerIndex = -1
 		self.TrickInProgress = False
-		self.gameplayers.RoundCleanUp(self.CardNumberThisRound, self.RoundNumber)
+		Player.RoundCleanUp()
 		self.Scoreboard.UpdateScores(self.RoundNumber, self.CardNumberThisRound)
 		self.RoundCleanUp()
 
@@ -186,40 +179,8 @@ class ClientGame(Game, DictLike):
 
 	def NewGameReset(self):
 		super().NewGameReset()
-		self.gameplayers.NewGame()
+		Player.NewGame()
 		self.RoundNumber = 1
-
-	def UpdateLoop(
-			self,
-			context: InputContext,
-			player: Player
-	):
-
-		with printing_exc():
-			while True:
-				delay(100)
-
-				if not self.client.ReceiveQueue.empty():
-					gameInfo = self.client.ReceiveQueue.get()
-
-					if not self.FrozenState:
-						log.debug(f'Obtained new message from Client, {gameInfo}.')
-
-					if gameInfo != 'pong':
-						with self.lock:
-							self.UpdateFromServer(gameInfo, player.playerindex)
-
-						if not self.FrozenState:
-							log.debug('Client-side game successfully updated.')
-
-				if self.client.SendQueue.empty():
-					if context.GameUpdatesNeeded:
-						self.client.send('@G')
-					elif self.client.LastUpdate < time() - 5:
-						self.client.send('ping')
-					continue
-
-				self.client.send(self.client.SendQueue.get())
 
 	def __enter__(self):
 		self.lock.acquire()
@@ -231,7 +192,7 @@ class ClientGame(Game, DictLike):
 
 	def __repr__(self):
 		String = super().__repr__()
-		Added = f'''gameplayers = {self.gameplayers}
+		Added = f'''gameplayers = {Player.AllPlayers}
 GamesPlayed = {self.GamesPlayed}
 CardNumberThisRound = {self.CardNumberThisRound}
 RoundNumber = {self.RoundNumber}
@@ -258,38 +219,38 @@ MaxCardNumber = {self.MaxCardNumber}
 
 		PlayerInfoList = StringList[1].split('--')
 
-		if any(isinstance(player.name, int) for player in self.gameplayers):
-			for player, playerinfo in zip(self.gameplayers, PlayerInfoList):
+		if not Player.AllPlayersHaveJoinedTheGame():
+			for player, playerinfo in zip(Player.AllPlayers, PlayerInfoList):
 				player.name = playerinfo.split('-')[0]
 		else:
 			for info in PlayerInfoList:
 				name, bid = info.split('-')
-				player = self.gameplayers[name]
+				player = Player.AllPlayers[name]
 
 				if bid == '*1':
 					player.Bid = -1
 				else:
 					player.Bid = int(bid)
 
-		if (Hand := StringList[2]) != 'None' and not self.gameplayers[playerindex].Hand:
-			self.gameplayers[playerindex].Hand.NewHand(CardsFromString(Hand))
-			self.NewCardQueues.Hand.put(1)
-
-		if (PlayedCards := StringList[3]) != 'None':
+		if (PlayedCards := StringList[2]) != 'None':
 			self.PlayedCards = CardsFromString(PlayedCards)
 			self.NewCardQueues.PlayedCards.put(1)
 
-		FinalString = StringList[4]
-		self.StartPlay, self.RepeatGame = [bool(int(FinalString[i])) for i in range(2)]
-		self.StartCardNumber = int(FinalString[2])
+		TournamentString = StringList[3]
+		self.StartPlay, self.RepeatGame = [bool(int(TournamentString[i])) for i in range(2)]
+		self.StartCardNumber = int(TournamentString[2])
 
 		if not self.TrumpCard:
 			try:
-				self.TrumpCard = (Card(AttemptToInt(FinalString[3]), FinalString[4]),)
+				self.TrumpCard = (Card(AttemptToInt(TournamentString[3]), TournamentString[4]),)
 				self.trumpsuit = self.TrumpCard[0].Suit
 				self.NewCardQueues.TrumpCard.put(1)
 			except KeyError:
 				pass
+
+		if (Hand := StringList[4]) != 'None' and not Player.AllPlayers[playerindex].Hand:
+			Player.AllPlayers[playerindex].Hand.NewHand(CardsFromString(Hand))
+			self.NewCardQueues.Hand.put(1)
 
 
 def AttemptToInt(string: str):

@@ -7,19 +7,21 @@ from src.display.abstract_surfaces.knock_surface_with_cards import KnockSurfaceW
 from src.display.abstract_surfaces.surface_coordinator import SurfaceCoordinator
 from src.display.abstract_surfaces.text_rendering import TextBlitsMixin
 from src.display.faders import OpacityFader
+from src.players.players_client import ClientPlayer as Player
 
 if TYPE_CHECKING:
 	from src.cards.client_card import ClientCard as Card
 
 
 @lru_cache
-def BoardDimensionsHelper(SurfWidth: int,
-                          SurfHeight: int,
-                          CardX: int,
-                          CardY: int,
-                          NormalLinesize: int,
-                          PlayerNo: int):
-
+def BoardDimensionsHelper(
+		SurfWidth: int,
+		SurfHeight: int,
+		CardX: int,
+		CardY: int,
+		NormalLinesize: int,
+		PlayerNo: int
+):
 	BoardFifth = SurfHeight // 5
 
 	TripleLinesize = 3 * NormalLinesize
@@ -67,11 +69,12 @@ def BoardDimensionsHelper(SurfWidth: int,
 
 
 @lru_cache
-def BoardHeightHelper(Width: int,
-                      GameSurfHeight: int,
-                      WindowMargin: int,
-                      CardY: int):
-
+def BoardHeightHelper(
+		Width: int,
+		GameSurfHeight: int,
+		WindowMargin: int,
+		CardY: int
+):
 	return min(Width, (GameSurfHeight - WindowMargin - (CardY + 40)))
 
 
@@ -81,14 +84,14 @@ class BoardSurface(KnockSurfaceWithCards, TextBlitsMixin):
 
 	def __init__(self):
 		self.CardList = self.game.PlayedCards
-		self.CardFadeManager = OpacityFader('Board')
+		self.CardFadeManager = OpacityFader('OpaqueOpacity', 'Board')
 		self.CardUpdateQueue = self.game.NewCardQueues.PlayedCards
 		super().__init__()   # calls SurfDimensions()
 		SurfaceCoordinator.BoardSurf = self
 
 	def Initialise(self):
 		self.StandardFont = self.Fonts['StandardBoardFont']
-		super().Initialise()
+		return super().Initialise()
 
 	def SurfDimensions(self):
 		self.Width = self.GameSurf.Width // 2
@@ -113,15 +116,13 @@ class BoardSurface(KnockSurfaceWithCards, TextBlitsMixin):
 
 	def GetSurfBlits(self):
 		with self.game:
-			players, PlayerNo, WhoseTurnPlayerIndex, TrickInProgress, RoundLeaderIndex = self.game.GetAttributes(
-				('gameplayers', 'PlayerNo', 'WhoseTurnPlayerIndex', 'TrickInProgress', 'RoundLeaderIndex')
+			WhoseTurnPlayerIndex, TrickInProgress, RoundLeaderIndex = self.game.GetAttributes(
+				('WhoseTurnPlayerIndex', 'TrickInProgress', 'RoundLeaderIndex')
 			)
 
-		AllBid, Linesize = players.AllBid(), self.StandardFont.linesize
-		Args = (WhoseTurnPlayerIndex, TrickInProgress, len(self.CardList), AllBid, PlayerNo, Linesize, RoundLeaderIndex)
+		PlayerNo, CardList = self.PlayerNo, self.CardList
+		AllBid, Linesize = Player.AllBid(), self.StandardFont.linesize
+		Args = (WhoseTurnPlayerIndex, TrickInProgress, len(CardList), AllBid, PlayerNo, Linesize, RoundLeaderIndex)
 		Positions = self.PlayerTextPositions
-		T = sum([player.BoardText(*Args, *Positions[i]) for i, player in enumerate(players)], start=[])
+		T = sum([player.BoardText(*Args, *Positions[i]) for i, player in enumerate(Player.AllPlayers)], start=[])
 		return super().GetSurfBlits() + [self.GetText(t[0], t[1], center=t[2]) for t in T]
-
-	def __hash__(self):
-		return hash(repr(self))

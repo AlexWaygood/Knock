@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 	from queue import Queue
 
 
-@dataclass
+@dataclass(eq=False, unsafe_hash=True)
 class Typewriter(SurfaceCoordinator):
 	__slots__ = 'RenderedSteps', 'Index', 'Rect', 'Q', 'font'
 
@@ -34,10 +34,11 @@ class Typewriter(SurfaceCoordinator):
 
 	def Initialise(self):
 		self.font = self.Fonts['TypewriterFont']
+		return self
 
 	def Type(self,
 	         text: str,
-	         WaitAfterwards: int = 1200):
+	         WaitAfterwards: int):
 
 		self.Q.put(text)
 

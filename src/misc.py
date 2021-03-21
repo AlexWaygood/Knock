@@ -1,6 +1,7 @@
 from string import ascii_letters, digits, punctuation
 from time import strftime, localtime
 from typing import Any, Sequence
+from logging import getLogger
 
 PrintableCharacters = ''.join((digits, ascii_letters, punctuation))
 PrintableCharactersPlusSpace = PrintableCharacters + ' '
@@ -25,3 +26,12 @@ class DictLike:
 
 	def GetAttributes(self, attrs: Sequence[str]):
 		return [self[attr] for attr in attrs]
+
+
+class Log:
+	def debug(self, *args, **kwargs):
+		pass
+
+
+def GetLogger(FrozenState: bool):
+	return Log() if FrozenState else getLogger(__name__)

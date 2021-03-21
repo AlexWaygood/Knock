@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 	from src.cards.client_card import ClientCard as Card
 
 
-@dataclass
+@dataclass(eq=False)
 class CoverRect:
 	__slots__ = 'surf', 'rect', 'surfandpos'
 
@@ -24,14 +24,16 @@ class CoverRect:
 	def __post_init__(self):
 		self.surfandpos = (self.surf, self.rect)
 
+	def __hash__(self):
+		return id(self)
+
 
 # noinspection PyAttributeOutsideInit
 class KnockSurfaceWithCards(KnockSurface):
-	__slots__ = 'CoverRectOpacity', 'GameSurfWidth', 'GameSurfHeight', 'RectList', 'CardList', 'CoverRects', \
-	            'CardFadeManager', 'CardUpdateQueue'
+	__slots__ = 'RectList', 'CardList', 'CoverRects', 'CardFadeManager', 'CardUpdateQueue', 'colour'
 
 	def __init__(self):
-		self.CoverRectOpacity = 255
+		self.colour = self.ColourScheme['GamePlay']
 		self.RectList: RectList = []
 		self.CoverRects: CoverRectList = []
 		super().__init__()
@@ -53,18 +55,17 @@ class KnockSurfaceWithCards(KnockSurface):
 		self.RectList, self.CoverRects = self.RectListHelper(self.CardX, self.CardY, *CardPositions)
 
 		for cv in self.CoverRects:
-			cv.surf.set_alpha(self.CoverRectOpacity)
+			cv.surf.set_alpha(self.CardFadeManager.GetOpacity())
 
 	def fill(self):
-		super().fill()
+		self.surf.fill(self.colour)
 
 		for cv in self.CoverRects:
 			cv.surf.fill(self.colour)
 
-		if op := self.CardFadeManager.GetOpacity():
-			self.CoverRectOpacity = op
+		if (FadeOpacity := self.CardFadeManager.FadeInProgress()) is not False:
 			for cv in self.CoverRects:
-				cv.surf.set_alpha(op)
+				cv.surf.set_alpha(FadeOpacity)
 
 	def GetSurfBlits(self):
 		self.UpdateCardRects()

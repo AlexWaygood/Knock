@@ -2,16 +2,17 @@ from __future__ import annotations
 
 from itertools import cycle
 from typing import TYPE_CHECKING
+from src.players.players_abstract import Player
 
 if TYPE_CHECKING:
-	from src.special_knock_types import CardList, NumberInput, OptionalTrump
+	from src.special_knock_types import CardList, NumberInput, OptionalTrump, OptionalSuit
 
 
 class Game:
 	"""Class for encoding order of gameplay, in coordination with the client script."""
 
-	__slots__ = 'StartPlay', 'RepeatGame', 'gameplayers', 'PlayerNumber', '_StartCardNumber', 'PlayedCards', \
-	            'TrumpCard', 'trumpsuit', 'Triggers'
+	__slots__ = 'StartPlay', 'RepeatGame', 'PlayerNumber', '_StartCardNumber', 'PlayedCards', 'TrumpCard', 'trumpsuit',\
+	            'Triggers'
 
 	def __init__(self):
 		# The PlayerNumber is set as an instance variable on the server side but a class variable on the client side.
@@ -21,16 +22,8 @@ class Game:
 		self.RepeatGame = True
 		self._StartCardNumber = 0
 		self.TrumpCard: OptionalTrump = tuple()
-		self.trumpsuit = ''
+		self.trumpsuit: OptionalSuit = None
 		self.PlayedCards: CardList = []
-
-	def AddPlayerName(
-			self,
-			name: str,
-			playerindex: int
-	):
-
-		self.gameplayers[playerindex].AddName(name)
 
 	@property
 	def StartCardNumber(self):
@@ -40,41 +33,30 @@ class Game:
 	def StartCardNumber(self, number: NumberInput):
 		self._StartCardNumber = int(number)
 
-	def IncrementTriggers(self, *args: str):
-		for arg in args:
-			self.Triggers.Surfaces[arg] += 1
-
-	def PlayerMakesBid(self, bid: NumberInput, playerindex: int):
-		self.gameplayers[playerindex].MakeBid(int(bid))
-		self.IncrementTriggers('Board')
-
 	def ExecutePlay(
 			self,
 			cardID: str,
 			playerindex: int
 	):
 
-		player = self.gameplayers[playerindex]
+		player = Player.AllPlayers[playerindex]
 		card = player.Hand[cardID]
 		player.PlayCard(card, self.trumpsuit)
 		self.PlayedCards.append(card)
-		self.IncrementTriggers('Board')
 
 	def GetGameParameters(self):
 		WhichRound = range(1, (self.StartCardNumber + 1))
 		HowManyCards = range(self.StartCardNumber, 0, -1)
-		WhoLeads = cycle(self.gameplayers)
+		WhoLeads = cycle(Player.AllPlayers)
 		return WhichRound, HowManyCards, WhoLeads
 
 	def RoundCleanUp(self):
-		self.IncrementTriggers('Scoreboard', 'Board')
 		self.TrumpCard = None
 		self.trumpsuit = ''
 
 	def NewGameReset(self):
 		self.StartCardNumber = 0
-		self.gameplayers.NewGame()
-		self.IncrementTriggers('Scoreboard')
+		Player.NewGame()
 		self.StartPlay = False
 
 	def __repr__(self):

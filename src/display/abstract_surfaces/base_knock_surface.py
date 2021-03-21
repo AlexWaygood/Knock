@@ -20,7 +20,7 @@ class Dimensions(NamedTuple):
 
 # noinspection PyAttributeOutsideInit
 class BaseKnockSurface:
-	__slots__ = 'Width', 'Height', 'x', 'y', 'colour', 'attrs', 'surf', 'surfandpos'
+	__slots__ = 'Width', 'Height', 'x', 'y', 'attrs', 'surf', 'surfandpos'
 
 	# Static method, but kept in this namespace for lrucaching reasons
 	@lru_cache
@@ -39,13 +39,14 @@ class BaseKnockSurface:
 
 	# Static method, but kept in this namespace for lrucaching reasons
 	@lru_cache
-	def GetSurfHelper(self, dimensions, rect):
-		surf = Surface(dimensions)
-		return surf, (surf, rect)
+	def GetSurfHelper(self, dimensions):
+		return Surface(dimensions)
 
 	def GetSurf(self):
-		self.surf, self.surfandpos = self.GetSurfHelper(self.attrs.dimensions, self.attrs.rect)
+		self.surf = self.GetSurfHelper(self.attrs.dimensions)
+		self.surfandpos = (self.surf, self.attrs.rect)
 		self.fill()
 
+	# Placeholder method, to be overriden higher up in the inheritance chain
 	def fill(self):
-		self.surf.fill(self.colour)
+		pass

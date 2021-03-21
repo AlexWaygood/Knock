@@ -1,6 +1,11 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
 from functools import lru_cache
 from src.display.abstract_surfaces.knock_surface_with_cards import KnockSurfaceWithCards
 from src.display.faders import OpacityFader
+
+if TYPE_CHECKING:
+	from src.cards.client_card import ClientCard as Card
 
 
 @lru_cache
@@ -27,7 +32,7 @@ class HandSurface(KnockSurfaceWithCards):
 
 	def __init__(self):
 		self.CardList = self.player.Hand
-		self.CardFadeManager = OpacityFader('Hand')
+		self.CardFadeManager = OpacityFader('OpaqueOpacity', 'Hand')
 		self.CardUpdateQueue = self.game.NewCardQueues.Hand
 		super().__init__()   # calls SurfDimensions()
 		self.HandRectsCalculated = False
@@ -47,13 +52,11 @@ class HandSurface(KnockSurfaceWithCards):
 		self.CoverRects.clear()
 		self.HandRectsCalculated = False
 
-	def UpdateCard(self, card, index):
-		"""
-		@type card: src.Cards.ClientCard.ClientCard
-		@type index: int
-		"""
-
+	def UpdateCard(
+			self,
+			card: Card,
+			index: int
+	):
 		card.ReceiveRect(self.RectList[index], self.attrs.topleft, self.GameSurf.attrs.topleft, CardInHand=True)
 
-	# Update & GetSurfBlits methods not defined here.
-	# The base class doesn't need to be overridden.
+	# Update, GetSurfBlits & Initialise methods not defined here as the base class doesn't need to be overridden.

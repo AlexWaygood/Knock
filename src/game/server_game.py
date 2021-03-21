@@ -12,7 +12,7 @@ environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 from pygame.time import delay
 
 if TYPE_CHECKING:
-	from src.special_knock_types import CardList, NumberInput
+	from src.special_knock_types import NumberInput, CardList
 
 
 class ServerGame(Game):
@@ -23,19 +23,15 @@ class ServerGame(Game):
 
 		# The PlayerNumber is set as an instance variable on the server side but a class variable on the client side.
 		self.PlayerNumber = PlayerNumber
-		self.gameplayers = Player.AllPlayers
-		self.gameplayers.PlayerNo = PlayerNumber
+		Player.PlayerNo = PlayerNumber
 		self.Triggers = EventsDict()
 
 		[Player(i) for i in range(PlayerNumber)]
 		[Card(*value) for value in AllCardValues]
 
 		self.Operations = {
-			# if the client is just asking for an updated copy of the game
-			'@G': lambda Info: None,
-
 			# if the client is sending the name of that player
-			'@P': lambda Info: self.AddPlayerName(Info[2:4], int(Info[-1])),
+			'@P': lambda Info: self.AddPlayerName(Info),
 
 			# if the client is telling us how many cards the game should start with
 			'@N': lambda Info: self.SetCardNumber(Info),
@@ -47,7 +43,7 @@ class ServerGame(Game):
 			'@S': lambda Info: self.TimeToStart(),
 
 			# if the client is telling us how many tricks they are going to bid in this round.
-			'@B': lambda Info: self.PlayerMakesBid(int(Info[2:4]), int(Info[4])),
+			'@B': lambda Info: self.PlayerMakesBid(Info),
 
 			# If the client is telling us whether they want an instant rematch after the game has ended.
 			'@1': lambda Info: self.RepeatQuestionAnswer(),
@@ -56,11 +52,15 @@ class ServerGame(Game):
 			'@T': lambda Info: 'Terminate',
 
 			# If the client is telling us they've completed an animation sequence.
-			'@A': lambda Info: self.PlayerActionCompleted(int(Info[2])),
+			'@A': lambda Info: self.PlayerActionCompleted(Info),
 
 			# If it's just a ping to keep the connection going
 			'pi': lambda Info: 'pong'
 		}
+
+	@staticmethod
+	def AddPlayerName(Info):
+		Player.AddName(Info[2:-1], int(Info[-1]))
 
 	def SetCardNumber(self, number: NumberInput):
 		self.StartCardNumber = int(number)
@@ -68,16 +68,20 @@ class ServerGame(Game):
 	def TimeToStart(self):
 		self.StartPlay = True
 
-	def PlayerActionCompleted(self, playerindex: int):
-		self.gameplayers[playerindex].ActionComplete = True
+	@staticmethod
+	def PlayerActionCompleted(Info: str):
+		Player.PlayerActionCompleted(int(Info[2]))
+
+	@staticmethod
+	def PlayerMakesBid(Info: str):
+		Player.PlayerMakesBid(int(Info[4]), int(Info[2:4]))
 
 	def RepeatQuestionAnswer(self):
 		self.RepeatGame = True
 
 	def WaitForPlayers(self, attribute: str):
 		self.Triggers.Events[attribute] += 1
-		self.Export()
-		self.gameplayers.WaitForPlayers()
+		Player.WaitForPlayers()
 
 	def PlayGame(self):
 		# Wait until the opening sequence is complete
@@ -85,12 +89,10 @@ class ServerGame(Game):
 		while not self.StartCardNumber:
 			delay(1)
 
-		self.gameplayers.NextStage()
-		self.Export()
+		Player.NextStage()
 
 		self.WaitForPlayers('GameInitialisation')
 		self.Triggers.Events['StartNumberSet'] += 1
-		self.Export()
 
 		for cardnumber in range(self.StartCardNumber, 0, -1):
 			self.PlayRound(cardnumber)
@@ -100,7 +102,6 @@ class ServerGame(Game):
 		while not self.RepeatGame:
 			delay(1)
 
-		self.Export()
 		self.NewGameReset()
 
 		# Wait until all players have logged their new playerindex.
@@ -115,8 +116,7 @@ class ServerGame(Game):
 		self.Triggers.Events['NewPack'] += 1
 
 		# Deal cards
-		self.gameplayers.ReceiveCards(Pack, cardnumber, trumpsuit)
-		self.IncrementTriggers('TrumpCard', 'Board', 'Scoreboard')
+		Player.NewPack(Pack, cardnumber, trumpsuit)
 		self.WaitForPlayers('CardsDealt')
 
 		# Play tricks
@@ -124,45 +124,36 @@ class ServerGame(Game):
 			self.PlayTrick()
 
 		# Reset players for the next round.
-		self.gameplayers.RoundCleanUp()
+		Player.EndOfRound()
 		self.RoundCleanUp()
 
 	def PlayTrick(self):
 		self.WaitForPlayers('TrickStart')
 
 		for i in range(self.PlayerNumber):
-			self.IncrementTriggers('Board')
 			while len(self.PlayedCards) == i:
 				delay(100)
 
-		self.gameplayers.NextStage()
+		Player.NextStage()
 		self.WaitForPlayers('TrickWinnerLogged')
 		self.PlayedCards.clear()
-		self.IncrementTriggers('Board')
 		self.WaitForPlayers('TrickEnd')
 
-	def Export(self):
-		EventsString = '--'.join(f'{v}' for v in self.Triggers.values())
+	def ClientCommsLoop(self):
+		while True:
+			delay(300)
 
-		PlayerString = '--'.join(
-			f'{player.name}-{B if (B := player.Bid) > -1 else "*1"}' for player in self.gameplayers
-		)
+			StartNo = self.StartCardNumber
 
-		CardsOnBoardString = CardsToString(self.PlayedCards)
-		TournamentStatus = f'{int(self.StartPlay)}{int(self.RepeatGame)}{self.StartCardNumber}' \
-		                   f'{repr(self.TrumpCard) if self.TrumpCard else ""}'
+			String = '---'.join((
+				'--'.join([f'{v}' for v in self.Triggers.values()]),
+				Player.ExportString(),
+				CardsToString(self.PlayedCards),
+				f'{int(self.StartPlay)}{int(self.RepeatGame)}{StartNo}{repr(self.TrumpCard) if self.TrumpCard else ""}'
+			))
 
-		for player in self.gameplayers:
-			PlayerHandString = CardsToString(player.Hand)
-			player.SendQ.put(
-				'---'.join((
-					EventsString,
-					PlayerString,
-					PlayerHandString,
-					CardsOnBoardString,
-					TournamentStatus
-				))
-			)
+			for player in Player.AllPlayers:
+				player.ScheduleSend('---'.join((String, CardsToString(player.Hand))))
 
 
 def CardsToString(L: CardList):

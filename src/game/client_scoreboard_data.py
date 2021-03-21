@@ -1,24 +1,19 @@
-from __future__ import annotations
-from typing import TYPE_CHECKING
 from pandas import DataFrame, concat
-
-if TYPE_CHECKING:
-	from src.players.players_client import ClientGameplayers as Gameplayers
+from src.players.players_client import ClientPlayer as Player
 
 
 # noinspection PyAttributeOutsideInit
 class Scoreboard:
-	__slots__ = 'players', 'PlayerNoTimes4', 'ColumnNo', 'Initialised', 'names', 'columns', 'StartNo', 'scoreboard', \
+	__slots__ = 'PlayerNoTimes4', 'ColumnNo', 'Initialised', 'names', 'columns', 'StartNo', 'scoreboard', \
 	            'DisplayScoreboard'
 
-	def __init__(self, gameplayers: Gameplayers):
+	def __init__(self):
 		self.Initialised = False
-		self.players = gameplayers
-		self.PlayerNoTimes4 = gameplayers.PlayerNo * 4
+		self.PlayerNoTimes4 = Player.PlayerNo * 4
 		self.ColumnNo = self.PlayerNoTimes4 + 2
 
 	def SetUp(self, StartCardNumber):
-		self.names = [f'{player}' for player in self.players]
+		self.names = Player.GetNames()
 		self.columns = ['', ''] + sum((['', name, '', ''] for name in self.names), start=[])
 		self.StartNo = StartCardNumber
 
@@ -32,7 +27,7 @@ class Scoreboard:
 
 	def UpdateScores(self, RoundNumber, CardNumber):
 		NewRow = DataFrame(
-			[[RoundNumber, CardNumber] + sum((player.Scoreboard for player in self.players), start=[])],
+			[[RoundNumber, CardNumber] + Player.GetScoreboard()],
 			columns=self.columns
 		)
 
