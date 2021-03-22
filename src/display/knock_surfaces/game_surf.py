@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from src.display.abstract_surfaces.base_knock_surface import BaseKnockSurface
 from src.display.abstract_surfaces.surface_coordinator import SurfaceCoordinator
@@ -11,9 +11,7 @@ from pygame.locals import K_UP, K_DOWN, K_LEFT, K_RIGHT
 from pygame.key import get_pressed as pg_key_get_pressed
 
 if TYPE_CHECKING:
-	from src.players.players_abstract import Hand
-	from src.special_knock_types import Position, Colour
-	from src.display.mouse.mouse import Scrollwheel
+	from src.special_knock_types import OptionalHand, OptionalScrollwheel, Position, Colour
 
 
 # noinspection PyAttributeOutsideInit
@@ -36,7 +34,7 @@ class GameSurface(BaseKnockSurface):
 		self.colour = StartColour
 		SurfaceCoordinator.GameSurf = self
 		self.FillFade = ColourFader('MenuScreen')
-		self.scrollwheel: Optional[Scrollwheel] = None
+		self.scrollwheel: OptionalScrollwheel = None
 
 		self.x = 0
 		self.y = 0
@@ -49,7 +47,7 @@ class GameSurface(BaseKnockSurface):
 		self.MinRectHeight = MinRectHeight
 
 		self.SurfAndPos()
-		self.Hand: Optional[Hand] = None
+		self.Hand: OptionalHand = None
 
 	def SurfAndPos(self):
 		super().SurfAndPos()
@@ -97,10 +95,7 @@ class GameSurface(BaseKnockSurface):
 
 		NewCoordinate = self.x + Amount
 		NewCoordinate = min(self.WindowWidth, NewCoordinate) if Amount > 0 else max(-self.Width, NewCoordinate)
-
-		for card in self.Hand:
-			card.colliderect.move_ip((NewCoordinate - self.x), 0)
-
+		self.Hand.MoveColliderects((NewCoordinate - self.x), 0)
 		self.x = NewCoordinate
 
 		if ArrowShift:
@@ -125,10 +120,7 @@ class GameSurface(BaseKnockSurface):
 
 		NewCoordinate = self.y + Amount
 		NewCoordinate = min(self.WindowHeight, NewCoordinate) if Amount > 0 else max(-self.Height, NewCoordinate)
-
-		for card in self.Hand:
-			card.colliderect.move_ip(0, (NewCoordinate - self.y))
-
+		self.Hand.MoveColliderects(0, (NewCoordinate - self.y))
 		self.y = NewCoordinate
 
 		if ArrowShift:
@@ -147,10 +139,7 @@ class GameSurface(BaseKnockSurface):
 	def MoveToCentre(self):
 		NewX = (self.WindowWidth / 2) - (self.Width / 2)
 		NewY = (self.WindowHeight / 2) - (self.Height / 2)
-
-		for card in self.Hand:
-			card.colliderect.move_ip((NewX - self.x), (NewY - self.y))
-
+		self.Hand.MoveColliderects((NewX - self.x), (NewY - self.y))
 		self.x, self.y = NewX, NewY
 		self.TidyUp()
 
@@ -172,7 +161,6 @@ class GameSurface(BaseKnockSurface):
 			RectWidth = RectHeight * 2.2
 
 		self.Width, self.Height = RectWidth, RectHeight
-
 		self.x = 0 if ResetPos or self.Width == NewWidth else (NewWidth * (self.x / self.WindowWidth))
 		self.y = 0 if ResetPos or self.Height == NewHeight else (NewHeight * (self.y / self.WindowHeight))
 

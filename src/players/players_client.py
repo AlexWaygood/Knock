@@ -4,17 +4,18 @@ from typing import TYPE_CHECKING
 from operator import attrgetter
 from itertools import groupby
 
-from src.players.players_abstract import Gameplayers, Player
+from src.players.players_abstract import Player
 
 if TYPE_CHECKING:
-	from src.game.client_game import ClientGame as Game
+	from src.special_knock_types import ClientPlayerDict, ClientPlayerList
 
 
 class ClientPlayer(Player):
 	__slots__ = 'Points', 'GamesWon', 'PointsThisRound', 'Tricks', 'RoundLeader', 'PointsLastRound', 'PosInTrick', \
 	            'Scoreboard'
 
-	AllPlayers: Gameplayers[ClientPlayer]
+	_AllPlayers: ClientPlayerList
+	_AllPlayersDict: ClientPlayerDict
 
 	def __init__(self, playerindex: int):
 		super().__init__(playerindex)
@@ -29,41 +30,44 @@ class ClientPlayer(Player):
 
 	@classmethod
 	def AllEqualByAttribute(cls, attr: str):
-		g = groupby(cls.AllPlayers, key=attrgetter(attr))
+		g = groupby(cls._AllPlayers, key=attrgetter(attr))
 		return next(g, True) and not next(g, False)
 
 	@classmethod
+	def PlayerWinsTrick(cls, name: str):
+		player = cls.player(name)
+		player.PointsThisRound += 1
+		player.Tricks += 1
+		return player
+
+	@classmethod
 	def GetNames(cls):
-		return [f'{player}' for player in cls.AllPlayers]
+		return [f'{player}' for player in cls.iter()]
 
 	@classmethod
 	def GetScoreboard(cls):
-		return sum((player.Scoreboard for player in cls.AllPlayers), start=[])
-
-	@classmethod
-	def AddVars(cls, game: Game):
-		cls.PlayerNo = game.PlayerNumber
+		return sum((player.Scoreboard for player in cls.iter()), start=[])
 
 	@classmethod
 	def RoundCleanUp(cls):
-		for player in cls.AllPlayers:
+		for player in cls.iter():
 			player.EndOfRound()
 
 	@classmethod
 	def HighestScoreFirst(cls):
-		return sorted(cls.AllPlayers, key=attrgetter('Points'), reverse=True)
+		return sorted(cls._AllPlayers, key=attrgetter('Points'), reverse=True)
 
 	@classmethod
 	def MostGamesWonFirst(cls):
-		return sorted(cls.AllPlayers, reverse=True, key=attrgetter('GamesWon'))
+		return sorted(cls._AllPlayers, reverse=True, key=attrgetter('GamesWon'))
 
 	@classmethod
 	def AllBid(cls):
-		return all(player.Bid != -1 for player in cls.AllPlayers)
+		return all(player.Bid != -1 for player in cls.iter())
 
 	@classmethod
 	def GameWinner(cls):
-		return max(cls.AllPlayers, key=attrgetter('Points'))
+		return max(cls._AllPlayers, key=attrgetter('Points'))
 
 	@classmethod
 	def ScoreboardText(
@@ -99,12 +103,12 @@ class ClientPlayer(Player):
 	@classmethod
 	def BidWaitingText(cls, playerindex: int):
 		if cls.PlayerNo != 2:
-			if (PlayersNotBid := sum(1 for player in cls.AllPlayers if player.Bid == -1)) > 1:
+			if (PlayersNotBid := sum(1 for player in cls.iter() if player.Bid == -1)) > 1:
 				WaitingText = f'{PlayersNotBid} remaining players'
 			else:
-				WaitingText = next(f'{player}' for player in cls.AllPlayers if player.Bid == -1)
+				WaitingText = next(f'{player}' for player in cls.iter() if player.Bid == -1)
 		else:
-			WaitingText = f'{cls.AllPlayers[0 if playerindex else 1]}'
+			WaitingText = f'{cls.player(0 if playerindex else 1)}'
 
 		return f'Waiting for {WaitingText} to bid'
 
@@ -113,11 +117,11 @@ class ClientPlayer(Player):
 		yield f'{"All" if cls.PlayerNo != 2 else "Both"} players have now bid.'
 
 		if cls.AllEqualByAttribute('Bid'):
-			BidNumber = cls.AllPlayers[0].Bid
+			BidNumber = cls.player(0).Bid
 			FirstWord = 'Both' if cls.PlayerNo == 2 else 'All'
 			yield f'{FirstWord} players bid {BidNumber}.'
 		else:
-			SortedPlayers = sorted(cls.AllPlayers, key=attrgetter('Bid'), reverse=True)
+			SortedPlayers = sorted(cls._AllPlayers, key=attrgetter('Bid'), reverse=True)
 			for i, player in enumerate(SortedPlayers):
 				yield f'{player}{" also" if i and player.Bid == SortedPlayers[i - 1].Bid else ""} bids {player.Bid}.'
 
@@ -126,13 +130,13 @@ class ClientPlayer(Player):
 		yield 'Round has ended.'
 
 		if cls.AllEqualByAttribute('PointsLastRound'):
-			Points = cls.AllPlayers[0].PointsLastRound
+			Points = cls.player(0).PointsLastRound
 
 			yield f'{"Both" if cls.PlayerNo == 2 else "All"} players won ' \
 			      f'{Points} point{"s" if Points != 1 else ""}.'
 
 		else:
-			for player in sorted(cls.AllPlayers, key=attrgetter('PointsLastRound'), reverse=True):
+			for player in sorted(cls._AllPlayers, key=attrgetter('PointsLastRound'), reverse=True):
 				yield f'{player} won {(Points := player.PointsLastRound)} point{"s" if Points != 1 else ""}.'
 
 		if FinalRound:
@@ -154,8 +158,8 @@ class ClientPlayer(Player):
 
 	@classmethod
 	def GameCleanUp(cls):
-		MaxPoints = max(player.Points for player in cls.AllPlayers)
-		Winners = [player.WinsGame() for player in cls.AllPlayers if player.Points == MaxPoints]
+		MaxPoints = max(player.Points for player in cls.iter())
+		Winners = [player.WinsGame() for player in cls.iter() if player.Points == MaxPoints]
 
 		if (WinnerNo := len(Winners)) > 1:
 			if WinnerNo == 2:
@@ -171,8 +175,8 @@ class ClientPlayer(Player):
 
 	@classmethod
 	def TournamentLeaders(cls):
-		MaxGamesWon = max(player.GamesWon for player in cls.AllPlayers)
-		Leaders = [player for player in cls.AllPlayers if player.GamesWon == MaxGamesWon]
+		MaxGamesWon = max(player.GamesWon for player in cls.iter())
+		Leaders = [player for player in cls.iter() if player.GamesWon == MaxGamesWon]
 
 		for p, player in enumerate(SortedPlayers := cls.MostGamesWonFirst()):
 			Part1 = "In this tournament, " if not p else ""
@@ -193,11 +197,6 @@ class ClientPlayer(Player):
 				JoinedList = ", ".join(leader.name for leader in Leaders[:-1])
 				Last = Leaders[-1]
 				yield f'{JoinedList} and {Last} lead so far in this tournament, {GamesWonText} each!'
-
-	def WinsTrick(self):
-		self.PointsThisRound += 1
-		self.Tricks += 1
-		return self
 
 	def WinsGame(self):
 		self.GamesWon += 1
@@ -257,9 +256,9 @@ class ClientPlayer(Player):
 
 		return PlayerText
 
-	def ReprInfo(self):
+	def __repr__(self):
 		return '\n'.join((
-			super().ReprInfo(),
+			super().__repr__(),
 			f'PosInTrick: {self.PosInTrick}.Points: {self.Points}.Tricks: {self.Tricks}.',
 			f'PointsThisRound: {self.PointsThisRound}. PointsLastRound: {self.PointsLastRound}.'
 			f'GamesWon: {self.GamesWon}. RoundLeader: {self.RoundLeader}. '

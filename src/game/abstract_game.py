@@ -1,20 +1,19 @@
 from __future__ import annotations
 
-from itertools import cycle
 from typing import TYPE_CHECKING
 from src.players.players_abstract import Player
 
 if TYPE_CHECKING:
-	from src.special_knock_types import CardList, NumberInput, OptionalTrump, OptionalSuit
+	from src.special_knock_types import AnyCardList, NumberInput, OptionalTrump, OptionalSuit
 
 
 class Game:
 	"""Class for encoding order of gameplay, in coordination with the client script."""
 
 	__slots__ = 'StartPlay', 'RepeatGame', 'PlayerNumber', '_StartCardNumber', 'PlayedCards', 'TrumpCard', 'trumpsuit',\
-	            'Triggers'
+	            'Triggers', 'BiddingSystem'
 
-	def __init__(self):
+	def __init__(self, BiddingSystem):
 		# The PlayerNumber is set as an instance variable on the server side but a class variable on the client side.
 		# So we don't bother with it here.
 
@@ -23,7 +22,8 @@ class Game:
 		self._StartCardNumber = 0
 		self.TrumpCard: OptionalTrump = tuple()
 		self.trumpsuit: OptionalSuit = None
-		self.PlayedCards: CardList = []
+		self.PlayedCards: AnyCardList = []
+		self.BiddingSystem = BiddingSystem
 
 	@property
 	def StartCardNumber(self):
@@ -39,7 +39,7 @@ class Game:
 			playerindex: int
 	):
 
-		player = Player.AllPlayers[playerindex]
+		player = Player.player(playerindex)
 		card = player.Hand[cardID]
 		player.PlayCard(card, self.trumpsuit)
 		self.PlayedCards.append(card)
@@ -47,12 +47,12 @@ class Game:
 	def GetGameParameters(self):
 		WhichRound = range(1, (self.StartCardNumber + 1))
 		HowManyCards = range(self.StartCardNumber, 0, -1)
-		WhoLeads = cycle(Player.AllPlayers)
+		WhoLeads = Player.cycle()
 		return WhichRound, HowManyCards, WhoLeads
 
 	def RoundCleanUp(self):
 		self.TrumpCard = None
-		self.trumpsuit = ''
+		self.trumpsuit = None
 
 	def NewGameReset(self):
 		self.StartCardNumber = 0

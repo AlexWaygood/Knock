@@ -5,7 +5,7 @@ from src.cards.server_card_suit_rank import Suit
 from itertools import groupby
 
 if TYPE_CHECKING:
-	from src.special_knock_types import SuitTuple as SuitTupleType, CardList, Grouped_Type
+	from src.special_knock_types import SuitTuple as SuitTupleType, AnyCardList, Grouped_Type
 
 
 Blacks = (Suit('♣'), Suit('♠'))
@@ -41,13 +41,13 @@ def MaxSuit(grouped: Grouped_Type):
 
 
 def SortHand(
-		Hand: CardList,
+		Hand: AnyCardList,
 		trumpsuit: Suit,
 		PlayedSuit: Optional[Suit] = None,
         SuitTuple: SuitTupleType = (None, None),
         Blacks=Blacks,
         Reds=Reds
-):
+) -> AnyCardList:
 
 	if PlayedSuit:
 		if PlayedSuit in SuitTuple:

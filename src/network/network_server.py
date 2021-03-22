@@ -40,7 +40,6 @@ class Server(Network):
 			IP: str,
 			port: int,
 			ManuallyVerify: bool,
-			BiddingSystem: str,
 			password: str,
 			CommsFunction: NetworkFunction,
 			game: Game
@@ -52,12 +51,11 @@ class Server(Network):
 		print(f'Ready to accept connections to the server (time {GetTime()}).\n')
 
 		Inputs, Outputs = [self.conn], []
-		NumberOfPlayers = game.PlayerNumber
 
 		while True:
 			readable, writable, exceptional = select(Inputs, Outputs, Inputs)
 			for s in readable:
-				if s is self.conn and NumberOfClients < NumberOfPlayers:
+				if s is self.conn and NumberOfClients < game.PlayerNumber:
 
 					# if the server itself is appearing in the 'readable' list,
 					# that means the server is ready to accept a new connection
@@ -72,15 +70,14 @@ class Server(Network):
 						NumberOfClients,
 						password,
 						ManuallyVerify,
-						NumberOfPlayers,
-						BiddingSystem
+						game
 					)
 
 					Inputs.append(NewConn)
 					Outputs.append(NewConn)
 					NumberOfClients += 1
 
-					if NumberOfClients == NumberOfPlayers:
+					if NumberOfClients == game.PlayerNumber:
 						print('Maximum number of connections received; no longer open for connections.')
 				else:
 					CommsFunction(self, s, game)
@@ -98,8 +95,7 @@ class Server(Network):
 	        NumberOfClients: int,
 	        password: str,
 	        ManuallyVerify: bool,
-	        NumberOfPlayers: int,
-	        BiddingSystem: str
+	        game: Game
 	):
 
 		conn, addr = self.conn.accept()
@@ -133,10 +129,10 @@ class Server(Network):
 				self.CloseConnection(conn)
 				return 0
 
-		player = Player.AllPlayers[NumberOfClients]
+		player = Player.player(NumberOfClients)
 		player.addr = addr
 		self.ConnectionInfo[conn] = player
-		self.ConnectionInfo[conn].SendQ.put(f'{NumberOfPlayers}{NumberOfClients}{BiddingSystem}')
+		self.ConnectionInfo[conn].SendQ.put(f'{game.PlayerNumber}{NumberOfClients}{game.BiddingSystem}')
 		print(f'Connection info to client {addr} was placed on the send-queue at {GetTime()}.\n')
 		return conn
 

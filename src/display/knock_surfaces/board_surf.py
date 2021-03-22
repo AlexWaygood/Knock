@@ -124,5 +124,5 @@ class BoardSurface(KnockSurfaceWithCards, TextBlitsMixin):
 		AllBid, Linesize = Player.AllBid(), self.StandardFont.linesize
 		Args = (WhoseTurnPlayerIndex, TrickInProgress, len(CardList), AllBid, PlayerNo, Linesize, RoundLeaderIndex)
 		Positions = self.PlayerTextPositions
-		T = sum([player.BoardText(*Args, *Positions[i]) for i, player in enumerate(Player.AllPlayers)], start=[])
+		T = sum([player.BoardText(*Args, *Positions[i]) for i, player in Player.enumerate()], start=[])
 		return super().GetSurfBlits() + [self.GetText(t[0], t[1], center=t[2]) for t in T]

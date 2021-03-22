@@ -12,4 +12,4 @@ def StartupSequence():
 	LoggingConfig(False)
 	PrintIntroMessage()
 	NumberOfPlayers, BiddingSystem, password, ManuallyVerify = UserInputs()
-	return Server(AccessToken=AccessToken), Game(NumberOfPlayers), BiddingSystem, password, (ManuallyVerify == 'yes')
+	return Server(AccessToken=AccessToken), Game(NumberOfPlayers, BiddingSystem), password, (ManuallyVerify == 'yes')

@@ -14,18 +14,13 @@ from pygame.time import delay
 class ClientsideGameplay:
 	__slots__ = 'game', 'displayManager', 'typewriter', 'client', 'player', 'BiddingSystem', 'context'
 
-	def __init__(
-			self,
-			player: Player,
-			BiddingSystem: str
-	):
-
+	def __init__(self, playerindex: int):
 		self.game = Game.OnlyGame
 		self.displayManager = DisplayManager.OnlyDisplayManager
 		self.typewriter = self.displayManager.Typewriter
 		self.client = Client.OnlyClient
-		self.player = player
-		self.BiddingSystem = BiddingSystem
+		self.player = Player.player(playerindex)
+		self.BiddingSystem = self.game.BiddingSystem
 		self.context = self.displayManager.InputContext
 
 	def Play(self):
@@ -70,10 +65,10 @@ class ClientsideGameplay:
 			self.Type(Message, WaitAfterwards=1000)
 
 		if self.playerindex() and GamesPlayed:
-			text = f"Waiting for {Player.AllPlayers[0]} to decide how many cards the game will start with."
+			text = f"Waiting for {Player.first()} to decide how many cards the game will start with."
 
 		elif self.playerindex():
-			text = f"As the first player to join this game, it is {Player.AllPlayers[0]}'s " \
+			text = f"As the first player to join this game, it is {Player.first()}'s " \
 			       f"turn to decide how many cards the game will start with."
 
 		elif GamesPlayed:

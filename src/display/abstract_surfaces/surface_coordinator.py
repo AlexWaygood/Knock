@@ -13,7 +13,7 @@ from src.game.client_game import ClientGame as Game
 from src.network.network_client import Client
 
 if TYPE_CHECKING:
-	from src.players.players_client import (ClientPlayer as Player)
+	from src.players.players_client import ClientPlayer as Player
 	from src.display.knock_surfaces.game_surf import GameSurface
 	from src.display.knock_surfaces.board_surf import BoardSurface
 	from src.special_knock_types import Position, DimensionTuple

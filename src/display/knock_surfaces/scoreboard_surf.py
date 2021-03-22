@@ -43,16 +43,16 @@ class Scoreboard(KnockSurface, TextBlitsMixin):
 		NormalLineSize = self.NormalFont.linesize
 		self.LeftMargin = int(NormalLineSize * 1.75)
 
-		MaxPointsText = max(self.NormalFont.size(f'{str(player)}: 88 points')[0] for player in Player.AllPlayers)
+		MaxPointsText = max(self.NormalFont.size(f'{str(player)}: 88 points')[0] for player in Player.iter())
 		self.TextColour = self.ColourScheme.TextDefault
 
-		self.SurfWidth = (
+		self.Width = (
 				(2 * self.LeftMargin)
 				+ max(MaxPointsText, self.UnderlinedFont.size('Trick not in progress')[0])
 		)
 
 		Multiplier = ((self.PlayerNo * 2) + 7) if self.game.GamesPlayed else (self.PlayerNo + 4)
-		self.SurfHeight = (NormalLineSize * Multiplier) + (2 * self.LeftMargin)
+		self.Height = (NormalLineSize * Multiplier) + (2 * self.LeftMargin)
 		self.title = (self.UnderlinedFont.render('SCOREBOARD'), (self.attrs.centre[0], int(NormalLineSize * 1.5)))
 
 	def TextBlitsHelper(
@@ -63,7 +63,7 @@ class Scoreboard(KnockSurface, TextBlitsMixin):
 	):
 		ScoreboardBlits += [
 			self.GetText(tup[0], self.NormalFont, **tup[1])
-			for tup in Player.ScoreboardText(self.NormalFont.linesize, y, self.SurfWidth, self.LeftMargin, attr)
+			for tup in Player.ScoreboardText(self.NormalFont.linesize, y, self.Width, self.LeftMargin, attr)
 		]
 
 		return ScoreboardBlits, (y + (self.NormalFont.linesize * self.PlayerNo))

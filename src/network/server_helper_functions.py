@@ -29,14 +29,14 @@ def CommsWithClient(
 		print(f'Connection with {player.addr} was broken at {GetTime()}.\n')
 
 		try:
-			Player.AllPlayers.remove(player)
+			del player
 			conn.shutdown(SHUT_RDWR)
 			conn.close()
 		finally:
 			raise Exception('Connection was terminated.')
 
-	elif Result == 'pong' or player.SendQ.empty():
-		player.SendQ.put('pong')
+	elif Result == 'pong' or player.NothingToSend():
+		player.ScheduleSend('pong')
 
 
 def EternalGameLoop(
@@ -54,4 +54,4 @@ def EternalGameLoop(
 			try:
 				server.CloseDown()
 			except:
-				pass
+				quit()

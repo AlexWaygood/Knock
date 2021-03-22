@@ -58,6 +58,7 @@ class ClientGame(Game, DictLike):
 	# This is only going to be called once, so we don't need to muck around with singleton patterns etc.
 	def __new__(
 			cls,
+			BiddingSystem: str,
 			PlayerNumber: int,
 			FrozenState: bool
 	):
@@ -67,15 +68,16 @@ class ClientGame(Game, DictLike):
 
 	def __init__(
 			self,
+			BiddingSystem: str,
 			PlayerNumber: int,
 			FrozenState: bool
 	):
-		super().__init__()
+		super().__init__(BiddingSystem)
 		self.FrozenState = FrozenState
 		self.lock = RLock()
 		self.client = Client.OnlyClient
 		self.Triggers = DoubleTrigger()
-		Player.AddVars(self)
+		Player.SetNumber(PlayerNumber)
 		self.Scoreboard = Scoreboard()
 		self.GamesPlayed = 0
 		self.CardNumberThisRound = -1
@@ -157,7 +159,7 @@ class ClientGame(Game, DictLike):
 
 	def EndTrick(self):
 		WinningCard = max(self.PlayedCards, key=methodcaller('GetWinValue', self.PlayedCards[0].Suit, self.trumpsuit))
-		(Winner := Player.AllPlayers[WinningCard.PlayedBy]).WinsTrick()
+		Winner = Player.PlayerWinsTrick(WinningCard.PlayedBy)
 
 		if self.TrickNumber != self.CardNumberThisRound:
 			self.WhoseTurnPlayerIndex = -1
@@ -190,9 +192,9 @@ class ClientGame(Game, DictLike):
 		self.lock.release()
 		return True
 
+	# PlayerNumber is given in the abstract_game repr
 	def __repr__(self):
-		String = super().__repr__()
-		Added = f'''gameplayers = {Player.AllPlayers}
+		Added = f'''gameplayers = {Player.reprList()}
 GamesPlayed = {self.GamesPlayed}
 CardNumberThisRound = {self.CardNumberThisRound}
 RoundNumber = {self.RoundNumber}
@@ -204,7 +206,7 @@ RoundLeaderIndex = {self.RoundLeaderIndex}
 MaxCardNumber = {self.MaxCardNumber}
 
 '''
-		return '\n'.join((String, Added))
+		return '\n'.join((super().__repr__(), Added))
 
 	def UpdateFromServer(
 			self,
@@ -220,12 +222,12 @@ MaxCardNumber = {self.MaxCardNumber}
 		PlayerInfoList = StringList[1].split('--')
 
 		if not Player.AllPlayersHaveJoinedTheGame():
-			for player, playerinfo in zip(Player.AllPlayers, PlayerInfoList):
+			for player, playerinfo in zip(Player.iter(), PlayerInfoList):
 				player.name = playerinfo.split('-')[0]
 		else:
 			for info in PlayerInfoList:
 				name, bid = info.split('-')
-				player = Player.AllPlayers[name]
+				player = Player.player(name)
 
 				if bid == '*1':
 					player.Bid = -1
@@ -248,8 +250,8 @@ MaxCardNumber = {self.MaxCardNumber}
 			except KeyError:
 				pass
 
-		if (Hand := StringList[4]) != 'None' and not Player.AllPlayers[playerindex].Hand:
-			Player.AllPlayers[playerindex].Hand.NewHand(CardsFromString(Hand))
+		if (Hand := StringList[4]) != 'None' and not Player.player(playerindex).Hand:
+			Player.player(playerindex).Hand.NewHand(CardsFromString(Hand))
 			self.NewCardQueues.Hand.put(1)
 
 

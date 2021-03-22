@@ -103,7 +103,7 @@ class DisplayManager:
 	# This is so the displayManager instance can be accessed in the clientside_gameplay thread.
 	def __new__(
 			cls,
-			player: Player,
+			playerindex: int,
 			FrozenState: bool,
 			StartColour: Colour
 	):
@@ -113,7 +113,7 @@ class DisplayManager:
 
 	def __init__(
 			self,
-			player: Player,
+			playerindex: int,
 			FrozenState: bool,
 			StartColour: Colour
 	):
@@ -126,7 +126,7 @@ class DisplayManager:
 		except:
 			WindowX, WindowY = self.WindowX, self.WindowY = self.DefaultMaxWidth, self.DefaultMaxHeight
 
-		self.player = player
+		self.player = Player.player(playerindex)
 		self.game = Game.OnlyGame
 		self.clock = Clock()
 		self.LastDisplayLog = 0
@@ -144,7 +144,7 @@ class DisplayManager:
 
 		# The GameSurf Adds itself as a class variable to the SurfaceCoordinator in __init__
 		self.GameSurf = GameSurface(StartColour, WindowX, WindowY, self.MinGameWidth, self.MinGameHeight)
-		SurfaceCoordinator.AddClassVars(player)
+		SurfaceCoordinator.AddClassVars(self.player)
 		TextBlitsMixin.AddTextFader()
 
 		self.BoardSurf = BoardSurface()  # Adds itself as a class variable to the SurfaceCoordinator in __init__
@@ -276,7 +276,7 @@ class DisplayManager:
 
 	def Update(self):
 		self.clock.tick(self.FrameRate)
-		Condition = (len(Player.AllPlayers) != self.game.PlayerNumber and self.game.StartPlay)
+		Condition = (Player.number() != self.game.PlayerNumber and self.game.StartPlay)
 
 		if Condition or not pg_display.get_init() or not pg_display.get_surface():
 			self.QuitGame()

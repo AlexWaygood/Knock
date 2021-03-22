@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 from queue import Queue, Empty
-from src.players.players_abstract import Player, Gameplayers
+from src.players.players_abstract import Player
 from os import environ
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 from pygame.time import delay
 
 if TYPE_CHECKING:
-	from src.special_knock_types import CardList, ConnectionAddress
+	from src.special_knock_types import ServerCardList, ConnectionAddress, ServerPlayerList, ServerPlayerDict
 	from src.cards.server_card_suit_rank import Suit
 
 
@@ -27,6 +27,9 @@ class SendQ:
 		self.LastUpdate = self.Q.get(block=False)
 		return self.LastUpdate
 
+	def empty(self):
+		return self.Q.empty()
+
 	def __enter__(self):
 		return self
 
@@ -37,7 +40,8 @@ class SendQ:
 class ServerPlayer(Player):
 	__slots__ = 'SendQ', 'addr', 'LastUpdate', 'ActionComplete'
 
-	AllPlayers: Gameplayers[ServerPlayer]
+	_AllPlayers: ServerPlayerList
+	_AllPlayersDict: ServerPlayerDict
 
 	def __init__(self, playerindex):
 		super().__init__(playerindex)
@@ -48,11 +52,11 @@ class ServerPlayer(Player):
 	@classmethod
 	def NewPack(
 			cls,
-			Pack: CardList,
+			Pack: ServerCardList,
 			CardNo: int,
 			trumpsuit: Suit
 	):
-		for player in cls.AllPlayers:
+		for player in cls.iter():
 			player.ReceiveCards([Pack.pop() for _ in range(CardNo)], trumpsuit)
 
 	@classmethod
@@ -61,12 +65,12 @@ class ServerPlayer(Player):
 			name: str,
 			playerindex: int
 	):
-		cls.AllPlayers[playerindex].name = name
-		return all(isinstance(player.name, str) for player in cls.AllPlayers)
+		cls.player(playerindex).name = name
+		return all(isinstance(player.name, str) for player in cls.iter())
 
 	@classmethod
 	def NextStage(cls):
-		for player in cls.AllPlayers:
+		for player in cls.iter():
 			player.ActionComplete = False
 
 	@classmethod
@@ -75,31 +79,31 @@ class ServerPlayer(Player):
 			index: int,
 			Bid: int
 	):
-		cls.AllPlayers[index].Bid = Bid
+		cls.player(index).Bid = Bid
 
 	@classmethod
 	def PlayerActionCompleted(cls, index: int):
-		cls.AllPlayers[index].ActionComplete = True
+		cls.player(index).ActionComplete = True
 
 	@classmethod
 	def WaitForPlayers(cls):
-		while any(not player.ActionComplete for player in cls.AllPlayers):
+		while any(not player.ActionComplete for player in cls.iter()):
 			delay(1)
 
 		ServerPlayer.NextStage()
 
 	@classmethod
 	def EndOfRound(cls):
-		for player in cls.AllPlayers:
+		for player in cls.iter():
 			player.Bid = -1
 
 	@classmethod
 	def ExportString(cls):
-		return '--'.join(f'{player.name}-{B if (B := player.Bid) > -1 else "*1"}' for player in cls.AllPlayers)
+		return '--'.join(f'{player.name}-{B if (B := player.Bid) > -1 else "*1"}' for player in cls.iter())
 
 	def ReprInfo(self):
 		return '\n'.join((
-			super().ReprInfo(),
+			super().__repr__(),
 			f'addr: {self.addr}. ActionComplete: {self.ActionComplete}.'
 		))
 
@@ -110,3 +114,6 @@ class ServerPlayer(Player):
 
 	def ScheduleSend(self, GameString):
 		self.SendQ.put(GameString)
+
+	def NothingToSend(self):
+		return self.SendQ.empty()

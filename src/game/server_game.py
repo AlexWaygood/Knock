@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from traceback_with_variables import printing_exc
 from random import shuffle
 from typing import TYPE_CHECKING
 
@@ -12,18 +13,22 @@ environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 from pygame.time import delay
 
 if TYPE_CHECKING:
-	from src.special_knock_types import NumberInput, CardList
+	from src.special_knock_types import NumberInput, ServerCardList
 
 
 class ServerGame(Game):
 	__slots__ = 'Operations', 'PlayerNumber'
 
-	def __init__(self, PlayerNumber: int):
-		super().__init__()
+	def __init__(
+			self,
+			BiddingSystem: str,
+			PlayerNumber: int
+	):
+		super().__init__(BiddingSystem)
 
 		# The PlayerNumber is set as an instance variable on the server side but a class variable on the client side.
 		self.PlayerNumber = PlayerNumber
-		Player.PlayerNo = PlayerNumber
+		Player.SetNumber(PlayerNumber)
 		self.Triggers = EventsDict()
 
 		[Player(i) for i in range(PlayerNumber)]
@@ -140,23 +145,36 @@ class ServerGame(Game):
 		self.WaitForPlayers('TrickEnd')
 
 	def ClientCommsLoop(self):
-		while True:
-			delay(300)
+		with printing_exc():
+			while True:
+				if Player.number() != self.PlayerNumber:
+					raise Exception('A client appears to have left the game!')
 
-			StartNo = self.StartCardNumber
+				delay(300)
+				self.Export()
 
-			String = '---'.join((
-				'--'.join([f'{v}' for v in self.Triggers.values()]),
-				Player.ExportString(),
-				CardsToString(self.PlayedCards),
-				f'{int(self.StartPlay)}{int(self.RepeatGame)}{StartNo}{repr(self.TrumpCard) if self.TrumpCard else ""}'
-			))
+	def Export(self):
+		StartNo = self.StartCardNumber
 
-			for player in Player.AllPlayers:
-				player.ScheduleSend('---'.join((String, CardsToString(player.Hand))))
+		String = '---'.join((
+			'--'.join([f'{v}' for v in self.Triggers.values()]),
+			Player.ExportString(),
+			CardsToString(self.PlayedCards),
+			f'{int(self.StartPlay)}{int(self.RepeatGame)}{StartNo}{repr(self.TrumpCard) if self.TrumpCard else ""}'
+		))
+
+		for player in Player.iter():
+			player.ScheduleSend('---'.join((String, CardsToString(player.Hand))))
+
+	# PlayerNumber is given in the abstract_game repr
+	def __repr__(self):
+		return '\n'.join((
+			super().__repr__(),
+			f'gameplayers = {Player.reprList()}\nTriggers: {self.Triggers}'
+		))
 
 
-def CardsToString(L: CardList):
+def CardsToString(L: ServerCardList):
 	if not L:
 		return 'None'
 	return '--'.join([f'{Card.AllCardsList.index(card)}-{card.PlayedBy}' for card in L])

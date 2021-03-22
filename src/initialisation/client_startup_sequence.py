@@ -27,7 +27,6 @@ def StartupSequence():
 
 	from src.clientside_gameplay import ClientsideGameplay
 	from src.game.client_game import ClientGame as Game
-	from src.players.players_client import ClientPlayer as Player
 	from src.network.network_client import Client
 
 	from src.display.display_manager import DisplayManager
@@ -57,13 +56,12 @@ def StartupSequence():
 	PlayerNo, playerindex, BiddingSystem = int(Message[0]), int(Message[1]), Message[2:]
 
 	debug('Message from server received, starting Game __init__()')
-	Game(PlayerNo, FrozenState)
-	player = Player.AllPlayers[playerindex]
+	Game(BiddingSystem, PlayerNo, FrozenState)
 
 	debug('Game __init__() complete, starting DisplayManager __init__()')
-	display_manager = DisplayManager(player, FrozenState, StartColour)
+	display_manager = DisplayManager(playerindex, FrozenState, StartColour)
 
 	debug('Finished DisplayManager __init__(), launching ClientsideGameplay __init__().')
-	clientside_gameplay = ClientsideGameplay(player, BiddingSystem)
+	clientside_gameplay = ClientsideGameplay(playerindex)
 
 	return client, clientside_gameplay, display_manager
