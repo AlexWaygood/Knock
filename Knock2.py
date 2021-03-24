@@ -4,7 +4,7 @@
 
 from threading import Thread
 from traceback_with_variables import printing_exc
-from src.initialisation.client_startup_sequence import StartupSequence
+from src.initialisation.startup_sequence.client_startup_sequence import StartupSequence
 
 
 with printing_exc():

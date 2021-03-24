@@ -7,15 +7,27 @@ from src.players.hand_sort_func import SortHand
 from itertools import cycle
 
 if TYPE_CHECKING:
-	from src.special_knock_types import AnyCardList, IndexOrKey, PlayerDict, SuitTuple, PlayerList, OptionalSuit
+	from src.special_knock_types import CardListTypeVar, StringOrInt, PlayerDict, SuitTuple, PlayerList, OptionalSuit,\
+		PlayerTypeVar, AnyHand
+
 	from src.cards.server_card_suit_rank import ServerCard as Card
 	from src.cards.server_card_suit_rank import Suit
-	from src.players.players_client import ClientPlayer
-	from src.players.players_server import ServerPlayer
+
+
+# @singledispatchmethod decorator is currently buggy; this is a workaround
+# (see https://bugs.python.org/issue39679,
+# https://stackoverflow.com/questions/62696796/singledispatchmethod-and-class-method-decorators-in-python-3-8)
+def _register(self, cls, method=None):
+	if hasattr(cls, '__func__'):
+		setattr(cls, '__annotations__', cls.__func__.__annotations__)
+	return self.dispatcher.register(cls, func=method)
+
+
+singledispatchmethod.register = _register
 
 
 # noinspection PyNestedDecorators
-class Player(object):
+class Player:
 	"""Class object for representing a single player in the game."""
 	__slots__ = '_name', 'playerindex', 'Hand', 'Bid'
 
@@ -24,15 +36,15 @@ class Player(object):
 	PlayerNo = 0
 
 	def __init__(self, playerindex: int):
-		self._name = playerindex
+		self._name: StringOrInt = playerindex
 		self.playerindex = playerindex
-		self.AllPlayers.append(self)
-		self.Hand = Hand()
 		self.Bid = -1
+		self.Hand: AnyHand
 
 	@classmethod
-	def SetNumber(cls, n: int):
+	def MakePlayers(cls, n: int):
 		cls.PlayerNo = n
+		cls._AllPlayers = [cls(i) for i in range(n)]
 
 	@classmethod
 	def number(cls):
@@ -42,26 +54,12 @@ class Player(object):
 	def first(cls):
 		return cls._AllPlayers[0]
 
-	### 3 overloaded methods for player() -- the return type depends on whether it's an inherited class or not.
-	### As a result, the type-hinting is quite complex
-
 	@overload
 	@classmethod
-	def player(cls: Player, index_or_key: IndexOrKey) -> Player:
+	def player(cls: PlayerTypeVar, index_or_key: StringOrInt) -> PlayerTypeVar:
 		pass
 
-	@overload
-	@classmethod
-	def player(cls: ClientPlayer, index_or_key: IndexOrKey) -> ClientPlayer:
-		pass
-
-	@overload
-	@classmethod
-	def player(cls: ServerPlayer, index_or_key: IndexOrKey) -> ServerPlayer:
-		pass
-
-	### the player() method will work whether you supply a player's playerindex or name
-
+	# the player() method will work whether you supply a player's playerindex or name
 	@singledispatchmethod
 	@classmethod
 	def player(cls, index_or_key: int):
@@ -71,8 +69,6 @@ class Player(object):
 	@classmethod
 	def _(cls, index_or_key: str):
 		return cls._AllPlayersDict[index_or_key]
-
-	###
 
 	@classmethod
 	def iter(cls):
@@ -93,9 +89,7 @@ class Player(object):
 	@classmethod
 	def NewGame(cls):
 		cls.AllPlayers = cls.AllPlayers[1:] + cls.AllPlayers[:1]
-
-		for player in cls.iter():
-			player.ResetPlayer(cls.PlayerNo)
+		[player.ResetPlayer(cls.PlayerNo) for player in cls.iter()]
 
 	@classmethod
 	def reprList(cls):
@@ -113,10 +107,9 @@ class Player(object):
 
 	def ReceiveCards(
 			self,
-			cards: AnyCardList,
+			cards: CardListTypeVar,
 			TrumpSuit: Suit
 	):
-
 		# Must receive an argument in the form of a list
 		self.Hand.NewHand(cards, TrumpSuit)
 		return self
@@ -128,7 +121,6 @@ class Player(object):
 	):
 
 		self.Hand.RemoveCard(card, TrumpSuit)
-		self.Hand.Iteration += 1
 
 	# This is kept as a separate method to the classmethod version, as it is extended in players_client.py.
 	def ResetPlayer(self, PlayerNo: int):
@@ -141,30 +133,23 @@ class Player(object):
 	def __str__(self):
 		return self.name if isinstance(self.name, str) else f'Player with index {self.playerindex}, as yet unnamed'
 
-	def __eq__(self, other: object):
-		assert isinstance(other, Player), "Can't compare a player with a non-player object"
-		return self.name == other.name and self.Hand.Iteration == other.Hand.Iteration
-
 
 class Hand(UserList):
-	__slots__ = 'Iteration', 'playername'
+	__slots__ = 'playername'
 
 	def __init__(self):
 		super().__init__()
-		self.Iteration = 0
 		self.playername = ''  # Is set when the player's name is set -- see the Player class
 
 	# noinspection PyAttributeOutsideInit
 	def NewHand(
 			self,
-			cards: AnyCardList,
+			cards: CardListTypeVar,
 			TrumpSuit: Suit
 	):
-
 		self.data = cards
 		self.sort(TrumpSuit)
-		self.data: AnyCardList = [card.AddToHand(self.playername) for card in self.data]
-		self.Iteration += 1
+		[card.AddToHand(self.playername) for card in self.data]
 
 	def RemoveCard(
 			self,
@@ -181,18 +166,9 @@ class Hand(UserList):
 			PlayedSuit: OptionalSuit = None,
 			suit_tuple: SuitTuple = (None, None)
 	):
-		self.data: AnyCardList = SortHand(self.data, TrumpSuit, PlayedSuit=PlayedSuit, SuitTuple=SuitTuple)
+		self.data: CardListTypeVar = SortHand(self.data, TrumpSuit, PlayedSuit=PlayedSuit, SuitTuple=SuitTuple)
 
-	# Used in gamesurf.py
-	def MoveColliderects(
-			self,
-			XMotion: float,
-			YMotion: float
-	):
-		for card in self.data:
-			card.colliderect.move_ip(XMotion, YMotion)
-
-	def __getitem__(self, item: IndexOrKey):
+	def __getitem__(self, item: StringOrInt):
 		try:
 			return super().__getitem__(item)
 		except:

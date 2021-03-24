@@ -19,12 +19,26 @@ AccessToken = '62e82f844db51d'
 
 
 class Server(Network):
-	__slots__ = 'ConnectionInfo', 'ip_handler'
+	__slots__ = 'ConnectionInfo', 'ip_handler', 'password_checker_class', 'password'
 
-	def __init__(self, AccessToken: str):
+	def __init__(
+			self,
+			AccessToken: str,
+			password: str
+	):
 		super().__init__()
 		self.ConnectionInfo: ConnectionDict = {}
 		self.ip_handler = None
+		self.password = password
+		self.password_checker_class = None
+
+		if password:
+			try:
+				from src.password_checker.password_server import ServerPasswordChecker as PasswordChecker
+				self.password_checker_class = PasswordChecker
+				PasswordChecker.password = password
+			except:
+				print('Password import failed; will be unable to check passwords for attempted connections.')
 
 		if AccessToken:
 			try:
@@ -32,22 +46,25 @@ class Server(Network):
 				self.ip_handler = getHandler(AccessToken)
 			except:
 				print("Encountered an error importing ipinfo; won't be able to provide info on IP addresses.")
+				log.debug("Encountered an error importing ipinfo; won't be able to provide info on IP addresses.")
 		else:
 			print('Not checking IP addresses as no access token was supplied.')
+			log.debug('Not checking IP addresses as no access token was supplied.')
 
 	def Run(
 			self,
 			IP: str,
 			port: int,
 			ManuallyVerify: bool,
-			password: str,
 			CommsFunction: NetworkFunction,
 			game: Game
 	):
+		log.debug('Initialising server...')
 		print('Initialising server...')
 		self.conn.bind((IP, port))
 		self.conn.listen()
 		NumberOfClients = 0
+		log.debug(f'Ready to accept connections to the server (time {GetTime()}).\n')
 		print(f'Ready to accept connections to the server (time {GetTime()}).\n')
 
 		Inputs, Outputs = [self.conn], []
@@ -68,7 +85,6 @@ class Server(Network):
 
 					NewConn = self.Connect(
 						NumberOfClients,
-						password,
 						ManuallyVerify,
 						game
 					)
@@ -78,6 +94,7 @@ class Server(Network):
 					NumberOfClients += 1
 
 					if NumberOfClients == game.PlayerNumber:
+						log.debug('Maximum number of connections received; no longer open for connections.')
 						print('Maximum number of connections received; no longer open for connections.')
 				else:
 					CommsFunction(self, s, game)
@@ -93,7 +110,6 @@ class Server(Network):
 	def Connect(
 			self,
 	        NumberOfClients: int,
-	        password: str,
 	        ManuallyVerify: bool,
 	        game: Game
 	):
@@ -105,35 +121,43 @@ class Server(Network):
 				# Should change this to addr[0] when other computers need to connect
 				details = self.ip_handler.getDetails('86.14.41.223')
 
-				print(
-					f'Attempted connection from {details.city}, '
-					f'{details.region}, {details.country_name} at {GetTime()}.'
-				)
+				messages = [
+					f'Attempted connection from {details.city}, {details.region}, {details.country_name} at {GetTime()}.',
+					f'IP, port: {addr}',
+					f'Hostname: {details.hostname}'
+				]
 
-				print(f'IP, port: {addr}')
-				print(f'Hostname: {details.hostname}')
+				for m in messages:
+					print(m)
+					log.debug(m)
+
 			except:
-				print(f"Couldn't get requested info for this IP address {addr}.")
+				m = f"Couldn't get requested info for this IP address {addr}."
+				print(m)
+				log.debug(m)
 
 		if self.ip_handler and ManuallyVerify:
 			if inputYesNo('\nAccept this connection? ') == 'no':
 				self.CloseConnection(conn)
 				return 0
 
-		if password:
-			from src.password_checker.password_server import ServerPasswordChecker as PasswordChecker
-			Checker = PasswordChecker(self, conn)
+		if self.password:
+			Checker = self.password_checker_class(self, conn)
 
-			if not Checker.CheckPassword(conn, password):
-				print('Client entered the wrong password; declining attempted connection.')
+			if not Checker.CheckPassword(conn):
+				m = f'Client {addr} entered the wrong password; declining attempted connection.'
+				print(m)
+				log.debug(m)
 				self.CloseConnection(conn)
 				return 0
 
-		player = Player.player(NumberOfClients)
-		player.addr = addr
-		self.ConnectionInfo[conn] = player
-		self.ConnectionInfo[conn].SendQ.put(f'{game.PlayerNumber}{NumberOfClients}{game.BiddingSystem}')
-		print(f'Connection info to client {addr} was placed on the send-queue at {GetTime()}.\n')
+		player: Player = Player.player(NumberOfClients)
+		self.ConnectionInfo[conn] = player.connect(addr, f'{game.PlayerNumber}{NumberOfClients}{game.BiddingSystem}')
+
+		m = f'Connection info to client {addr} was placed on the send-queue at {GetTime()}.\n'
+		print(m)
+		log.debug(m)
+
 		return conn
 
 	def receive(self, conn: socket):

@@ -4,12 +4,10 @@ from enum import Enum, IntEnum
 from itertools import product
 
 if TYPE_CHECKING:
-    from src.special_knock_types import RankType
+    from src.special_knock_types import RankType, ServerCardList, ServerCardDict
 
 # Subclassing an Enum class means that it's automatically hashable.
 # Subclassing IntEnum means that the __lt__, __gt__ & __eq__ methods are all filled in for us.
-# Using the @unique decorator means that a __new__ method is automatically generated...
-# ... ensuring that an existing instance is returned if one with those arguments has already been created.
 
 # E.g. r = Rank(11)
 # repr(r) = J
@@ -84,20 +82,21 @@ class ServerCard:
     """Class representing a playing card from a standard deck (excluding jokers)"""
     __slots__ = 'Rank', 'Suit', 'PlayedBy', 'ID'
 
-    AllCardsList = []
-    AllCardDict = {}
+    AllCardsList: ServerCardList = []
+    AllCardDict: ServerCardDict = {}
 
     def __new__(
             cls,
             rank: RankType,
             suit: str
     ):
+        key = (Rank(rank), Suit(suit))
+
         try:
-            return cls.AllCardDict[(rank, suit)]
+            return cls.AllCardDict[key]
         except:
             new = super(ServerCard, cls).__new__(cls)
-            cls.AllCardDict[(rank, suit)] = new
-            cls.AllCardsList.append(new)
+            cls.AllCardDict[key] = new
             return new
 
     def __init__(
@@ -105,11 +104,14 @@ class ServerCard:
             rank: RankType,
             suit: str
     ):
-
         self.Rank = Rank(rank)
         self.Suit = Suit(suit)
-        self.ID = (rank, suit)
+        self.ID = (self.Rank, self.Suit)
         self.PlayedBy = ''
+
+    @classmethod
+    def MakePack(cls):
+        cls.AllCardsList = [cls(*value) for value in AllCardValues]
 
     def AddToHand(self, playername: str):
         self.PlayedBy = playername

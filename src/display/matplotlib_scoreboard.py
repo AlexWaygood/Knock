@@ -12,7 +12,7 @@ from itertools import product
 from PyQt5.QtGui import QIcon
 
 from src.misc import GetDate
-from src.display.abstract_surfaces.surface_coordinator import SurfaceCoordinator
+from src.display.surface_coordinator import SurfaceCoordinator
 
 from os import path, environ
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"

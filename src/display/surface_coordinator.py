@@ -5,7 +5,7 @@ from functools import lru_cache
 from fractions import Fraction
 from math import ceil
 
-from src.display.abstract_surfaces.text_rendering import Fonts
+from src.display.abstract_text_rendering import Fonts
 from src.display.colours import ColourScheme
 
 from src.cards.client_card import ClientCard as Card
@@ -70,6 +70,7 @@ class SurfaceCoordinator:
 		cls.GameSurf.Hand = cls.player.Hand
 		GameX, GameY = cls.GameSurf.Width, cls.GameSurf.Height
 		cls.Fonts = Fonts(GameX, GameY)
+		print(f'Default font is {Fonts.DefaultFont}')
 		cls.WindowMargin, cls.CardX, cls.CardY, cls.RequiredResizeRatio = GetDimensions(GameX, GameY)
 
 	@classmethod

@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import List, Callable, Tuple, TYPE_CHECKING, Union, Optional, Sequence, Dict, Any
+from typing import List, Callable, Tuple, TYPE_CHECKING, Union, Optional, Sequence, Dict, Any, TypeVar
 
 
 if TYPE_CHECKING:
@@ -14,13 +14,13 @@ if TYPE_CHECKING:
 
 	from src.players.players_abstract import Player, Hand
 	from src.players.players_server import ServerPlayer
-	from src.players.players_client import ClientPlayer
+	from src.players.players_client import ClientPlayer, ClientHand
 
 	from src.network.network_server import Server
 	from src.network.network_client import Client
 
 	from src.game.client_game import ClientGame
-	from src.cards.server_card_suit_rank import ServerCard, Suit
+	from src.cards.server_card_suit_rank import ServerCard, Suit, Rank
 	from src.cards.client_card import ClientCard
 
 	Blittable = Optional[Tuple[Surface, Rect]]
@@ -28,15 +28,17 @@ if TYPE_CHECKING:
 
 	OptionalRect = Optional[Rect]
 	RectList = List[OptionalRect]
-	CoverRectList = List[Optional[CoverRect]]
+	CoverRectList = List[CoverRect]
 
 	OptionalSurface = Optional[Surface]
-	SurfaceList = List[OptionalSurface]
+	SurfaceList = List[Surface]
 
-	ServerCardList = List[Optional[ServerCard]]
-	AnyCardList = List[Union[ServerCard, ClientCard, None]]
-	Grouped_Type = Dict[Suit, AnyCardList]
+	ServerCardList = List[ServerCard]
+	ServerCardDict = Dict[Tuple[Rank, Suit], ServerCard]
+	CardListTypeVar = TypeVar('CardListTypeVar', ServerCardList, List[ClientCard])
+	Grouped_Type = Dict[Suit, CardListTypeVar]
 	OptionalTrump = Tuple[Optional[ServerCard]]
+	AnyCardList = List[Union[ServerCard, ClientCard]]
 
 	Position = Optional[Tuple[float, float]]
 	DimensionTuple = Optional[Tuple[float, float]]
@@ -44,6 +46,7 @@ if TYPE_CHECKING:
 	SuitTuple = Tuple[OptionalSuit, OptionalSuit]
 
 	PositionOrBlitsList = Union[Position, BlitsList]
+	PositionList = List[Tuple[float, float]]
 
 	Colour = Sequence[int, int, int]
 	OptionalColours = Optional[ColourScheme]
@@ -53,10 +56,12 @@ if TYPE_CHECKING:
 	ConnectionDict = Dict[socket, ServerPlayer]
 
 	RankType = Union[int, str]
-	IndexOrKey = Union[int, str]
+	StringOrInt = Union[int, str]
 	NumberInput = Union[int, str]
 
 	UpdaterDict = Dict[str, int]
+
+	PlayerTypeVar = TypeVar('PlayerTypeVar', Player, ClientPlayer, ServerPlayer)
 
 	PlayerList = List[Player]
 	ClientPlayerList = List[ClientPlayer]
@@ -65,8 +70,6 @@ if TYPE_CHECKING:
 	PlayerDict = Dict[str, Player]
 	ClientPlayerDict = Dict[str, ClientPlayer]
 	ServerPlayerDict = Dict[str, ServerPlayer]
-
-	AnyPlayer = Union[Player, ServerPlayer, ClientPlayer]
 
 	CardImageDict = Dict[str, Surface]
 	TupledImageDict = Sequence[Tuple[str, Surface]]
@@ -81,4 +84,6 @@ if TYPE_CHECKING:
 	ScoreboardTextList = List[ScoreboardText]
 	OptionalColourFader = Optional[ColourFader]
 
-	OptionalHand = Optional[Hand]
+	OptionalClientHand = Optional[ClientHand]
+	AnyHand = Union[Hand, ClientHand]
+	NumberList = List[int]

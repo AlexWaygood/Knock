@@ -13,7 +13,7 @@ class Game:
 	__slots__ = 'StartPlay', 'RepeatGame', 'PlayerNumber', '_StartCardNumber', 'PlayedCards', 'TrumpCard', 'trumpsuit',\
 	            'Triggers', 'BiddingSystem'
 
-	def __init__(self, BiddingSystem):
+	def __init__(self, BiddingSystem: str):
 		# The PlayerNumber is set as an instance variable on the server side but a class variable on the client side.
 		# So we don't bother with it here.
 

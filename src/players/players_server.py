@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 from queue import Queue, Empty
-from src.players.players_abstract import Player
+from src.players.players_abstract import Player, Hand
 from os import environ
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 from pygame.time import delay
@@ -21,6 +21,8 @@ class SendQ:
 
 	def put(self, data):
 		if data != self.LastUpdate:
+			if self.Q.full():
+				self.Q.get()
 			self.Q.put(data)
 
 	def get(self):
@@ -48,6 +50,7 @@ class ServerPlayer(Player):
 		self.SendQ = SendQ()
 		self.addr: ConnectionAddress = tuple()
 		self.ActionComplete = False
+		self.Hand = Hand()
 
 	@classmethod
 	def NewPack(
@@ -100,6 +103,15 @@ class ServerPlayer(Player):
 	@classmethod
 	def ExportString(cls):
 		return '--'.join(f'{player.name}-{B if (B := player.Bid) > -1 else "*1"}' for player in cls.iter())
+
+	def connect(
+			self,
+			addr: ConnectionAddress,
+			gameInfo: str
+	):
+		self.addr = addr
+		self.SendQ.put(gameInfo)
+		return self
 
 	def ReprInfo(self):
 		return '\n'.join((

@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
+from logging import getLogger
 
 from Crypto.Util.Padding import unpad
 from Crypto.Cipher.AES import block_size as AES_block_size
@@ -11,8 +12,13 @@ if TYPE_CHECKING:
 	from src.network.network_server import Server
 
 
+log = getLogger(__name__)
+
+
 # noinspection PyAttributeOutsideInit
 class ServerPasswordChecker(PasswordChecker):
+	password = ''
+
 	def __init__(self,
 	             parent: Server,
 	             conn: socket):
@@ -21,32 +27,35 @@ class ServerPasswordChecker(PasswordChecker):
 		self.ServerPublicKey = self.GenerateKey()
 		self.ClientPublicKey = None
 		self.type = 'Server'
+
+		log.debug('Exchanging keys...')
 		print('Exchanging keys...')
+
 		self.ExchangeKeys()
 
-	def CheckPassword(
-			self,
-			conn: socket,
-			password: str,
-			PasswordLength: int = PasswordLength
-	):
-
+	def CheckPassword(self, PasswordLength: int = PasswordLength):
 		# The client sends us the password, encrypted using the full key, and the initialisation vector.
 		# The server uses the full key and the initialisation vector to calculate the cipher used to encrypt the password.
 		# The server decrypts the password that the client sent it.
 		# The client sends back the password, the server checks that it's correct.
 
 		print('Receiving password from client...')
-		CipheredPassword = self.parent.SubReceive(PasswordLength + 16, conn)
-		iv = self.parent.SubReceive(16, conn)
+		log.debug('Receiving password from client...')
+
+		CipheredPassword = self.parent.SubReceive(PasswordLength + 16, self.conn)
+		iv = self.parent.SubReceive(16, self.conn)
 
 		print('Checking password...')
+		log.debug('Checking password...')
+
 		ReceivedPassword = unpad(self.GetCipher(iv).decrypt(CipheredPassword), AES_block_size).decode()
 
-		if ReceivedPassword != password:
+		if ReceivedPassword != self.password:
 			return False
 
 		print('Correct password received.')
+		log.debug('Correct password received.')
+
 		return True
 
 	def ExchangeKeys(self):
@@ -61,4 +70,6 @@ class ServerPasswordChecker(PasswordChecker):
 		self.SendKey(server=True, Partial=True)
 		self.ReceiveKey(Partial=True)
 		self.CalculateFullKey(server=True)
+
 		print('Completed key exchange.')
+		log.debug('Completed key exchange.')

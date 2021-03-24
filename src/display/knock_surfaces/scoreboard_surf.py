@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from functools import lru_cache
 from typing import TYPE_CHECKING
 from src.display.abstract_surfaces.knock_surface import KnockSurface
-from src.display.abstract_surfaces.text_rendering import TextBlitsMixin
+from src.display.abstract_text_rendering import TextBlitsMixin
 from src.display.faders import ColourFader
 from src.players.players_client import ClientPlayer as Player
 
@@ -10,18 +11,34 @@ if TYPE_CHECKING:
 	from src.special_knock_types import BlitsList
 
 
+def DimensionFunctionGenerator(PlayerNo):
+	@lru_cache
+	def ScoreboardDimensionsHelper(NormalFont, UnderlinedFont, GamesPlayed):
+		NormalLineSize = NormalFont.linesize
+		LeftMargin = int(NormalLineSize * 1.75)
+		MaxPointsText = max(NormalFont.size(f'{player}: 88 points')[0] for player in Player.iter())
+		Width = ((2 * LeftMargin) + max(MaxPointsText, UnderlinedFont.size('Trick not in progress')[0]))
+		Multiplier = ((PlayerNo * 2) + 7) if GamesPlayed else (PlayerNo + 4)
+		Height = (NormalLineSize * Multiplier) + (2 * LeftMargin)
+		title = (UnderlinedFont.render('SCOREBOARD'), ((Width // 2), int(NormalLineSize * 1.5)))
+		return Width, Height, title, LeftMargin
+	return ScoreboardDimensionsHelper
+
+
 # noinspection PyAttributeOutsideInit,PyMissingConstructor
 class Scoreboard(KnockSurface, TextBlitsMixin):
-	__slots__ = 'LeftMargin', 'title', 'FillFade', 'NormalFont', 'UnderlinedFont', 'Initialised'
+	__slots__ = 'LeftMargin', 'title', 'FillFade', 'NormalFont', 'UnderlinedFont', 'Initialised', 'DimensionsHelperFunc'
 
 	def __init__(self):
 		self.Initialised = False
+		self.DimensionsHelperFunc = DimensionFunctionGenerator(self.PlayerNo)
 
 	def RealInit(self):
 		super().__init__()    # calls SurfDimensions()
 		self.FillFade = ColourFader('Scoreboard')
 		self.GetSurf()
 		self.Initialised = True
+		self.OnScreen = True
 
 	def GetSurf(self):
 		if self.Initialised:
@@ -38,22 +55,13 @@ class Scoreboard(KnockSurface, TextBlitsMixin):
 		self.surf.fill(self.FillFade.GetColour())
 
 	def SurfDimensions(self):
-		self.x = self.WindowMargin
-		self.y = self.WindowMargin
-		NormalLineSize = self.NormalFont.linesize
-		self.LeftMargin = int(NormalLineSize * 1.75)
-
-		MaxPointsText = max(self.NormalFont.size(f'{str(player)}: 88 points')[0] for player in Player.iter())
+		self.x = self.y = self.WindowMargin
 		self.TextColour = self.ColourScheme.TextDefault
-
-		self.Width = (
-				(2 * self.LeftMargin)
-				+ max(MaxPointsText, self.UnderlinedFont.size('Trick not in progress')[0])
+		self.Width, self.Height, self.title, self.LeftMargin = self.DimensionsHelperFunc(
+			self.NormalFont,
+			self.UnderlinedFont,
+			self.game.GamesPlayed
 		)
-
-		Multiplier = ((self.PlayerNo * 2) + 7) if self.game.GamesPlayed else (self.PlayerNo + 4)
-		self.Height = (NormalLineSize * Multiplier) + (2 * self.LeftMargin)
-		self.title = (self.UnderlinedFont.render('SCOREBOARD'), (self.attrs.centre[0], int(NormalLineSize * 1.5)))
 
 	def TextBlitsHelper(
 			self,

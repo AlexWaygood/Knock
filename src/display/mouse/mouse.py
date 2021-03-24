@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from dataclasses import dataclass
 from src.display.mouse.cursors import NWArrow, NEArrow, DownArrow, UpArrow, SWArrow, SEArrow, LeftArrow, RightArrow
-from src.display.abstract_surfaces.surface_coordinator import SurfaceCoordinator
+from src.display.surface_coordinator import SurfaceCoordinator
 
 from os import environ
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"

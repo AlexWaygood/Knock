@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from src.display.abstract_surfaces.base_knock_surface import BaseKnockSurface
-from src.display.abstract_surfaces.surface_coordinator import SurfaceCoordinator
+from src.display.surface_coordinator import SurfaceCoordinator
 from src.display.faders import ColourFader
 
 from os import environ
@@ -11,7 +11,7 @@ from pygame.locals import K_UP, K_DOWN, K_LEFT, K_RIGHT
 from pygame.key import get_pressed as pg_key_get_pressed
 
 if TYPE_CHECKING:
-	from src.special_knock_types import OptionalHand, OptionalScrollwheel, Position, Colour
+	from src.special_knock_types import OptionalClientHand, OptionalScrollwheel, Position, Colour
 
 
 # noinspection PyAttributeOutsideInit
@@ -47,7 +47,7 @@ class GameSurface(BaseKnockSurface):
 		self.MinRectHeight = MinRectHeight
 
 		self.SurfAndPos()
-		self.Hand: OptionalHand = None
+		self.Hand: OptionalClientHand = None
 
 	def SurfAndPos(self):
 		super().SurfAndPos()

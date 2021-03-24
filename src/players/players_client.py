@@ -4,10 +4,10 @@ from typing import TYPE_CHECKING
 from operator import attrgetter
 from itertools import groupby
 
-from src.players.players_abstract import Player
+from src.players.players_abstract import Player, Hand
 
 if TYPE_CHECKING:
-	from src.special_knock_types import ClientPlayerDict, ClientPlayerList
+	from src.special_knock_types import ClientPlayerDict, ClientPlayerList, PositionList
 
 
 class ClientPlayer(Player):
@@ -27,6 +27,7 @@ class ClientPlayer(Player):
 		self.PointsLastRound = 0
 		self.GamesWon = 0
 		self.RoundLeader = False
+		self.Hand = ClientHand()
 
 	@classmethod
 	def AllEqualByAttribute(cls, attr: str):
@@ -42,7 +43,7 @@ class ClientPlayer(Player):
 
 	@classmethod
 	def GetNames(cls):
-		return [f'{player}' for player in cls.iter()]
+		return [str(player) for player in cls.iter()]
 
 	@classmethod
 	def GetScoreboard(cls):
@@ -50,8 +51,7 @@ class ClientPlayer(Player):
 
 	@classmethod
 	def RoundCleanUp(cls):
-		for player in cls.iter():
-			player.EndOfRound()
+		[player.EndOfRound() for player in cls.iter()]
 
 	@classmethod
 	def HighestScoreFirst(cls):
@@ -98,18 +98,54 @@ class ClientPlayer(Player):
 		return [
 			(f'{self}:', {'topleft': (LeftAlignX, y)}),
 			(f'{value} {attribute}{"s" if value != 1 else ""}', {'topright': (RightAlignX, y)})
+
 		]
+
+	@ classmethod
+	def BoardText(cls, *args, Positions: PositionList = None):
+		# Must receive exactly the same arguments as Boardhelp() method below
+		AllBid = cls.AllBid()
+		return sum((player.Boardhelp(*args, AllBid, *Positions[i]) for i, player in cls.enumerate()), start=[])
+
+	def Boardhelp(
+			self,
+			WhoseTurn: int,
+			TrickInProgress: bool,
+			PlayedCardsNo: int,
+			LineSize: int,
+			RoundLeaderIndex: int,
+			AllBid: bool,
+			BaseX: int,
+			BaseY: int
+	):
+		condition = (WhoseTurn == self.playerindex and TrickInProgress and PlayedCardsNo < self.PlayerNo)
+		font = 'UnderlinedBoardFont' if condition else 'StandardBoardFont'
+		Bid = f'Bid {"unknown" if (Bid := self.Bid) == -1 else (Bid if AllBid else "received")}'
+		Tricks = f'{self.Tricks} trick{"" if self.Tricks == 1 else "s"}'
+
+		Pos2, Pos3 = (BaseX, (BaseY + LineSize)), (BaseX, (BaseY + (LineSize * 2)))
+
+		PlayerText = [
+			(f'{self}', font, (BaseX, BaseY)),
+			(Bid, 'StandardBoardFont', Pos2),
+			(Tricks, 'StandardBoardFont', Pos3)
+		]
+
+		Condition = (self.playerindex == RoundLeaderIndex and not AllBid)
+
+		if Condition:
+			PlayerText.append(('Leads this round', 'StandardBoardFont', (BaseX, (BaseY + (LineSize * 3)))))
+
+		return PlayerText
 
 	@classmethod
 	def BidWaitingText(cls, playerindex: int):
-		if cls.PlayerNo != 2:
-			if (PlayersNotBid := sum(1 for player in cls.iter() if player.Bid == -1)) > 1:
-				WaitingText = f'{PlayersNotBid} remaining players'
-			else:
-				WaitingText = next(f'{player}' for player in cls.iter() if player.Bid == -1)
-		else:
+		if cls.PlayerNo == 2:
 			WaitingText = f'{cls.player(0 if playerindex else 1)}'
-
+		elif (PlayersNotBid := sum(1 for player in cls.iter() if player.Bid == -1)) > 1:
+			WaitingText = f'{PlayersNotBid} remaining players'
+		else:
+			WaitingText = next(str(player) for player in cls.iter() if player.Bid == -1)
 		return f'Waiting for {WaitingText} to bid'
 
 	@classmethod
@@ -161,17 +197,16 @@ class ClientPlayer(Player):
 		MaxPoints = max(player.Points for player in cls.iter())
 		Winners = [player.WinsGame() for player in cls.iter() if player.Points == MaxPoints]
 
-		if (WinnerNo := len(Winners)) > 1:
+		if WinnerNo := len(Winners) == 1:
+			yield f'{Winners[0].name} won the game!'
+		else:
 			if WinnerNo == 2:
 				ListOfWinners = f'{Winners[0]} and {Winners[1]}'
 			else:
-				ListOfWinners = f'{", ".join(Winner.name for Winner in Winners[:-1])} and {Winners[-1]}'
+				ListOfWinners = f'{", ".join([str(Winner) for Winner in Winners[:-1]])} and {Winners[-1]}'
 
 			yield 'Tied game!'
 			yield f'The joint winners of this game were {ListOfWinners}, with {MaxPoints} each!'
-
-		else:
-			yield f'{Winners[0].name} won the game!'
 
 	@classmethod
 	def TournamentLeaders(cls):
@@ -208,7 +243,6 @@ class ClientPlayer(Player):
 		return self
 
 	def EndOfRound(self):
-		self.Hand.Iteration += 1
 		self.Scoreboard = [self.Bid, self.Tricks]
 
 		# Have to redefine PointsThisRound variable in order to redefine PointsLastRound correctly.
@@ -223,39 +257,6 @@ class ClientPlayer(Player):
 		self.Tricks = 0
 		return self
 
-	def BoardText(
-			self,
-			WhoseTurn: int,
-			TrickInProgress: bool,
-			PlayedCardsNo: int,
-			AllBid: bool,
-			PlayerNo: int,
-			LineSize: int,
-			RoundLeaderIndex: int,
-			BaseX: int,
-			BaseY: int
-	):
-
-		condition = (WhoseTurn == self.playerindex and TrickInProgress and PlayedCardsNo < PlayerNo)
-		font = 'UnderlinedBoardFont' if condition else 'StandardBoardFont'
-		Bid = f'Bid {"unknown" if (Bid := self.Bid) == -1 else (Bid if AllBid else "received")}'
-		Tricks = f'{self.Tricks} trick{"" if self.Tricks == 1 else "s"}'
-
-		Pos2, Pos3 = (BaseX, (BaseY + LineSize)), (BaseX, (BaseY + (LineSize * 2)))
-
-		PlayerText = [
-			(f'{self}', font, (BaseX, BaseY)),
-			(Bid, 'StandardBoardFont', Pos2),
-			(Tricks, 'StandardBoardFont', Pos3)
-		]
-
-		Condition = (self.playerindex == RoundLeaderIndex and not AllBid)
-
-		if Condition:
-			PlayerText.append(('Leads this round', 'StandardBoardFont', (BaseX, (BaseY + (LineSize * 3)))))
-
-		return PlayerText
-
 	def __repr__(self):
 		return '\n'.join((
 			super().__repr__(),
@@ -263,3 +264,15 @@ class ClientPlayer(Player):
 			f'PointsThisRound: {self.PointsThisRound}. PointsLastRound: {self.PointsLastRound}.'
 			f'GamesWon: {self.GamesWon}. RoundLeader: {self.RoundLeader}. '
 		))
+
+
+class ClientHand(Hand):
+	__slots__ = tuple()
+
+	# Used in gamesurf.py
+	def MoveColliderects(
+			self,
+			XMotion: float,
+			YMotion: float
+	):
+		[card.MoveColliderect(XMotion, YMotion) for card in self.data]

@@ -1,12 +1,11 @@
 from src.display.abstract_surfaces.base_knock_surface import BaseKnockSurface
-from src.display.abstract_surfaces.surface_coordinator import SurfaceCoordinator
+from src.display.surface_coordinator import SurfaceCoordinator
 
 
 class KnockSurface(BaseKnockSurface, SurfaceCoordinator):
 	__slots__ = 'Iteration', 'OnScreen'
 
 	def __init__(self):
-		self.colour = self.ColourScheme.GamePlay
 		self.Iteration = 0
 		self.Initialise()
 		self.OnScreen = False
@@ -25,18 +24,16 @@ class KnockSurface(BaseKnockSurface, SurfaceCoordinator):
 		return self
 
 	def Update(self, ForceUpdate: bool = False):
-		if not self.OnScreen:
-			return None
+		if self.OnScreen:
+			with self.game:
+				ServerIteration = self.game.Triggers.Server.Surfaces[repr(self)]
 
-		with self.game:
-			ServerIteration = self.game.Triggers.Server.Surfaces[repr(self)]
+			if ServerIteration > self.Iteration or ForceUpdate:
+				self.Iteration = ServerIteration
+				self.fill()
+				self.surf.blits(self.GetSurfBlits(), False)
 
-		if ServerIteration > self.Iteration or ForceUpdate:
-			self.Iteration = ServerIteration
-			self.fill()
-			self.surf.blits(self.GetSurfBlits(), False)
-
-		self.GameSurf.surf.blit(*self.surfandpos)
+			self.GameSurf.surf.blit(*self.surfandpos)
 
 	# Two placeholder methods, to be overriden higher up in the inheritance chain
 	def SurfDimensions(self, *args, **kwargs):

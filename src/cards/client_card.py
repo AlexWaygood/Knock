@@ -78,6 +78,9 @@ class ClientCard(ServerCard):
 			return self.Rank.Value
 		return self.Rank.Value + 13 if self.Suit == trumpsuit else 0
 
+	def MoveColliderect(self, XMotion, YMotion):
+		self.colliderect.move_ip(XMotion, YMotion)
+
 	@classmethod
 	def UpdateAtrributes(cls):
 		for card in cls.AllCardsList:

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, TYPE_CHECKING
+from typing import TYPE_CHECKING
 from threading import RLock
 from itertools import chain
 from queue import Queue
@@ -19,7 +19,7 @@ environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 from pygame.time import delay
 
 if TYPE_CHECKING:
-	from src.special_knock_types import NumberInput, OptionalClientGame
+	from src.special_knock_types import NumberInput, OptionalClientGame, NumberList
 	from src.display.input_context import InputContext
 
 
@@ -62,8 +62,8 @@ class ClientGame(Game, DictLike):
 			PlayerNumber: int,
 			FrozenState: bool
 	):
-		cls.OnlyGame = super(ClientGame, cls).__new__(cls)
 		cls.PlayerNumber = PlayerNumber
+		cls.OnlyGame = super(ClientGame, cls).__new__(cls)
 		return cls.OnlyGame
 
 	def __init__(
@@ -77,7 +77,7 @@ class ClientGame(Game, DictLike):
 		self.lock = RLock()
 		self.client = Client.OnlyClient
 		self.Triggers = DoubleTrigger()
-		Player.SetNumber(PlayerNumber)
+		Player.MakePlayers(PlayerNumber)
 		self.Scoreboard = Scoreboard()
 		self.GamesPlayed = 0
 		self.CardNumberThisRound = -1
@@ -85,13 +85,12 @@ class ClientGame(Game, DictLike):
 		self.TrickInProgress = False
 		self.TrickNumber = 0
 		self.WhoseTurnPlayerIndex = -1
-		self.PlayerOrder: List[int] = []
+		self.PlayerOrder: NumberList = []
 		self.RoundLeaderIndex = -1
 		self.MaxCardNumber = 51 // PlayerNumber
 		self.NewCardQueues = NewCardQueues()
 
-		[Player(i) for i in range(PlayerNumber)]
-		[Card(*value) for value in AllCardValues]
+		Card.MakePack()
 
 	def TimeToStart(self):
 		self.StartPlay = True
@@ -223,7 +222,7 @@ MaxCardNumber = {self.MaxCardNumber}
 
 		if not Player.AllPlayersHaveJoinedTheGame():
 			for player, playerinfo in zip(Player.iter(), PlayerInfoList):
-				player.name = playerinfo.split('-')[0]
+				player.name = AttemptToInt(playerinfo.split('-')[0])
 		else:
 			for info in PlayerInfoList:
 				name, bid = info.split('-')

@@ -19,8 +19,8 @@ class ClientsideGameplay:
 		self.displayManager = DisplayManager.OnlyDisplayManager
 		self.typewriter = self.displayManager.Typewriter
 		self.client = Client.OnlyClient
-		self.player = Player.player(playerindex)
-		self.BiddingSystem = self.game.BiddingSystem
+		self.player: Player = Player.player(playerindex)
+		self.BiddingSystem: str = self.game.BiddingSystem
 		self.context = self.displayManager.InputContext
 
 	def Play(self):

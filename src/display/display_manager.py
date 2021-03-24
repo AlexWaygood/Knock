@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING
 from queue import Queue
 from collections import deque
 
-from src.display.abstract_surfaces.surface_coordinator import SurfaceCoordinator
-from src.display.abstract_surfaces.text_rendering import TextBlitsMixin
+from src.display.surface_coordinator import SurfaceCoordinator
+from src.display.abstract_text_rendering import TextBlitsMixin
 
 from src.display.knock_surfaces.game_surf import GameSurface
 from src.display.knock_surfaces.scoreboard_surf import Scoreboard
@@ -155,8 +155,8 @@ class DisplayManager:
 
 		self.InputContext = InputContext()
 		self.Typewriter = Typewriter([], -1, Queue(), None, None)
-		self.UserInput = TextInput('', None, self.InputContext)
 		self.Errors = Errors(deque(), [], GetTicks(), None)
+		self.UserInput = TextInput('', None, self.InputContext, self.Errors)
 		self.Mouse = Mouse(None, self.InputContext)
 		self.Scrollwheel = self.Mouse.Scrollwheel
 		self.GameSurf.scrollwheel = self.Mouse.Scrollwheel
@@ -201,9 +201,6 @@ class DisplayManager:
 		while True:
 			self.Update()
 
-	def InitialiseScoreboard(self):
-		self.ScoreboardSurf.RealInit()
-
 	def GetHandRects(self):
 		self.HandSurf.GetHandRects()
 
@@ -223,7 +220,7 @@ class DisplayManager:
 		if not self.game.GamesPlayed:
 			self.GameSurf.FillFade('MenuScreen', 'GamePlay', 1000)
 
-		self.ScoreboardSurf.Activate()
+		self.ScoreboardSurf.RealInit()
 		self.ScoreboardSurf.FillFade('GamePlay', 'Scoreboard', 1000)
 
 	def RoundStartFade(self):
@@ -487,42 +484,9 @@ class DisplayManager:
 			elif EvKey == pg_locals.K_BACKSPACE:
 				self.UserInput.NormalBackspaceEvent()
 			elif EvKey == pg_locals.K_RETURN:
-				self.HandleTextInput(self.UserInput.EnterEvent())
+				self.UserInput.EnterEvent()
 			else:
 				self.UserInput.AddTextEvent(event.unicode)
-
-	def HandleTextInput(self, Input: str):
-		if not Input:
-			return None
-
-		if isinstance(self.player.name, int):
-			if len(Input) < 30:
-				# Don't need to check that letters are ASCII-compliant;
-				# wouldn't have been able to type them if they weren't.
-				self.player.name = Input
-				self.client.QueueMessage(f'@P{Input}{self.player.playerindex}')
-			else:
-				self.Errors.Add('Name must be <30 characters; please try again.')
-
-		elif not (self.game.StartCardNumber or self.player.playerindex):
-			# Using try/except rather than if/else to catch unexpected errors as well as expected ones.
-			try:
-				assert 1 <= float(Input) <= self.game.MaxCardNumber and float(Input).is_integer()
-				self.game.StartCardNumber = int(Input)
-				self.client.QueueMessage(f'@N{Input}')
-			except:
-				self.Errors.Add(f'Please enter an integer between 1 and {self.game.MaxCardNumber}')
-
-		elif self.player.Bid == -1:
-			# Using try/except rather than if/else to catch unexpected errors as well as expected ones.
-			Count = len(self.player.Hand)
-
-			try:
-				assert 0 <= float(Input) <= Count and float(Input).is_integer()
-				self.player.Bid = int(Input)
-				self.client.QueueMessage(''.join((f'@B', f'{f"{Input}" : 0>2}', f'{self.player.playerindex}')))
-			except:
-				self.Errors.Add(f'Your bid must be an integer between 0 and {Count}.')
 
 	def __repr__(self):
 		return f'''Object for managing all variables related to pygame display on the client-side of the game. Current state:

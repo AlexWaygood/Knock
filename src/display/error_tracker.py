@@ -5,8 +5,8 @@ from fractions import Fraction
 from functools import lru_cache
 from dataclasses import dataclass
 
-from src.display.abstract_surfaces.text_rendering import TextBlitsMixin
-from src.display.abstract_surfaces.surface_coordinator import SurfaceCoordinator
+from src.display.abstract_text_rendering import TextBlitsMixin
+from src.display.surface_coordinator import SurfaceCoordinator
 
 from os import environ
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"

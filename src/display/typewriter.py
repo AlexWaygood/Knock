@@ -4,8 +4,8 @@ from dataclasses import dataclass
 from typing import Optional, TYPE_CHECKING
 from itertools import accumulate
 
-from src.display.abstract_surfaces.surface_coordinator import SurfaceCoordinator
-from src.display.abstract_surfaces.text_rendering import GetCursor
+from src.display.surface_coordinator import SurfaceCoordinator
+from src.display.abstract_text_rendering import GetCursor
 
 from os import environ
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
@@ -13,7 +13,7 @@ from pygame import Rect
 from pygame.time import delay
 
 if TYPE_CHECKING:
-	from src.display.abstract_surfaces.text_rendering import FontAndLinesize
+	from src.display.abstract_text_rendering import FontAndLinesize
 	from src.special_knock_types import SurfaceList
 	from queue import Queue
 

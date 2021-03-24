@@ -33,7 +33,7 @@ class KnockSurfaceWithCards(KnockSurface):
 	__slots__ = 'RectList', 'CardList', 'CoverRects', 'CardFadeManager', 'CardUpdateQueue', 'colour'
 
 	def __init__(self):
-		self.colour = self.ColourScheme['GamePlay']
+		self.colour = self.ColourScheme.GamePlay
 		self.RectList: RectList = []
 		self.CoverRects: CoverRectList = []
 		super().__init__()

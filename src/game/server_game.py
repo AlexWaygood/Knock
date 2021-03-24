@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from src.game.abstract_game import Game, EventsDict
 from src.players.players_server import ServerPlayer as Player
-from src.cards.server_card_suit_rank import AllCardValues, ServerCard as Card
+from src.cards.server_card_suit_rank import ServerCard as Card
 
 from os import environ
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
@@ -28,11 +28,10 @@ class ServerGame(Game):
 
 		# The PlayerNumber is set as an instance variable on the server side but a class variable on the client side.
 		self.PlayerNumber = PlayerNumber
-		Player.SetNumber(PlayerNumber)
 		self.Triggers = EventsDict()
 
-		[Player(i) for i in range(PlayerNumber)]
-		[Card(*value) for value in AllCardValues]
+		Player.MakePlayers(PlayerNumber)
+		Card.MakePack()
 
 		self.Operations = {
 			# if the client is sending the name of that player

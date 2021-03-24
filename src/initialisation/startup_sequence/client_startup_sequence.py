@@ -32,7 +32,7 @@ def StartupSequence():
 	from src.display.display_manager import DisplayManager
 	from src.display.colours import ColourScheme
 
-	from src.initialisation.client_user_inputs import UserInputs
+	from src.initialisation.user_inputs.client_user_inputs import UserInputs
 	from src.initialisation.ascii_suits import PrintIntroMessage
 	from src.initialisation.client_set_blocked_events import SetBlockedEvents
 
@@ -41,8 +41,13 @@ def StartupSequence():
 	from pygame.key import set_repeat as set_pg_key_repeat
 
 	PrintIntroMessage()
-	IP, Port, password, Theme = UserInputs()
+	pg_init()
+	IP, Port, password, Theme, FontChoice, BoldFont = UserInputs()
 	StartColour = ColourScheme(Theme).MenuScreen
+
+	if FontChoice:
+		from src.display.abstract_text_rendering import Fonts
+		Fonts.SetDefaultFont(FontChoice, BoldFont)
 
 	pg_init()
 	set_pg_key_repeat(1000, 50)

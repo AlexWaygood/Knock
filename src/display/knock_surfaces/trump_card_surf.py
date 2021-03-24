@@ -3,7 +3,7 @@ from functools import lru_cache
 from typing import TYPE_CHECKING
 
 from src.display.abstract_surfaces.knock_surface_with_cards import KnockSurfaceWithCards
-from src.display.abstract_surfaces.text_rendering import TextBlitsMixin
+from src.display.abstract_text_rendering import TextBlitsMixin
 from src.display.faders import OpacityFader
 
 if TYPE_CHECKING:

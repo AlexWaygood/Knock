@@ -2,13 +2,13 @@
 
 """This script must be run by exactly one machine for a game to take place."""
 
-from src.initialisation.server_startup_sequence import StartupSequence
+from src.initialisation.startup_sequence.server_startup_sequence import StartupSequence
 from src.network.server_helper_functions import EternalGameLoop, CommsWithClient
 from threading import Thread
 from traceback_with_variables import printing_exc
 
 with printing_exc():
-	server, game, password, ManuallyVerify = StartupSequence()
+	server, game, ManuallyVerify = StartupSequence()
 
 # The server will accept new connections until the expected number of players have connected to the server.
 # Remember - this part of the code will fail if the server's network router does not have port forwarding set up.
@@ -19,4 +19,4 @@ Thread(name='ServerGameplay', target=EternalGameLoop, daemon=True, args=(game, s
 Thread(name='ClientComms', target=game.ClientCommsLoop, daemon=True).start()
 
 with printing_exc():
-	server.Run('127.0.0.1', 5555, ManuallyVerify, password, CommsWithClient, game)
+	server.Run('127.0.0.1', 5555, ManuallyVerify, CommsWithClient, game)

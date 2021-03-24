@@ -3,7 +3,7 @@ def StartupSequence():
 	MaximiseWindow()
 
 	from src.initialisation.ascii_suits import PrintIntroMessage
-	from src.initialisation.server_user_inputs import UserInputs
+	from src.initialisation.user_inputs.server_user_inputs import UserInputs
 	from src.initialisation.logging_config import LoggingConfig
 
 	from src.network.network_server import Server, AccessToken
@@ -12,4 +12,4 @@ def StartupSequence():
 	LoggingConfig(False)
 	PrintIntroMessage()
 	NumberOfPlayers, BiddingSystem, password, ManuallyVerify = UserInputs()
-	return Server(AccessToken=AccessToken), Game(NumberOfPlayers, BiddingSystem), password, (ManuallyVerify == 'yes')
+	return Server(AccessToken, password), Game(BiddingSystem, NumberOfPlayers), (ManuallyVerify == 'yes')

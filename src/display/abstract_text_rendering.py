@@ -39,6 +39,9 @@ class FontAndLinesize:
 	def size(self, text: str):
 		return self.font.size(text)
 
+	def __hash__(self):
+		return id(self)
+
 
 @overload
 def GetCursor(TextAndPos: PositionOrBlitsList, font: FontAndLinesize) -> BlitsList:
@@ -65,13 +68,13 @@ def FontMachine(
 		DefaultMassiveFontSize: int
 ):
 	x = 10
-	NormalFont = SysFont(Fonts.DefaultFont, x, bold=True)
-	UnderLineFont = SysFont(Fonts.DefaultFont, x, bold=True)
+	NormalFont = SysFont(Fonts.DefaultFont, x, bold=Fonts.DefaultBold)
+	UnderLineFont = SysFont(Fonts.DefaultFont, x, bold=Fonts.DefaultBold)
 
 	while x < 19:
 		x += 1
-		font = SysFont(Fonts.DefaultFont, x, bold=True)
-		font2 = SysFont(Fonts.DefaultFont, x, bold=True)
+		font = SysFont(Fonts.DefaultFont, x, bold=Fonts.DefaultBold)
+		font2 = SysFont(Fonts.DefaultFont, x, bold=Fonts.DefaultBold)
 		Size = font.size('Trick not in progress')
 
 		if Size[0] > int(GameX * Fraction(70, 683)) or Size[1] > int(GameY * Fraction(18, 768)):
@@ -86,8 +89,8 @@ def FontMachine(
 		FontAndLinesize(font) for font in (
 			NormalFont,
 			UnderLineFont,
-			SysFont(Fonts.DefaultFont, DefaultTitleFontSize, bold=True),
-			SysFont(Fonts.DefaultFont, DefaultMassiveFontSize, bold=True)
+			SysFont(Fonts.DefaultFont, DefaultTitleFontSize, bold=Fonts.DefaultBold),
+			SysFont(Fonts.DefaultFont, DefaultMassiveFontSize, bold=Fonts.DefaultBold)
 		)
 	]
 
@@ -98,9 +101,19 @@ class Fonts(DictLike):
 	            'NormalScoreboardFont', 'UnderlinedScoreboardFont'
 
 	DefaultFont = 'Times New Roman'
+	DefaultBold = True
 	DefaultTitleFontSize = 20
 	DefaultMassiveFontSize = 40
 	# The size for the standard font is determined dynamically based on the user's screensize
+
+	@classmethod
+	def SetDefaultFont(
+			cls,
+			font: str,
+			BoldFont: bool
+	):
+		cls.DefaultFont = font
+		cls.DefaultBold = BoldFont
 
 	def __init__(
 			self,
