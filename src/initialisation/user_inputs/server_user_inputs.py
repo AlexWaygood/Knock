@@ -2,8 +2,12 @@ from pyinputplus import inputInt, inputMenu, inputCustom, inputYesNo
 from src.password_checker.password_abstract import GeneratePassword, PasswordInput
 
 
+MIN_PLAYERS = 2
+MAX_PLAYERS = 6
+
+
 def UserInputs():
-	NumberOfPlayers = inputInt('How many players will be playing? ', min=2, max=6)
+	NumberOfPlayers = inputInt('How many players will be playing? ', min=MIN_PLAYERS, max=MAX_PLAYERS)
 	print()
 
 	BiddingRuleChoices = [

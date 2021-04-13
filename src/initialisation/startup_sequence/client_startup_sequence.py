@@ -4,6 +4,10 @@ from logging import debug
 from os import chdir, environ
 
 
+PYGAME_KEY_EVENT_DELAY = 1000
+PYGAME_KEY_EVENT_FREQUENCY = 50
+
+
 def StartupSequence():
 	# This is only relevant if you are using pyinstaller to convert this script into a .exe file.
 	if getattr(sys, 'frozen', False):
@@ -30,7 +34,7 @@ def StartupSequence():
 	from src.network.network_client import Client
 
 	from src.display.display_manager import DisplayManager
-	from src.display.colours import ColourScheme
+	from src.display.colours import THEMES, ColourScheme
 
 	from src.initialisation.user_inputs.client_user_inputs import UserInputs
 	from src.initialisation.ascii_suits import PrintIntroMessage
@@ -42,7 +46,7 @@ def StartupSequence():
 
 	PrintIntroMessage()
 	pg_init()
-	IP, Port, password, Theme, FontChoice, BoldFont = UserInputs()
+	IP, Port, password, Theme, FontChoice, BoldFont = UserInputs(THEMES)
 	StartColour = ColourScheme(Theme).MenuScreen
 
 	if FontChoice:
@@ -50,7 +54,7 @@ def StartupSequence():
 		Fonts.SetDefaultFont(FontChoice, BoldFont)
 
 	pg_init()
-	set_pg_key_repeat(1000, 50)
+	set_pg_key_repeat(PYGAME_KEY_EVENT_DELAY, PYGAME_KEY_EVENT_FREQUENCY)
 	SetBlockedEvents()
 
 	debug('Starting Client __init__()')

@@ -74,7 +74,6 @@ class ColourFader(Fader):
 			colour2: str,
 			TimeToTake: int
 	):
-
 		self.DoFade(self.colour_scheme[colour1], self.colour_scheme[colour2], TimeToTake)
 		delay(TimeToTake)
 		while self.Fade:

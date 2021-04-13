@@ -13,6 +13,11 @@ if TYPE_CHECKING:
 	from src.cards.client_card import ClientCard as Card
 
 
+# Two global constants
+COVER_RECT_START_OPACITY = 'OpaqueOpacity'  # Dictates the opacity of the CoverRects at the start of the game
+STANDARD_BOARD_FONT = 'StandardBoardFont'
+
+
 def DimensionFunctionGenerator(PlayerNo: int):
 	@lru_cache
 	def BoardDimensionsHelper(
@@ -52,7 +57,8 @@ def DimensionFunctionGenerator(PlayerNo: int):
 				# Bottom-right position
 				PlayerTextPositions.append(((SurfWidth - CardX), ThreeFifthsBoard))
 				CardRectsOnBoard.append(
-					((SurfWidth - (DoubleCardWidth + 60)), (PlayerTextPositions[-1][1] - HalfCardWidth)))
+					((SurfWidth - (DoubleCardWidth + 60)), (PlayerTextPositions[-1][1] - HalfCardWidth))
+				)
 
 				# Bottom-mid position
 				if PlayerNo != 4:
@@ -86,13 +92,13 @@ class BoardSurface(KnockSurfaceWithCards, TextBlitsMixin):
 	def __init__(self):
 		self.BoardDimensionsHelper = DimensionFunctionGenerator(self.PlayerNo)
 		self.CardList = self.game.PlayedCards
-		self.CardFadeManager = OpacityFader('OpaqueOpacity', 'Board')
+		self.CardFadeManager = OpacityFader(COVER_RECT_START_OPACITY, 'Board')
 		self.CardUpdateQueue = self.game.NewCardQueues.PlayedCards
 		super().__init__()   # calls SurfDimensions()
 		SurfaceCoordinator.BoardSurf = self
 
 	def Initialise(self):
-		self.StandardFont = self.Fonts['StandardBoardFont']
+		self.StandardFont = self.Fonts[STANDARD_BOARD_FONT]
 		return super().Initialise()
 
 	def SurfDimensions(self):

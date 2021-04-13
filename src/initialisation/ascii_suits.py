@@ -7,13 +7,29 @@ from rich.panel import Panel
 from rich import print as rprint
 
 
+DEFAULT_WIDTH = 140
+DEFAULT_HEIGHT = 40
+CLUBS_LENGTH_START_VALUE = 1000
+DIVISOR_START_VALUE = 5
+IMAGE_RESIZE_RATIO = Fraction(55, 100)
+ASCII_ART_FILL_CHARACTER = '@'
+IMAGE_NAMES = ('Club', 'Diamond', 'Heart', 'Spade')
+TEXT_JUSTIFY = 'center'
+TEXT_STYLE = 'bold white on red'
+VERTICAL_PADDING = 3
+
+
+def GetPath(name: str):
+	return path.join('Images', 'Suits', f'{name}.png')
+
+
 def ConvertImage(name: str,
                  NewWidth: int):
 
-	im = Image.open(path.join('Images', 'Suits', f'{name}.png'))
-	ratio = Fraction(im.size[1], im.size[0]) * Fraction(55, 100)
+	im = Image.open(GetPath(name))
+	ratio = Fraction(im.size[1], im.size[0]) * IMAGE_RESIZE_RATIO
 	im = im.resize((NewWidth, int(NewWidth * ratio)))
-	Ascii = ''.join((' ' if p else '@') for p in im.getdata())
+	Ascii = ''.join((' ' if p else ASCII_ART_FILL_CHARACTER) for p in im.getdata())
 	return [Ascii[i: i + NewWidth] for i in range(0, len(Ascii), NewWidth)]
 
 
@@ -23,17 +39,17 @@ def ASCIISuits(TextLength: int):
 		terminal = get_terminal_size()
 		width, height = terminal.columns, terminal.lines
 	except OSError:
-		width = 140
-		height = 40
+		width = DEFAULT_WIDTH
+		height = DEFAULT_HEIGHT
 
-	Divisor = 5
-	ClubsLength = 1000
+	Divisor = DIVISOR_START_VALUE
+	ClubsLength = CLUBS_LENGTH_START_VALUE
 
 	while ClubsLength > (height - TextLength):
 		ImageWidth = width // Divisor
 
 		Clubs, Diamonds, Hearts, Spades = [
-			ConvertImage(string, ImageWidth) for string in ('Club', 'Diamond', 'Heart', 'Spade')
+			ConvertImage(string, ImageWidth) for string in IMAGE_NAMES
 		]
 
 		ClubsLength = len(Clubs)
@@ -58,15 +74,14 @@ t = ''.join((
 	'\n\n\n\n'
 ))
 
-
-text = Text(t, justify='center', style='bold white on red')
-VerticalPadding = 3
-TextLength = len(t.splitlines()) + (VerticalPadding * 2) + 6
+# noinspection PyTypeChecker
+text = Text(t, justify=TEXT_JUSTIFY, style=TEXT_STYLE)
+TextLength = len(t.splitlines()) + (VERTICAL_PADDING * 2) + 6
 
 
 def PrintIntroMessage(text: Text = text,
                       TextLength: int = TextLength,
-                      VerticalPadding: int = VerticalPadding):
+                      VerticalPadding: int = VERTICAL_PADDING):
 
 	for line in ASCIISuits(TextLength):
 		print(line)

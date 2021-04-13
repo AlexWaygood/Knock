@@ -18,6 +18,11 @@ if TYPE_CHECKING:
 	from queue import Queue
 
 
+FONT = 'TypewriterFont'
+TYPEWRITER_DELAY = 30
+TEXT_COLOUR = (0, 0, 0)
+
+
 @dataclass(eq=False, unsafe_hash=True)
 class Typewriter(SurfaceCoordinator):
 	__slots__ = 'RenderedSteps', 'Index', 'Rect', 'Q', 'font'
@@ -30,10 +35,10 @@ class Typewriter(SurfaceCoordinator):
 
 	def __post_init__(self):
 		self.AllSurfaces.append(self)
-		self.font = self.Fonts['TypewriterFont']
+		self.font = self.Fonts[FONT]
 
 	def Initialise(self):
-		self.font = self.Fonts['TypewriterFont']
+		self.font = self.Fonts[FONT]
 		return self
 
 	def Type(self,
@@ -47,7 +52,7 @@ class Typewriter(SurfaceCoordinator):
 
 		for _ in text:
 			self.Index += 1
-			delay(30)
+			delay(TYPEWRITER_DELAY)
 
 		if WaitAfterwards:
 			delay(WaitAfterwards)
@@ -58,7 +63,7 @@ class Typewriter(SurfaceCoordinator):
 	def Update(self, **kwargs):
 		if not self.Q.empty():
 			self.Rect = Rect((0, 0), self.font.size((text := self.Q.get())))
-			self.RenderedSteps = [self.font.render(step, False, (0, 0, 0)) for step in accumulate(text)]
+			self.RenderedSteps = [self.font.render(step, False, TEXT_COLOUR) for step in accumulate(text)]
 
 		if self.Index == -1:
 			return None

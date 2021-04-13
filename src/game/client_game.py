@@ -73,11 +73,14 @@ class ClientGame(Game, DictLike):
 			FrozenState: bool
 	):
 		super().__init__(BiddingSystem)
+
 		self.FrozenState = FrozenState
 		self.lock = RLock()
 		self.client = Client.OnlyClient
 		self.Triggers = DoubleTrigger()
+
 		Player.MakePlayers(PlayerNumber)
+
 		self.Scoreboard = Scoreboard()
 		self.GamesPlayed = 0
 		self.CardNumberThisRound = -1
@@ -182,6 +185,10 @@ class ClientGame(Game, DictLike):
 		super().NewGameReset()
 		Player.NewGame()
 		self.RoundNumber = 1
+
+	def CheckForPlayerDeparture(self, CurrentPlayerNumber):
+		if self.StartPlay and self.PlayerNumber != CurrentPlayerNumber:
+			return True
 
 	def __enter__(self):
 		self.lock.acquire()

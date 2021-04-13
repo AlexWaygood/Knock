@@ -14,12 +14,16 @@ if TYPE_CHECKING:
 	from src.special_knock_types import OptionalClientHand, OptionalScrollwheel, Position, Colour
 
 
+ARROW_KEY_NUDGE_AMOUNT = 20         # Controls how much an arrow-key press will move the game surface during gameplay.
+START_FILL_COLOUR = 'MenuScreen'    # Controls the start fill colour (used as a key for a ColourFader object)
+MIN_WIDTH_TO_HEIGHT_RATIO = 1.7     # Stops the user resizing the screen into a silly shape
+MAX_WIDTH_TO_HEIGHT_RATIO = 2.2     # Stops the user resizing the screen into a silly shape
+
+
 # noinspection PyAttributeOutsideInit
 class GameSurface(BaseKnockSurface):
 	__slots__ = 'WindowWidth', 'WindowHeight', 'MinRectWidth', 'MinRectHeight', 'MovementLookup', 'FillFade', \
 	            'scrollwheel', 'Hand', 'surfandpos', 'topleft', 'colour'
-
-	ArrowKeyNudgeAmount = 20
 
 	def __init__(
 			self,
@@ -33,7 +37,7 @@ class GameSurface(BaseKnockSurface):
 		super().__init__()
 		self.colour = StartColour
 		SurfaceCoordinator.GameSurf = self
-		self.FillFade = ColourFader('MenuScreen')
+		self.FillFade = ColourFader(START_FILL_COLOUR)
 		self.scrollwheel: OptionalScrollwheel = None
 
 		self.x = 0
@@ -71,16 +75,16 @@ class GameSurface(BaseKnockSurface):
 		self.surfandpos = (self.surf, self.attrs.rect)
 
 	def NudgeUp(self, ArrowShift: bool = True, TidyUpNeeded: bool = True):
-		self.YShift(self.ArrowKeyNudgeAmount, ArrowShift=ArrowShift,  TidyUpNeeded=TidyUpNeeded)
+		self.YShift(ARROW_KEY_NUDGE_AMOUNT, ArrowShift=ArrowShift,  TidyUpNeeded=TidyUpNeeded)
 
 	def NudgeDown(self, ArrowShift: bool = True, TidyUpNeeded: bool = True):
-		self.YShift(-self.ArrowKeyNudgeAmount, ArrowShift=ArrowShift,  TidyUpNeeded=TidyUpNeeded)
+		self.YShift(-ARROW_KEY_NUDGE_AMOUNT, ArrowShift=ArrowShift,  TidyUpNeeded=TidyUpNeeded)
 
 	def NudgeLeft(self, ArrowShift: bool = True, TidyUpNeeded: bool = True):
-		self.XShift(-self.ArrowKeyNudgeAmount, ArrowShift=ArrowShift,  TidyUpNeeded=TidyUpNeeded)
+		self.XShift(-ARROW_KEY_NUDGE_AMOUNT, ArrowShift=ArrowShift,  TidyUpNeeded=TidyUpNeeded)
 
 	def NudgeRight(self, ArrowShift: bool = True, TidyUpNeeded: bool = True):
-		self.XShift(self.ArrowKeyNudgeAmount, ArrowShift=ArrowShift, TidyUpNeeded=TidyUpNeeded)
+		self.XShift(ARROW_KEY_NUDGE_AMOUNT, ArrowShift=ArrowShift, TidyUpNeeded=TidyUpNeeded)
 
 	def MouseMove(self, Motion: Position):
 		self.XShift(Motion[0], TidyUpNeeded=False).YShift(Motion[1])
@@ -99,9 +103,7 @@ class GameSurface(BaseKnockSurface):
 		self.x = NewCoordinate
 
 		if ArrowShift:
-			KeysPressed = pg_key_get_pressed()
-
-			if KeysPressed[K_UP]:
+			if (KeysPressed := pg_key_get_pressed())[K_UP]:
 				self.NudgeUp(ArrowShift=False, TidyUpNeeded=False)
 			elif KeysPressed[K_DOWN]:
 				self.NudgeDown(ArrowShift=False, TidyUpNeeded=False)
@@ -124,9 +126,7 @@ class GameSurface(BaseKnockSurface):
 		self.y = NewCoordinate
 
 		if ArrowShift:
-			KeysPressed = pg_key_get_pressed()
-
-			if KeysPressed[K_LEFT]:
+			if (KeysPressed := pg_key_get_pressed())[K_LEFT]:
 				self.NudgeRight(ArrowShift=False, TidyUpNeeded=False)
 			elif KeysPressed[K_RIGHT]:
 				self.NudgeLeft(ArrowShift=False, TidyUpNeeded=False)
@@ -155,10 +155,10 @@ class GameSurface(BaseKnockSurface):
 		RectWidth = (NewWidth if NewWidth >= self.MinRectWidth else self.MinRectWidth)
 		RectHeight = (NewHeight if NewHeight >= self.MinRectHeight else self.MinRectHeight)
 
-		if 1.7 > (RectWidth / RectHeight):
-			RectHeight = RectWidth / 1.7
-		elif 2.2 < (RectWidth / RectHeight):
-			RectWidth = RectHeight * 2.2
+		if (RectWidth / RectHeight) < MIN_WIDTH_TO_HEIGHT_RATIO:
+			RectHeight = RectWidth / MIN_WIDTH_TO_HEIGHT_RATIO
+		elif (RectWidth / RectHeight) > MAX_WIDTH_TO_HEIGHT_RATIO:
+			RectWidth = RectHeight * MAX_WIDTH_TO_HEIGHT_RATIO
 
 		self.Width, self.Height = RectWidth, RectHeight
 		self.x = 0 if ResetPos or self.Width == NewWidth else (NewWidth * (self.x / self.WindowWidth))

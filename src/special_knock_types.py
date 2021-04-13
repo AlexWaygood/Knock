@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 
 	from src.display.display_manager import DisplayManager
 	from src.display.abstract_surfaces.knock_surface_with_cards import CoverRect
-	from src.display.colours import ColourScheme
+	from src.display.colours import ColourScheme, Theme
 	from src.display.faders import ColourFader
 	from src.display.mouse.mouse import Scrollwheel
 
@@ -34,8 +34,10 @@ if TYPE_CHECKING:
 	SurfaceList = List[Surface]
 
 	ServerCardList = List[ServerCard]
+	ClientCardList = List[ClientCard]
 	ServerCardDict = Dict[Tuple[Rank, Suit], ServerCard]
-	CardListTypeVar = TypeVar('CardListTypeVar', ServerCardList, List[ClientCard])
+	ClientCardDict = Dict[Tuple[Rank, Suit], ClientCard]
+	CardListTypeVar = TypeVar('CardListTypeVar', ServerCardList, ClientCardList)
 	Grouped_Type = Dict[Suit, CardListTypeVar]
 	OptionalTrump = Tuple[Optional[ServerCard]]
 	AnyCardList = List[Union[ServerCard, ClientCard]]
@@ -48,8 +50,9 @@ if TYPE_CHECKING:
 	PositionOrBlitsList = Union[Position, BlitsList]
 	PositionList = List[Tuple[float, float]]
 
-	Colour = Sequence[int, int, int]
+	Colour = Union[List[int], Tuple[int, int, int], Tuple[int, int, int, int]]
 	OptionalColours = Optional[ColourScheme]
+	ThemeTuple = Sequence[Theme]
 
 	NetworkFunction = Callable[[Server, *List[Any]], None]
 	ConnectionAddress = Tuple[str, int]
@@ -87,3 +90,6 @@ if TYPE_CHECKING:
 	OptionalClientHand = Optional[ClientHand]
 	AnyHand = Union[Hand, ClientHand]
 	NumberList = List[int]
+
+	ArrowCursor = Sequence[str]
+	Cursor_Type = Tuple[DimensionTuple, Position, Sequence[int]]

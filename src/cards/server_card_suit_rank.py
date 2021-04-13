@@ -6,6 +6,18 @@ from itertools import product
 if TYPE_CHECKING:
     from src.special_knock_types import RankType, ServerCardList, ServerCardDict
 
+
+# Two card-related global constants
+
+RANK_MAPPER = {
+        'J': 'Jack',
+        'Q': 'Queen',
+        'K': 'King',
+        'A': 'Ace'
+    }
+
+BLACKS = ('♣', '♠')
+
 # Subclassing an Enum class means that it's automatically hashable.
 # Subclassing IntEnum means that the __lt__, __gt__ & __eq__ methods are all filled in for us.
 
@@ -14,13 +26,6 @@ if TYPE_CHECKING:
 # str(r) = 'Jack'
 # r.value = 11
 # r < Rank(12) = True
-
-RankMapper = {
-        'J': 'Jack',
-        'Q': 'Queen',
-        'K': 'King',
-        'A': 'Ace'
-    }
 
 
 class Rank(IntEnum):
@@ -42,15 +47,10 @@ class Rank(IntEnum):
         return str(self.value) if self.value < 11 else self.name
 
     def __str__(self):
-        return str(self.value) if self.value < 11 else RankMapper[self.name]
+        return str(self.value) if self.value < 11 else RANK_MAPPER[self.name]
 
 
-Blacks = ('♣', '♠')
-
-# Mixing in 'str' as a class means that we'll be able to sort Suit instances by value.
-
-
-class Suit(str, Enum):
+class Suit(str, Enum):  # Mixing in 'str' as a class means that we'll be able to sort Suit instances by value.
     Diamonds = '♢'
     Clubs = '♣'
     Spades = '♠'
@@ -63,7 +63,7 @@ class Suit(str, Enum):
         return self.value
 
     def IsBlack(self):
-        return self.value in Blacks
+        return self.value in BLACKS
 
     def OtherOfColour(self):
         if self.IsBlack():

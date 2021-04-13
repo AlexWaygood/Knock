@@ -17,18 +17,25 @@ from pygame import Surface
 from pygame.font import SysFont
 
 
+DEFAULT_TYPING_CURSOR_COLOUR = (0, 0, 0)
+DEFAULT_TYPING_CURSOR_WIDTH = 3
+TYPING_CURSOR_BLINKS_PER_SECOND = 2
+DEFAULT_FONT = 'Times New Roman'
+DEFAULT_BOLD = True
+TITLE_FONT_SIZE = 20
+MASSIVE_FONT_SIZE = 40
+# The size for the standard font is determined dynamically based on the user's screensize
+
+
 class FontAndLinesize:
 	"""Class for holding data about various fonts that will be used frequently in the game"""
 	__slots__ = 'font', 'linesize', 'Cursor'
 
-	DefaultCursorColour = (0, 0, 0)
-	DefaultCursorWidth = 3
-
 	def __init__(self, font: SysFont):
 		self.font = font
 		self.linesize = font.get_linesize()
-		self.Cursor = Surface((self.DefaultCursorWidth, self.linesize))
-		self.Cursor.fill(self.DefaultCursorColour)
+		self.Cursor = Surface((DEFAULT_TYPING_CURSOR_WIDTH, self.linesize))
+		self.Cursor.fill(DEFAULT_TYPING_CURSOR_COLOUR)
 
 	def __repr__(self):
 		return f'FontAndLinesize object, style={Fonts.DefaultFont}, linesize={self.linesize}'
@@ -43,38 +50,37 @@ class FontAndLinesize:
 		return id(self)
 
 
+def CursorNeeded():
+	return (time() % 1) > (1 / TYPING_CURSOR_BLINKS_PER_SECOND)
+
+
 @overload
 def GetCursor(TextAndPos: PositionOrBlitsList, font: FontAndLinesize) -> BlitsList:
 	pass
 
 
 @singledispatch
-def GetCursor(TextAndPos: tuple, font: FontAndLinesize):
-	return [(font.Cursor, TextAndPos)] if time() % 1 > 0.5 else []
+def GetCursor(TextAndPos: tuple, font: FontAndLinesize) -> BlitsList:
+	return [(font.Cursor, TextAndPos)] if CursorNeeded() else []
 
 
 @GetCursor.register
-def _(TextAndPos: list, font: FontAndLinesize):
-	if time() % 1 > 0.5:
+def _(TextAndPos: list, font: FontAndLinesize) -> BlitsList:
+	if CursorNeeded():
 		TextAndPos.append((font.Cursor, TextAndPos[0][1].topright))
 	return TextAndPos
 
 
 @lru_cache
-def FontMachine(
-		GameX: int,
-		GameY: int,
-		DefaultTitleFontSize: int,
-		DefaultMassiveFontSize: int
-):
+def FontMachine(GameX: int, GameY: int):
 	x = 10
-	NormalFont = SysFont(Fonts.DefaultFont, x, bold=Fonts.DefaultBold)
-	UnderLineFont = SysFont(Fonts.DefaultFont, x, bold=Fonts.DefaultBold)
+	NormalFont = SysFont(DEFAULT_FONT, x, bold=DEFAULT_BOLD)
+	UnderLineFont = SysFont(DEFAULT_FONT, x, bold=DEFAULT_BOLD)
 
 	while x < 19:
 		x += 1
-		font = SysFont(Fonts.DefaultFont, x, bold=Fonts.DefaultBold)
-		font2 = SysFont(Fonts.DefaultFont, x, bold=Fonts.DefaultBold)
+		font = SysFont(DEFAULT_FONT, x, bold=DEFAULT_BOLD)
+		font2 = SysFont(DEFAULT_FONT, x, bold=DEFAULT_BOLD)
 		Size = font.size('Trick not in progress')
 
 		if Size[0] > int(GameX * Fraction(70, 683)) or Size[1] > int(GameY * Fraction(18, 768)):
@@ -89,8 +95,8 @@ def FontMachine(
 		FontAndLinesize(font) for font in (
 			NormalFont,
 			UnderLineFont,
-			SysFont(Fonts.DefaultFont, DefaultTitleFontSize, bold=Fonts.DefaultBold),
-			SysFont(Fonts.DefaultFont, DefaultMassiveFontSize, bold=Fonts.DefaultBold)
+			SysFont(DEFAULT_FONT, TITLE_FONT_SIZE, bold=DEFAULT_BOLD),
+			SysFont(DEFAULT_FONT, MASSIVE_FONT_SIZE, bold=DEFAULT_BOLD)
 		)
 	]
 
@@ -100,11 +106,7 @@ class Fonts(DictLike):
 	            'ErrorTitleFont', 'ErrorMessagesFont', 'StandardBoardFont', 'UnderlinedBoardFont', \
 	            'NormalScoreboardFont', 'UnderlinedScoreboardFont'
 
-	DefaultFont = 'Times New Roman'
-	DefaultBold = True
-	DefaultTitleFontSize = 20
-	DefaultMassiveFontSize = 40
-	# The size for the standard font is determined dynamically based on the user's screensize
+	DefaultFont = DEFAULT_FONT
 
 	@classmethod
 	def SetDefaultFont(
@@ -121,7 +123,7 @@ class Fonts(DictLike):
 			GameY: int
 	):
 
-		Normal, UnderLine, Title, Massive = FontMachine(GameX, GameY, 20, 40)
+		Normal, UnderLine, Title, Massive = FontMachine(GameX, GameY)
 
 		self.Normal = Normal
 		self.UnderLine = UnderLine

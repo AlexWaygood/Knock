@@ -1,11 +1,21 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
 from socket import gethostbyname
 from pprint import pprint
 from pyinputplus import inputCustom, inputMenu, inputYesNo
 from ipaddress import ip_address
 from os import environ
+
 from src.password_checker.password_abstract import PasswordInput
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 from pygame.font import init as pg_font_init, get_fonts
+
+if TYPE_CHECKING:
+	from src.special_knock_types import ThemeTuple
+
+
+DEFAULT_THEME_INDEX = 0
+FONT_ENTRY_MAX_ATTEMPTS = 3
 
 
 def IPValidation(InputText: str):
@@ -31,13 +41,9 @@ def FontInput(FontName: str, AllFonts=AllFonts):
 
 SettingsChoices = ['Continue with default settings', 'Customise default font and colour theme for the game']
 
-ThemeChoices = ['Classic theme (dark red board)', 'High contrast theme (orange board)']
-ThemeDict = {'Classic theme (dark red board)': 'Classic', 'High contrast theme (orange board)': 'Contrast'}
-
 
 def UserInputs(
-		ThemeChoices=ThemeChoices,
-		ThemeDict=ThemeDict,
+		themes: ThemeTuple,
 		SettingsChoices=SettingsChoices,
 		AllFonts=AllFonts
 ):
@@ -88,7 +94,7 @@ def UserInputs(
 						prompt='Please enter your preferred font for the game '
 						       '(press enter to default to Times New Roman):\n\n',
 						blank=True,
-						limit=3
+						limit=FONT_ENTRY_MAX_ATTEMPTS
 					)
 
 				except:
@@ -97,12 +103,14 @@ def UserInputs(
 		if FontChoice:
 			BoldFont = inputYesNo(prompt='Would you like that font emboldened by default? ')
 
-		Theme = inputMenu(
-			choices=ThemeChoices,
+		# noinspection PyTypeChecker
+		ChosenTheme = inputMenu(
+			choices=[t.Description for t in themes],
 			prompt='Please select the colour theme you would like to play with:\n\n',
 			numbered=True
 		)
-	else:
-		Theme = ThemeChoices[0]
 
-	return IP, Port, password, ThemeDict[Theme], FontChoice, (BoldFont == 'yes')
+	else:
+		ChosenTheme = themes[DEFAULT_THEME_INDEX].Description
+
+	return IP, Port, password, ChosenTheme, FontChoice, (BoldFont == 'yes')

@@ -19,6 +19,9 @@ if TYPE_CHECKING:
 	from src.special_knock_types import Position, DimensionTuple
 
 
+INPUT_POS_OFFSET = 50
+
+
 @lru_cache
 def GetDimensions(
 		GameX: int,
@@ -70,7 +73,6 @@ class SurfaceCoordinator:
 		cls.GameSurf.Hand = cls.player.Hand
 		GameX, GameY = cls.GameSurf.Width, cls.GameSurf.Height
 		cls.Fonts = Fonts(GameX, GameY)
-		print(f'Default font is {Fonts.DefaultFont}')
 		cls.WindowMargin, cls.CardX, cls.CardY, cls.RequiredResizeRatio = GetDimensions(GameX, GameY)
 
 	@classmethod
@@ -99,8 +101,8 @@ class SurfaceCoordinator:
 			surf.Initialise().GetSurf()
 
 		cls.BoardCentre = BoardX, BoardY = cls.BoardSurf.NonrelativeBoardCentre
-		cls.PreplayInputPos = (cls.GameSurf.attrs.centre[0], (cls.GameSurf.attrs.centre[1] + 50))
-		cls.PlayStartedInputPos = (BoardX, (BoardY + 50))
+		cls.PreplayInputPos = (cls.GameSurf.attrs.centre[0], (cls.GameSurf.attrs.centre[1] + INPUT_POS_OFFSET))
+		cls.PlayStartedInputPos = (BoardX, (BoardY + INPUT_POS_OFFSET))
 
 	@classmethod
 	def NewWindowSize(

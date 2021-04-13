@@ -17,6 +17,12 @@ if TYPE_CHECKING:
 	from src.special_knock_types import Blittable
 
 
+TITLE_FONT = 'ErrorTitleFont'
+MESSAGE_FONT = 'ErrorMessageFont'
+MESSAGE_LIFESPAN = 5000
+MAX_MESSAGE_NO = 5
+
+
 # Magic numbers based on the principle of "what looks good on my laptop."
 @lru_cache
 def ErrorPosHelper(
@@ -44,17 +50,17 @@ class Errors(TextBlitsMixin, SurfaceCoordinator):
 	# noinspection PyAttributeOutsideInit
 	def Initialise(self):
 		self.Pos = ErrorPosHelper(self.GameSurf.Width, self.GameSurf.Height)
-		self.TitleFont = self.Fonts['ErrorTitleFont']
-		self.MessageFont = self.Fonts['ErrorMessagesFont']
+		self.TitleFont = self.Fonts[TITLE_FONT]
+		self.MessageFont = self.Fonts[MESSAGE_FONT]
 		return self
 
 	def Update(self, ForceUpdate: bool = False):
 		self.ErrorMessages()
 
-		if self.Messages and GetTicks() > self.StartTime + 5000:
+		if self.Messages and GetTicks() > self.StartTime + MESSAGE_LIFESPAN:
 			self.Messages.clear()
 
-		while len(self.Messages) > 5:
+		while len(self.Messages) > MAX_MESSAGE_NO:
 			self.Messages.popleft()
 
 		self.GameSurf.surf.blits(self.Messages)

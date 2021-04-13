@@ -8,12 +8,18 @@ if TYPE_CHECKING:
 	from src.cards.client_card import ClientCard as Card
 
 
-@lru_cache
-def GetHandRects(GameSurfX: int,
-                 WindowMargin: int,
-                 CardX: int,
-                 StartNumber: int):
+# Two global constants
+HAND_SURFACE_X_COORDINATE = 0  # The Hand surface's Y-coordinate changes, but the X-coordinate never does
+COVER_RECT_START_OPACITY = 'OpaqueOpacity'
 
+
+@lru_cache
+def GetHandRects(
+		GameSurfX: int,
+		WindowMargin: int,
+		CardX: int,
+		StartNumber: int
+):
 	x = WindowMargin
 	DoubleWindowMargin = x * 2
 	PotentialBuffer = CardX // 2
@@ -28,11 +34,12 @@ def GetHandRects(GameSurfX: int,
 
 class HandSurface(KnockSurfaceWithCards):
 	__slots__ = 'HandRectsCalculated'
-	x = 0
+
+	x = HAND_SURFACE_X_COORDINATE
 
 	def __init__(self):
 		self.CardList = self.player.Hand
-		self.CardFadeManager = OpacityFader('OpaqueOpacity', 'Hand')
+		self.CardFadeManager = OpacityFader(COVER_RECT_START_OPACITY, 'Hand')
 		self.CardUpdateQueue = self.game.NewCardQueues.Hand
 		super().__init__()   # calls SurfDimensions()
 		self.HandRectsCalculated = False

@@ -10,6 +10,11 @@ if TYPE_CHECKING:
 	from src.cards.client_card import ClientCard as Card
 
 
+START_COVER_RECT_OPACITY = 'OpaqueOpacity'
+FONT = 'TrumpCardFont'
+TRUMPCARD_SURFACE_TITLE = 'TrumpCard'
+
+
 @lru_cache
 def TrumpCardDimensionsHelper(
 		GameX: int,
@@ -26,12 +31,12 @@ class TrumpCardSurface(KnockSurfaceWithCards, TextBlitsMixin):
 
 	def __init__(self):
 		self.CardList = self.game.TrumpCard
-		self.CardFadeManager = OpacityFader('OpaqueOpacity', 'TrumpCard')
+		self.CardFadeManager = OpacityFader(START_COVER_RECT_OPACITY, 'TrumpCard')
 		self.CardUpdateQueue = self.game.NewCardQueues.TrumpCard
 		super().__init__()   # Calls SurfDimensions()
 
 	def Initialise(self):
-		self.font = self.Fonts['TrumpcardFont']
+		self.font = self.Fonts[FONT]
 		return super().Initialise()
 
 	def SurfDimensions(self):
@@ -50,4 +55,4 @@ class TrumpCardSurface(KnockSurfaceWithCards, TextBlitsMixin):
 	def GetSurfBlits(self):
 		L = super().GetSurfBlits()
 		font, LineSize = self.font, self.font.linesize
-		return L + [self.GetText('TrumpCard', font, center=((self.attrs.centre[0] / 2), (LineSize / 2)))]
+		return L + [self.GetText(TRUMPCARD_SURFACE_TITLE, font, center=((self.attrs.centre[0] / 2), (LineSize / 2)))]

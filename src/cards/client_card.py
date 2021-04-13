@@ -14,14 +14,20 @@ from pygame.image import fromstring as pg_image_fromstring
 if TYPE_CHECKING:
 	from fractions import Fraction
 	from pygame import Rect
-	from src.special_knock_types import RankType, Position, CardImageDict, TupledImageDict, OptionalSurface, OptionalRect
+	from src.special_knock_types import RankType, Position, CardImageDict, TupledImageDict, OptionalSurface, \
+		OptionalRect, ClientCardList, ClientCardDict
+
+
+# Two card-related global constants
+ORIGINAL_CARD_IMAGE_DIMENSIONS = (691, 1056)  # Used in the SurfaceCoordinator script
+PATH_TO_CARD_IMAGES = path.join('Images', 'Cards', 'Compressed')
 
 
 def OpenImage(
 		ID: str,
 		ResizeRatio: Fraction
 ):
-	im = Image.open(path.join(ClientCard.PathToImages, f'{ID}.jpg')).convert("RGB")
+	im = Image.open(path.join(PATH_TO_CARD_IMAGES, f'{ID}.jpg')).convert("RGB")
 	im = im.resize((int(im.size[0] / ResizeRatio), int(im.size[1] / ResizeRatio)))
 	return pg_image_fromstring(im.tobytes(), im.size, im.mode).convert()
 
@@ -37,10 +43,13 @@ def CardResizer(
 class ClientCard(ServerCard):
 	__slots__ = 'rect', 'colliderect', 'image', 'surfandpos'
 
+	AllCardsList: ClientCardList
+	AllCardDict: ClientCardDict
+
 	BaseCardImages: CardImageDict = {}
 	CardImages: CardImageDict = {}
-	OriginalImageDimensions = (691, 1056)  # Used in the SurfaceCoordinator script
-	PathToImages = path.join('Images', 'Cards', 'Compressed')
+
+	OriginalImageDimensions = ORIGINAL_CARD_IMAGE_DIMENSIONS  # Used in the SurfaceCoordinator script
 
 	def __init__(
 			self,

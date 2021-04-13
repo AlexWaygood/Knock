@@ -16,6 +16,10 @@ if TYPE_CHECKING:
 	from src.special_knock_types import NumberInput, ServerCardList
 
 
+DEFAULT_NETWORK_MESSAGE = 'pong'
+KILL_PROGRAMME_MESSAGE = 'Terminate'
+
+
 class ServerGame(Game):
 	__slots__ = 'Operations', 'PlayerNumber'
 
@@ -53,13 +57,13 @@ class ServerGame(Game):
 			'@1': lambda Info: self.RepeatQuestionAnswer(),
 
 			# If the client is saying they don't want a repeat game.
-			'@T': lambda Info: 'Terminate',
+			'@T': lambda Info: KILL_PROGRAMME_MESSAGE,
 
 			# If the client is telling us they've completed an animation sequence.
 			'@A': lambda Info: self.PlayerActionCompleted(Info),
 
 			# If it's just a ping to keep the connection going
-			'pi': lambda Info: 'pong'
+			'pi': lambda Info: DEFAULT_NETWORK_MESSAGE
 		}
 
 	@staticmethod

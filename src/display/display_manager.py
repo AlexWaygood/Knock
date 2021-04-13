@@ -49,6 +49,30 @@ if TYPE_CHECKING:
 	from src.special_knock_types import BlitsList, DimensionTuple, OptionalDisplayManager, Colour
 
 
+MIN_GAME_WIDTH = 1186
+MIN_GAME_HEIGHT = 588
+DEFAULT_MAX_WIDTH = 1300
+DEFAULT_MAX_HEIGHT = 680
+MINIMUM_WINDOW_DIMENSION = 10
+
+PYGAME_ICON_FILE_PATH = path.join('Images', 'PygameIcon.png')
+DEFAULT_WINDOW_CAPTION = 'Knock (made by Alex Waygood)'
+CONNECTION_BROKEN_CAPTION = 'LOST CONNECTION WITH THE SERVER'
+
+SCROLLWHEEL_EVENT_FREQUENCY = 1000
+FRAMERATE = 100
+EXIT_FULLSCREEN_TOGGLE_AMOUNT = 100
+WINDOW_RESIZE_TOGGLE_AMOUNT = 20
+
+WINDOW_RESIZE_KEYS = (pg_locals.K_ESCAPE, pg_locals.K_TAB)
+GAME_REMATCH_KEYS = (pg_locals.K_SPACE, pg_locals.K_RETURN)
+ARROW_KEYS = (pg_locals.K_UP, pg_locals.K_DOWN, pg_locals.K_LEFT, pg_locals.K_RIGHT)
+
+LOGGING_FREQUENCY = 1000
+CONNECTION_BROKEN_DELAY = 500
+DEFAULT_NETWORK_MESSAGE = 'pong'
+
+
 @lru_cache
 def ZoomInHelper(
 		NewVar: int,
@@ -64,10 +88,11 @@ def ZoomInHelper(
 
 @lru_cache
 def ZoomOutHelper(NewVar: int,
-                  OldVar: int):
+                  OldVar: int,
+                  MinimumDimension: int = 10):
 
-	if NewVar < 10:
-		NewVar = 10
+	if NewVar < MinimumDimension:
+		NewVar = MinimumDimension
 	return NewVar, (NewVar != OldVar)
 
 
@@ -84,19 +109,6 @@ class DisplayManager:
 	            'LastDisplayLog', 'WindowCaption', 'InteractiveScoreboard', 'Scrollwheel', 'clock', 'player', 'game', \
 	            'ControlKeyFunctions', 'ArrowKeyFunctions', 'log'
 
-	MinGameWidth = 1186
-	MinGameHeight = 588
-	DefaultMaxWidth = 1300
-	DefaultMaxHeight = 680
-
-	PygameIconFilePath = path.join('Images', 'PygameIcon.png')
-	DefaultWindowCaption = 'Knock (made by Alex Waygood)'
-	ConnectionBrokenCaption = 'LOST CONNECTION WITH THE SERVER'
-
-	FrameRate = 100
-	WindowResizeKeys = (pg_locals.K_ESCAPE, pg_locals.K_TAB)
-	GameRematchKeys = (pg_locals.K_SPACE, pg_locals.K_RETURN)
-	ArrowKeys = (pg_locals.K_UP, pg_locals.K_DOWN, pg_locals.K_LEFT, pg_locals.K_RIGHT)
 	OnlyDisplayManager: OptionalDisplayManager = None
 
 	# This is only going to be called once, so we don't need to muck around with singleton patterns etc.
@@ -124,7 +136,7 @@ class DisplayManager:
 			Monitor = get_monitors()[0]
 			WindowX, WindowY = self.WindowX, self.WindowY = Monitor.width, Monitor.height
 		except:
-			WindowX, WindowY = self.WindowX, self.WindowY = self.DefaultMaxWidth, self.DefaultMaxHeight
+			WindowX, WindowY = self.WindowX, self.WindowY = DEFAULT_MAX_WIDTH, DEFAULT_MAX_HEIGHT
 
 		self.player = Player.player(playerindex)
 		self.game = Game.OnlyGame
@@ -139,11 +151,10 @@ class DisplayManager:
 		self.ScreenX = WindowX
 		self.ScreenY = WindowY
 
-		# Must be done before initialising any Knock surfaces
-		Fader.AddColourScheme()
+		Fader.AddColourScheme()  # Must be done before initialising any Knock surfaces
 
 		# The GameSurf Adds itself as a class variable to the SurfaceCoordinator in __init__
-		self.GameSurf = GameSurface(StartColour, WindowX, WindowY, self.MinGameWidth, self.MinGameHeight)
+		self.GameSurf = GameSurface(StartColour, WindowX, WindowY, MIN_GAME_WIDTH, MIN_GAME_HEIGHT)
 		SurfaceCoordinator.AddClassVars(self.player)
 		TextBlitsMixin.AddTextFader()
 
@@ -162,7 +173,7 @@ class DisplayManager:
 		self.GameSurf.scrollwheel = self.Mouse.Scrollwheel
 		self.FireworkVars = FireworkVars()
 		self.InteractiveScoreboard = InteractiveScoreboard(self.InputContext)
-		self.WindowIcon = pg_image_load(self.PygameIconFilePath)
+		self.WindowIcon = pg_image_load(PYGAME_ICON_FILE_PATH)
 		self.log = GetLogger(FrozenState)
 
 		self.ControlKeyFunctions = {
@@ -194,7 +205,7 @@ class DisplayManager:
 		set_cursor(pg_locals.SYSTEM_CURSOR_WAIT)
 		SurfaceCoordinator.AddSurfs()
 		self.GameSurf.GetSurf()
-		self.WindowCaption = self.DefaultWindowCaption
+		self.WindowCaption = DEFAULT_WINDOW_CAPTION
 		pg_display.set_caption(self.WindowCaption)
 
 		self.log.debug('Starting main pygame loop.')
@@ -272,27 +283,28 @@ class DisplayManager:
 		raise Exception('Game has ended.')
 
 	def Update(self):
-		self.clock.tick(self.FrameRate)
-		Condition = (Player.number() != self.game.PlayerNumber and self.game.StartPlay)
+		self.clock.tick(FRAMERATE)
 
-		if Condition or not pg_display.get_init() or not pg_display.get_surface():
+		Condition = (not pg_display.get_init() or not pg_display.get_surface())
+
+		if self.game.CheckForPlayerDeparture(Player.number()) or Condition:
 			self.QuitGame()
 
 		pg_display.update()
 		NewGameInfo, BrokenConnection = self.client.Update()
 
-		if BrokenConnection and self.WindowCaption != self.ConnectionBrokenCaption:
-			pg_display.set_caption(self.ConnectionBrokenCaption)
-			self.WindowCaption = self.ConnectionBrokenCaption
+		if BrokenConnection and self.WindowCaption != CONNECTION_BROKEN_CAPTION:
+			pg_display.set_caption(CONNECTION_BROKEN_CAPTION)
+			self.WindowCaption = CONNECTION_BROKEN_CAPTION
 
-		elif not self.client.ConnectionBroken and self.WindowCaption == self.ConnectionBrokenCaption:
-			pg_display.set_caption(self.DefaultWindowCaption)
-			self.WindowCaption = self.DefaultWindowCaption
+		elif not self.client.ConnectionBroken and self.WindowCaption == CONNECTION_BROKEN_CAPTION:
+			pg_display.set_caption(DEFAULT_WINDOW_CAPTION)
+			self.WindowCaption = DEFAULT_WINDOW_CAPTION
 
 		if NewGameInfo:
 			self.log.debug(f'Obtained new message from Client, {NewGameInfo}.')
 
-			if NewGameInfo != 'pong':
+			if NewGameInfo != DEFAULT_NETWORK_MESSAGE:
 				with self.game as g:
 					g.UpdateFromServer(NewGameInfo, self.player.playerindex)
 
@@ -307,12 +319,12 @@ class DisplayManager:
 
 		self.DisplayUpdatesCompleted += 1
 
-		if (Time := GetTicks()) > self.LastDisplayLog + 1000:
+		if (Time := GetTicks()) > self.LastDisplayLog + LOGGING_FREQUENCY:
 			self.LastDisplayLog = Time
 			self.log.debug(f'{self.DisplayUpdatesCompleted} display updates completed.')
 
 		if BrokenConnection:
-			delay(500)
+			delay(CONNECTION_BROKEN_DELAY)
 
 	def NewWindowSize(
 			self,
@@ -332,7 +344,8 @@ class DisplayManager:
 			self.DeactivateVideoResize = True
 
 			if self.Fullscreen:
-				self.WindowX, self.WindowY = (self.ScreenX - 100), (self.ScreenY - 100)
+				self.WindowX = self.ScreenX - EXIT_FULLSCREEN_TOGGLE_AMOUNT
+				self.WindowY = self.ScreenY - EXIT_FULLSCREEN_TOGGLE_AMOUNT
 				self.RestartDisplay()
 			else:
 				self.WindowX, self.WindowY = self.ScreenX, self.ScreenY
@@ -365,7 +378,7 @@ class DisplayManager:
 			return None
 
 		x, y = self.WindowX, self.WindowY
-		a, b = (x + 20), (y + 20)
+		a, b = (x + WINDOW_RESIZE_TOGGLE_AMOUNT), (y + WINDOW_RESIZE_TOGGLE_AMOUNT)
 
 		if a >= self.ScreenX and b >= self.ScreenY:
 			self.NewWindowSize(ToggleFullscreen=True)
@@ -380,10 +393,10 @@ class DisplayManager:
 	def ZoomOut(self):
 		x, y = self.WindowX, self.WindowY
 
-		if x == y == 10:
+		if x == y == MINIMUM_WINDOW_DIMENSION:
 			return None
 
-		a, b = (x - 20), (y - 20)
+		a, b = (x - WINDOW_RESIZE_TOGGLE_AMOUNT), (y - WINDOW_RESIZE_TOGGLE_AMOUNT)
 
 		x, ResizeNeeded1 = ZoomOutHelper(a, x)
 		y, ResizeNeeded2 = ZoomOutHelper(b, y)
@@ -412,7 +425,7 @@ class DisplayManager:
 			if self.Scrollwheel.IsDown:
 				self.Scrollwheel.ComesUp()
 
-			elif (EvKey := event.key) in self.WindowResizeKeys:
+			elif (EvKey := event.key) in WINDOW_RESIZE_KEYS:
 				self.NewWindowSize(EvKey, ToggleFullscreen=True)
 
 			elif ControlKeyDown():
@@ -462,7 +475,7 @@ class DisplayManager:
 			if EvType == pg_locals.MOUSEBUTTONUP:
 				if (Button := event.button) == 1 and not self.client.ConnectionBroken:
 					self.Mouse.click = False
-				elif Button == 2 and GetTicks() > self.Scrollwheel.OriginalDownTime + 1000:
+				elif Button == 2 and GetTicks() > self.Scrollwheel.OriginalDownTime + SCROLLWHEEL_EVENT_FREQUENCY:
 					self.Scrollwheel.ComesUp()
 
 			elif EvType == pg_locals.MOUSEMOTION and pg_mouse_get_pressed(5)[0] and pg_mouse_get_pressed(5)[2]:
@@ -473,12 +486,11 @@ class DisplayManager:
 			event: Event,
 			EvKey: int
 	):
-
-		if not self.InputContext.FireworksDisplay and EvKey in self.ArrowKeys:
+		if not self.InputContext.FireworksDisplay and EvKey in ARROW_KEYS:
 			self.ArrowKeyFunctions[EvKey]()
 
 		elif not self.client.ConnectionBroken:
-			if self.InputContext.GameReset and EvKey in self.GameRematchKeys:
+			if self.InputContext.GameReset and EvKey in GAME_REMATCH_KEYS:
 				self.game.RepeatGame = True
 				self.client.QueueMessage('@1')
 			elif EvKey == pg_locals.K_BACKSPACE:
@@ -490,11 +502,11 @@ class DisplayManager:
 
 	def __repr__(self):
 		return f'''Object for managing all variables related to pygame display on the client-side of the game. Current state:
--MinGameWidth: {self.MinGameWidth}
--MinGameHeight: {self.MinGameHeight}
--DefaultMaxWidth = {self.DefaultMaxWidth}
--DefaultMaxHeight = {self.DefaultMaxHeight}
--PygameIconFilePath: {self.PygameIconFilePath} (absolute: {path.abspath(self.PygameIconFilePath)}).
+-MinGameWidth: {MIN_GAME_WIDTH}
+-MinGameHeight: {MIN_GAME_HEIGHT}
+-DefaultMaxWidth = {DEFAULT_MAX_WIDTH}
+-DefaultMaxHeight = {DEFAULT_MAX_HEIGHT}
+-PygameIconFilePath: {PYGAME_ICON_FILE_PATH} (absolute: {path.abspath(PYGAME_ICON_FILE_PATH)}).
 -Fullscreen: {self.Fullscreen}.
 -DeactivateVideoResize: {self.DeactivateVideoResize}
 -ScreenX: {self.ScreenX}.

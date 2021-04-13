@@ -14,6 +14,11 @@ if TYPE_CHECKING:
 	from src.display.error_tracker import Errors
 
 
+FONT = 'UserInputFont'
+TEXT_COLOUR = (0, 0, 0)
+MAX_PLAYER_NAME_LENGTH = 30
+
+
 @dataclass(eq=False)
 class TextInput(TextBlitsMixin, SurfaceCoordinator):
 	# Repr & hash automatically defined as it's a dataclass!
@@ -26,10 +31,10 @@ class TextInput(TextBlitsMixin, SurfaceCoordinator):
 
 	def __post_init__(self):
 		self.AllSurfaces.append(self)
-		self.font = self.Fonts['UserInputFont']
+		self.font = self.Fonts[FONT]
 
 	def Initialise(self):
-		self.font = self.Fonts['UserInputFont']
+		self.font = self.Fonts[FONT]
 		return self
 
 	def PasteEvent(self):
@@ -63,7 +68,7 @@ class TextInput(TextBlitsMixin, SurfaceCoordinator):
 				PlayStarted = g.StartPlay
 
 			center = self.PlayStartedInputPos if PlayStarted else self.PreplayInputPos
-			L = [self.GetTextHelper(self.Text, self.font, (0, 0, 0), center=center)] if self.Text else center
+			L = [self.GetTextHelper(self.Text, self.font, TEXT_COLOUR, center=center)] if self.Text else center
 			self.GameSurf.surf.blits(GetCursor(L, self.font))
 
 	# Must define hash even though it's in the parent class, because it's a dataclass
@@ -81,13 +86,13 @@ class TextInput(TextBlitsMixin, SurfaceCoordinator):
 			return None
 
 		if isinstance(self.player.name, int):
-			if len(self.Text) < 30:
+			if len(self.Text) < MAX_PLAYER_NAME_LENGTH:
 				# Don't need to check that letters are ASCII-compliant;
 				# wouldn't have been able to type them if they weren't.
 				self.player.name = self.Text
 				self.QueueClientMessage(f'@P{self.Text}{self.player.playerindex}')
 			else:
-				self.ReportError('Name must be <30 characters; please try again.')
+				self.ReportError(f'Name must be <{MAX_PLAYER_NAME_LENGTH} characters; please try again.')
 
 		elif not (self.game.StartCardNumber or self.player.playerindex):
 			# Using try/except rather than if/else to catch unexpected errors as well as expected ones.

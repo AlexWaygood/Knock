@@ -9,18 +9,38 @@ from src.players.players_client import ClientPlayer as Player
 
 if TYPE_CHECKING:
 	from src.special_knock_types import BlitsList
+	from src.display.abstract_text_rendering import FontAndLinesize
 
 
-def DimensionFunctionGenerator(PlayerNo):
+NORMAL_FONT = 'NormalScoreboardFont'
+UNDERLINED_FONT = 'UnderlinedScoreboardFont'
+SCOREBOARD_TITLE = 'SCOREBOARD'
+
+
+def TrickText(TrickNo: int, CardNo: int):
+	if TrickNo:
+		return f'Trick {TrickNo} of {CardNo}'
+	return 'Trick not in progress'
+
+
+def RoundText(RoundNo: int, StartCardNo: int):
+	return f'Round {RoundNo} of {StartCardNo}'
+
+
+def DimensionFunctionGenerator(PlayerNo: int):
 	@lru_cache
-	def ScoreboardDimensionsHelper(NormalFont, UnderlinedFont, GamesPlayed):
+	def ScoreboardDimensionsHelper(
+			NormalFont: FontAndLinesize,
+			UnderlinedFont: FontAndLinesize,
+			GamesPlayed: int
+	):
 		NormalLineSize = NormalFont.linesize
 		LeftMargin = int(NormalLineSize * 1.75)
-		MaxPointsText = max(NormalFont.size(f'{player}: 88 points')[0] for player in Player.iter())
+		MaxPointsText = max(NormalFont.size(f'{player}: 188 points')[0] for player in Player.iter())
 		Width = ((2 * LeftMargin) + max(MaxPointsText, UnderlinedFont.size('Trick not in progress')[0]))
 		Multiplier = ((PlayerNo * 2) + 7) if GamesPlayed else (PlayerNo + 4)
 		Height = (NormalLineSize * Multiplier) + (2 * LeftMargin)
-		title = (UnderlinedFont.render('SCOREBOARD'), ((Width // 2), int(NormalLineSize * 1.5)))
+		title = (UnderlinedFont.render(SCOREBOARD_TITLE), ((Width // 2), int(NormalLineSize * 1.5)))
 		return Width, Height, title, LeftMargin
 	return ScoreboardDimensionsHelper
 
@@ -47,8 +67,8 @@ class Scoreboard(KnockSurface, TextBlitsMixin):
 	def Initialise(self):
 		if self.Initialised:
 			super().Initialise()
-			self.NormalFont = self.Fonts['NormalScoreboardFont']
-			self.UnderlinedFont = self.Fonts['UnderlinedScoreboardFont']
+			self.NormalFont = self.Fonts[NORMAL_FONT]
+			self.UnderlinedFont = self.Fonts[UNDERLINED_FONT]
 			return self
 
 	def fill(self):
@@ -66,15 +86,12 @@ class Scoreboard(KnockSurface, TextBlitsMixin):
 	def TextBlitsHelper(
 			self,
 			y: int,
-			ScoreboardBlits: BlitsList,
+			ToBlit: BlitsList,
 			attr: str
 	):
-		ScoreboardBlits += [
-			self.GetText(tup[0], self.NormalFont, **tup[1])
-			for tup in Player.ScoreboardText(self.NormalFont.linesize, y, self.Width, self.LeftMargin, attr)
-		]
-
-		return ScoreboardBlits, (y + (self.NormalFont.linesize * self.PlayerNo))
+		font, linesize, width, Margin = self.NormalFont, self.NormalFont.linesize, self.Width, self.LeftMargin
+		ToBlit += [self.GetText(t[0], font, **t[1]) for t in Player.ScoreboardText(linesize, y, width, Margin, attr)]
+		return ToBlit, (y + (linesize * self.PlayerNo))
 
 	def GetSurfBlits(self):
 		TrickNo, CardNo, RoundNo, StartCardNo, GamesPlayed = self.game.GetAttributes((
@@ -82,20 +99,19 @@ class Scoreboard(KnockSurface, TextBlitsMixin):
 		))
 
 		ScoreboardBlits = [self.title]
-		NormalFont, NormalLineSize = self.NormalFont, self.NormalFont.linesize
-		y = self.title[1] + NormalLineSize
+		NormalFont, LineSize = self.NormalFont, self.NormalFont.linesize
+		y = self.title[1] + LineSize
 		ScoreboardBlits, y = self.TextBlitsHelper(y, ScoreboardBlits, 'point')
-		y += NormalLineSize * 2
+		y += LineSize * 2
 
-		Message1 = self.GetText(f'Round {RoundNo} of {StartCardNo}', NormalFont, center=(self.attrs.centre[0], y))
-		TrickText = f'Trick {TrickNo} of {CardNo}' if TrickNo else 'Trick not in progress'
-		Message2 = self.GetText(TrickText, NormalFont, center=(self.attrs.centre[0], (y + NormalLineSize)))
+		Message1 = self.GetText(RoundText(RoundNo, StartCardNo), NormalFont, center=(self.attrs.centre[0], y))
+		Message2 = self.GetText(TrickText(CardNo, TrickNo), NormalFont, center=(self.attrs.centre[0], (y + LineSize)))
 		ScoreboardBlits += [Message1, Message2]
 
 		if GamesPlayed:
-			y += NormalLineSize * 3
+			y += LineSize * 3
 			ScoreboardBlits.append(self.GetText('-----', NormalFont, center=(self.attrs.centre[0], y)))
-			y += NormalLineSize
+			y += LineSize
 			ScoreboardBlits, y = self.TextBlitsHelper(y, ScoreboardBlits, 'game')
 
 		return ScoreboardBlits
