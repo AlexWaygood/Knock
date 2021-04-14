@@ -7,12 +7,12 @@ class Scoreboard:
 	__slots__ = 'PlayerNoTimes4', 'ColumnNo', 'Initialised', 'names', 'columns', 'StartNo', 'scoreboard', \
 	            'DisplayScoreboard'
 
-	def __init__(self):
+	def __init__(self) -> None:
 		self.Initialised = False
 		self.PlayerNoTimes4 = Player.PlayerNo * 4
 		self.ColumnNo = self.PlayerNoTimes4 + 2
 
-	def SetUp(self, StartCardNumber):
+	def SetUp(self, StartCardNumber: int) -> None:
 		self.names = Player.GetNames()
 		self.columns = ['', ''] + sum((['', name, '', ''] for name in self.names), start=[])
 		self.StartNo = StartCardNumber
@@ -25,7 +25,7 @@ class Scoreboard:
 		self.DisplayScoreboard = self.FillBlanks(0)
 		self.Initialised = True
 
-	def UpdateScores(self, RoundNumber, CardNumber):
+	def UpdateScores(self, RoundNumber: int, CardNumber: int) -> None:
 		NewRow = DataFrame(
 			[[RoundNumber, CardNumber] + Player.GetScoreboard()],
 			columns=self.columns

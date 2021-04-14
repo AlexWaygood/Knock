@@ -5,22 +5,31 @@ Two classes that have to do with communications between the server and clients..
 
 """
 
+from typing import Any
 from socket import socket, AF_INET, SOCK_STREAM, SHUT_RDWR
 from datetime import datetime
 
 
-def GetTime():
+DEFAULT_TINY_MESSAGE_SIZE = 10
+MIN_RECV_BYTES = 8192
+
+
+def GetTime() -> str:
 	"""Function to get the time in a fixed format"""
 	return datetime.now().strftime("%H:%M:%S")
+
+
+def PadMessage(Message: Any):
+	return f'{Message:-<{DEFAULT_TINY_MESSAGE_SIZE}}'
 
 
 class Network:
 	"""Class object for encoding communication protocols between the server and client."""
 	__slots__ = 'conn'
 
-	DefaultTinyMessageSize = 10
+	DefaultTinyMessageSize = DEFAULT_TINY_MESSAGE_SIZE
 
-	def __init__(self, *args, **kwargs):
+	def __init__(self, *args, **kwargs) -> None:
 		self.conn = socket(AF_INET, SOCK_STREAM)
 
 	@staticmethod
@@ -31,7 +40,7 @@ class Network:
 		response = []
 
 		while AmountToReceive > 0:
-			chunk = (conn.recv(min(8192, AmountToReceive)))
+			chunk = (conn.recv(min(MIN_RECV_BYTES, AmountToReceive)))
 			AmountToReceive -= len(chunk)
 			response.append(chunk)
 
@@ -42,18 +51,16 @@ class Network:
 		conn.shutdown(SHUT_RDWR)
 		conn.close()
 
+	@staticmethod
 	def send(
-			self,
 			message: str,
 	        conn: socket
 	):
 		# Create a header telling the other computer the size of the data we want to send.
 		# Turn the header into a fixed-length message using f-string left-alignment, encode it, send it.
 		# Then send the main message itself.
-		n = self.DefaultTinyMessageSize
-
-		if len(message) > n:
-			conn.sendall(f'{len(message):-<{n}}'.encode())
+		if len(message) > DEFAULT_TINY_MESSAGE_SIZE:
+			conn.sendall(PadMessage(len(message)).encode())
 			conn.sendall(message.encode())
 		else:
-			conn.sendall(f'{message:-<{n}}'.encode())
+			conn.sendall(PadMessage(message).encode())

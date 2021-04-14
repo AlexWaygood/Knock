@@ -669,7 +669,7 @@ class KnockTournament(object):
 		self.ReceiveGame(self.Client.ClientSimpleSend(arg))
 
 	def SendToServer(self, MessageType, Message):
-		self.ReceiveGame(self.Client.send(MessageType, Message))
+		self.ReceiveGame(self.Client.ClientSend(MessageType, Message))
 
 	def RedrawWindow(self, WindowDimensions=None, FromFullScreen=False, ToFullScreen=False):
 		x, y = self.Dimensions['ScreenSize']

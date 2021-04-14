@@ -5,13 +5,13 @@ from src.display.abstract_surfaces.base_knock_surface import BaseKnockSurface
 from src.display.surface_coordinator import SurfaceCoordinator
 from src.display.faders import ColourFader
 
-from os import environ
-environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
+# noinspection PyUnresolvedReferences
+from src import pre_pygame_import
 from pygame.locals import K_UP, K_DOWN, K_LEFT, K_RIGHT
 from pygame.key import get_pressed as pg_key_get_pressed
 
 if TYPE_CHECKING:
-	from src.special_knock_types import OptionalClientHand, OptionalScrollwheel, Position, Colour
+	from src.special_knock_types import OptionalClientHand, OptionalScrollwheel, Position, Colour, Blittable
 
 
 ARROW_KEY_NUDGE_AMOUNT = 20         # Controls how much an arrow-key press will move the game surface during gameplay.
@@ -53,11 +53,11 @@ class GameSurface(BaseKnockSurface):
 		self.SurfAndPos()
 		self.Hand: OptionalClientHand = None
 
-	def SurfAndPos(self):
+	def SurfAndPos(self) -> None:
 		super().SurfAndPos()
 		self.topleft = self.attrs.topleft
 
-	def Update(self):
+	def Update(self) -> Blittable:
 		if self.scrollwheel.IsMoving():
 			self.MouseMove(self.scrollwheel.GetMovement())
 
@@ -65,11 +65,11 @@ class GameSurface(BaseKnockSurface):
 		SurfaceCoordinator.UpdateAll()
 		return self.surfandpos
 
-	def fill(self):
+	def fill(self) -> None:
 		self.colour = self.FillFade.GetColour()
 		self.surf.fill(self.colour)
 
-	def TidyUp(self):
+	def TidyUp(self) -> None:
 		self.topleft = (self.x, self.y)
 		self.attrs.rect.topleft = self.topleft
 		self.surfandpos = (self.surf, self.attrs.rect)
@@ -136,7 +136,7 @@ class GameSurface(BaseKnockSurface):
 
 		return self
 
-	def MoveToCentre(self):
+	def MoveToCentre(self) -> None:
 		NewX = (self.WindowWidth / 2) - (self.Width / 2)
 		NewY = (self.WindowHeight / 2) - (self.Height / 2)
 		self.Hand.MoveColliderects((NewX - self.x), (NewY - self.y))
@@ -172,7 +172,7 @@ class GameSurface(BaseKnockSurface):
 
 		return NewWidth, NewHeight
 
-	def __repr__(self):
+	def __repr__(self) -> str:
 		return f'''\
 GameSurf object, an intermediate surf all things are blitted onto before being blitted onto the screen. Current state:
 -x: {self.x}.

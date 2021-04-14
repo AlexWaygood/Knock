@@ -43,10 +43,10 @@ class Rank(IntEnum):
     K = 13
     A = 14
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return str(self.value) if self.value < 11 else self.name
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self.value) if self.value < 11 else RANK_MAPPER[self.name]
 
 
@@ -56,16 +56,16 @@ class Suit(str, Enum):  # Mixing in 'str' as a class means that we'll be able to
     Spades = '♠'
     Hearts = '♡'
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.value
 
-    def IsBlack(self):
+    def IsBlack(self) -> bool:
         return self.value in BLACKS
 
-    def OtherOfColour(self):
+    def OtherOfColour(self) -> Suit:
         if self.IsBlack():
             return Suit('♣' if repr(self) == '♠' else '♠')
         return Suit('♢' if repr(self) == '♡' else '♡')
@@ -94,7 +94,7 @@ class ServerCard:
 
         try:
             return cls.AllCardDict[key]
-        except:
+        except KeyError:
             new = super(ServerCard, cls).__new__(cls)
             cls.AllCardDict[key] = new
             return new
@@ -110,15 +110,15 @@ class ServerCard:
         self.PlayedBy = ''
 
     @classmethod
-    def MakePack(cls):
+    def MakePack(cls) -> None:
         cls.AllCardsList = [cls(*value) for value in AllCardValues]
 
     def AddToHand(self, playername: str):
         self.PlayedBy = playername
         return self
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f'{self.Rank} of {self.Suit}'
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'{self.Rank!r}{self.Suit!r}'

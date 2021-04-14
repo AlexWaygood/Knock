@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 	from src.players.players_client import ClientPlayer as Player
 	from src.display.knock_surfaces.game_surf import GameSurface
 	from src.display.knock_surfaces.board_surf import BoardSurface
-	from src.special_knock_types import Position, DimensionTuple
+	from src.special_knock_types import Position, DimensionTuple, T
 
 
 INPUT_POS_OFFSET = 50
@@ -76,14 +76,14 @@ class SurfaceCoordinator:
 		cls.WindowMargin, cls.CardX, cls.CardY, cls.RequiredResizeRatio = GetDimensions(GameX, GameY)
 
 	@classmethod
-	def AddSurfs(cls):
+	def AddSurfs(cls) -> None:
 		for surf in cls.AllSurfaces:
 			surf.GetSurf()
 
 		Card.AddImages(cls.RequiredResizeRatio)
 
 	@classmethod
-	def NewWindowSize1(cls):
+	def NewWindowSize1(cls) -> None:
 		GameX, GameY = cls.GameSurf.Width, cls.GameSurf.Height
 
 		cls.WindowMargin, cls.CardX, cls.CardY, RequiredResizeRatio = GetDimensions(
@@ -96,7 +96,7 @@ class SurfaceCoordinator:
 		cls.Fonts.__init__(cls.GameSurf.Width, cls.GameSurf.Height)
 
 	@classmethod
-	def NewWindowSize2(cls):
+	def NewWindowSize2(cls) -> None:
 		for surf in cls.AllSurfaces:
 			surf.Initialise().GetSurf()
 
@@ -122,11 +122,11 @@ class SurfaceCoordinator:
 			for surf in cls.AllSurfaces:
 				surf.Update(ForceUpdate=ForceUpdate)
 
-	def Initialise(self):
+	def Initialise(self: T) -> T:
 		return self
 
 	def Update(self, ForceUpdate: bool = False):
 		pass
 
-	def GetSurf(self):
+	def GetSurf(self) -> None:
 		pass

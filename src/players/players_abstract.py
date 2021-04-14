@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, overload
+from typing import TYPE_CHECKING, overload, List
 from collections import UserList
 from functools import singledispatchmethod
 from src.players.hand_sort_func import SortHand
@@ -8,7 +8,7 @@ from itertools import cycle
 
 if TYPE_CHECKING:
 	from src.special_knock_types import CardListTypeVar, StringOrInt, PlayerDict, SuitTuple, PlayerList, OptionalSuit,\
-		PlayerTypeVar, AnyHand
+		PlayerTypeVar, AnyHand, T, PlayerNameList, AnyCardsIter
 
 	from src.cards.server_card_suit_rank import ServerCard as Card
 	from src.cards.server_card_suit_rank import Suit
@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 # @singledispatchmethod decorator is currently buggy; this is a workaround
 # (see https://bugs.python.org/issue39679,
 # https://stackoverflow.com/questions/62696796/singledispatchmethod-and-class-method-decorators-in-python-3-8)
+# noinspection PyMissingTypeHints
 def _register(self, cls, method=None):
 	if hasattr(cls, '__func__'):
 		setattr(cls, '__annotations__', cls.__func__.__annotations__)
@@ -47,11 +48,11 @@ class Player:
 		cls._AllPlayers = [cls(i) for i in range(n)]
 
 	@classmethod
-	def number(cls):
+	def number(cls) -> int:
 		return len(cls._AllPlayers)
 
 	@classmethod
-	def first(cls):
+	def first(cls) -> Player:
 		return cls._AllPlayers[0]
 
 	@overload
@@ -71,32 +72,32 @@ class Player:
 		return cls._AllPlayersDict[index_or_key]
 
 	@classmethod
-	def iter(cls):
-		return iter(cls._AllPlayers)
+	def iter(cls: T) -> List[T]:
+		return cls._AllPlayers
 
 	@classmethod
-	def cycle(cls):
+	def cycle(cls: T) -> cycle[T]:
 		return cycle(cls._AllPlayers)
 
 	@classmethod
-	def enumerate(cls):
+	def enumerate(cls: T) -> enumerate:
 		return enumerate(cls._AllPlayers)
 
 	@classmethod
-	def AllPlayersHaveJoinedTheGame(cls):
+	def AllPlayersHaveJoinedTheGame(cls) -> bool:
 		return all(isinstance(player.name, str) for player in cls.iter()) and cls.number() == cls.PlayerNo
 
 	@classmethod
-	def NewGame(cls):
+	def NewGame(cls) -> None:
 		cls.AllPlayers = cls.AllPlayers[1:] + cls.AllPlayers[:1]
 		[player.ResetPlayer(cls.PlayerNo) for player in cls.iter()]
 
 	@classmethod
-	def reprList(cls):
+	def reprList(cls) -> PlayerNameList:
 		return [repr(player) for player in cls.iter()]
 
 	@property
-	def name(self):
+	def name(self) -> str:
 		return self._name
 
 	@name.setter
@@ -127,17 +128,17 @@ class Player:
 		self.playerindex = (self.playerindex + 1) if self.playerindex < (PlayerNo - 1) else 0
 		return self
 
-	def __repr__(self):
+	def __repr__(self) -> str:
 		return f'{self}. Playerindex: {self.playerindex}. Hand {self.Hand}. Bid: {self.Bid}.'
 
-	def __str__(self):
+	def __str__(self) -> str:
 		return self.name if isinstance(self.name, str) else f'Player with index {self.playerindex}, as yet unnamed'
 
 
 class Hand(UserList):
 	__slots__ = 'playername'
 
-	def __init__(self):
+	def __init__(self) -> None:
 		super().__init__()
 		self.playername = ''  # Is set when the player's name is set -- see the Player class
 
@@ -171,8 +172,8 @@ class Hand(UserList):
 	def __getitem__(self, item: StringOrInt):
 		try:
 			return super().__getitem__(item)
-		except:
+		except IndexError:
 			return next(card for card in self.data if repr(card) == item)
 
-	def __iter__(self):
+	def __iter__(self) -> AnyCardsIter:
 		return iter(self.data)

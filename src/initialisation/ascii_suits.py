@@ -18,6 +18,19 @@ TEXT_JUSTIFY = 'center'
 TEXT_STYLE = 'bold white on red'
 VERTICAL_PADDING = 3
 
+TEXT_TO_PRINT = ''.join((
+	'\n\n\n\n',
+	'Welcome to Knock, a multiplayer card game developed by Alex Waygood!',
+	'\n\n\n',
+	'This game is written in Python, using the pygame library.',
+	'\n\n\n',
+	'Knock is a variant of contract whist, also known as diminishing whist or "Oh Hell". ',
+	'To take a look at the rules of the game, see this website here:',
+	'\n\n',
+	'https://www.pagat.com/exact/ohhell.html',
+	'\n\n\n\n'
+))
+
 
 def GetPath(name: str):
 	return path.join('Images', 'Suits', f'{name}.png')
@@ -39,8 +52,7 @@ def ASCIISuits(TextLength: int):
 		terminal = get_terminal_size()
 		width, height = terminal.columns, terminal.lines
 	except OSError:
-		width = DEFAULT_WIDTH
-		height = DEFAULT_HEIGHT
+		width, height = DEFAULT_WIDTH, DEFAULT_HEIGHT
 
 	Divisor = DIVISOR_START_VALUE
 	ClubsLength = CLUBS_LENGTH_START_VALUE
@@ -61,29 +73,12 @@ def ASCIISuits(TextLength: int):
 		yield ''.join((buffer, c, buffer, d, buffer, h, buffer, s, buffer))
 
 
-t = ''.join((
-	'\n\n\n\n',
-	'Welcome to Knock, a multiplayer card game developed by Alex Waygood!',
-	'\n\n\n',
-	'This game is written in Python, using the pygame library.',
-	'\n\n\n',
-	'Knock is a variant of contract whist, also known as diminishing whist or "Oh Hell". ',
-	'To take a look at the rules of the game, see this website here:',
-	'\n\n',
-	'https://www.pagat.com/exact/ohhell.html',
-	'\n\n\n\n'
-))
-
-# noinspection PyTypeChecker
-text = Text(t, justify=TEXT_JUSTIFY, style=TEXT_STYLE)
-TextLength = len(t.splitlines()) + (VERTICAL_PADDING * 2) + 6
-
-
-def PrintIntroMessage(text: Text = text,
-                      TextLength: int = TextLength,
-                      VerticalPadding: int = VERTICAL_PADDING):
+def PrintIntroMessage() -> None:
+	# noinspection PyTypeChecker
+	text = Text(TEXT_TO_PRINT, justify=TEXT_JUSTIFY, style=TEXT_STYLE)
+	TextLength = len(TEXT_TO_PRINT.splitlines()) + (VERTICAL_PADDING * 2) + 6
 
 	for line in ASCIISuits(TextLength):
 		print(line)
 
-	rprint(Panel(text, padding=(VerticalPadding, 2), style="black"))
+	rprint(Panel(text, padding=(VERTICAL_PADDING, 2), style="black"))

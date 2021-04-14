@@ -8,13 +8,29 @@ from typing import overload, TYPE_CHECKING
 from src.misc import DictLike
 from src.display.faders import ColourFader
 
-if TYPE_CHECKING:
-	from src.special_knock_types import BlitsList, Colour, PositionOrBlitsList, OptionalColourFader
+from src.global_constants import (
+	STANDARD_BOARD_FONT,
+	UNDERLINED_BOARD_FONT,
+	NORMAL_SCOREBOARD_FONT,
+	UNDERLINED_SCOREBOARD_FONT,
+	TRUMP_CARD_FONT,
+	TYPEWRITER_FONT,
+	USER_INPUT_FONT,
+	ERROR_MESSAGES_FONT,
+	ERROR_TITLE_FONT,
+	STANDARD_MASSIVE_FONT,
+	STANDARD_NORMAL_FONT,
+	STANDARD_TITLE_FONT,
+	STANDARD_UNDERLINE_FONT
+)
 
-from os import environ
-environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
+# noinspection PyUnresolvedReferences
+from src import pre_pygame_import
 from pygame import Surface
 from pygame.font import SysFont
+
+if TYPE_CHECKING:
+	from src.special_knock_types import BlitsList, Colour, PositionOrBlitsList, OptionalColourFader
 
 
 DEFAULT_TYPING_CURSOR_COLOUR = (0, 0, 0)
@@ -37,20 +53,20 @@ class FontAndLinesize:
 		self.Cursor = Surface((DEFAULT_TYPING_CURSOR_WIDTH, self.linesize))
 		self.Cursor.fill(DEFAULT_TYPING_CURSOR_COLOUR)
 
-	def __repr__(self):
+	def __repr__(self) -> str:
 		return f'FontAndLinesize object, style={Fonts.DefaultFont}, linesize={self.linesize}'
 
-	def render(self, *args):
+	def render(self, *args) -> Surface:
 		return self.font.render(*args)
 
 	def size(self, text: str):
 		return self.font.size(text)
 
-	def __hash__(self):
+	def __hash__(self) -> int:
 		return id(self)
 
 
-def CursorNeeded():
+def CursorNeeded() -> bool:
 	return (time() % 1) > (1 / TYPING_CURSOR_BLINKS_PER_SECOND)
 
 
@@ -102,9 +118,9 @@ def FontMachine(GameX: int, GameY: int):
 
 
 class Fonts(DictLike):
-	__slots__ = 'Normal', 'UnderLine', 'Massive', 'Title', 'TypewriterFont', 'UserInputFont', 'TrumpcardFont',\
-	            'ErrorTitleFont', 'ErrorMessagesFont', 'StandardBoardFont', 'UnderlinedBoardFont', \
-	            'NormalScoreboardFont', 'UnderlinedScoreboardFont'
+	__slots__ = STANDARD_NORMAL_FONT, STANDARD_UNDERLINE_FONT, STANDARD_MASSIVE_FONT, STANDARD_TITLE_FONT, \
+	            TYPEWRITER_FONT, USER_INPUT_FONT, TRUMP_CARD_FONT, ERROR_TITLE_FONT, ERROR_MESSAGES_FONT, \
+	            STANDARD_BOARD_FONT, UNDERLINED_BOARD_FONT,  NORMAL_SCOREBOARD_FONT, UNDERLINED_SCOREBOARD_FONT
 
 	DefaultFont = DEFAULT_FONT
 
@@ -143,7 +159,7 @@ class Fonts(DictLike):
 		self.NormalScoreboardFont = self.Normal
 		self.UnderlinedScoreboardFont = self.UnderLine
 
-	def __repr__(self):
+	def __repr__(self) -> str:
 		return ''.join((
 			f'Fonts-theme object: \n--',
 			'; '.join(f"{f}: {self[f]}" for f in self.__slots__),
@@ -158,7 +174,7 @@ class TextBlitsMixin:
 	TextFade: OptionalColourFader = None
 
 	@classmethod
-	def AddTextFader(cls):
+	def AddTextFader(cls) -> None:
 		cls.TextFade = ColourFader('TextDefault')
 
 	@lru_cache
@@ -184,5 +200,5 @@ class TextBlitsMixin:
 		return self.GetTextHelper(text, font, self.TextFade.GetColour(), **kwargs)
 
 	# This method can't be inherited by dataclasses, which have to explicitly redefine __hash__()
-	def __hash__(self):
+	def __hash__(self) -> int:
 		return id(self)

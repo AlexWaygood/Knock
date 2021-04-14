@@ -1,52 +1,49 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 from src.cards.server_card_suit_rank import Suit
 from itertools import groupby
+from operator import attrgetter
 
 if TYPE_CHECKING:
-	from src.special_knock_types import SuitTuple as SuitTupleType, CardListTypeVar, Grouped_Type
+	from src.special_knock_types import SuitTuple as SuitTupleType, CardListTypeVar, Grouped_Type, OptionalSuit
 
 
-Blacks = (Suit('♣'), Suit('♠'))
-Reds = (Suit('♡'), Suit('♢'))
+BLACKS = (Suit('♣'), Suit('♠'))
+REDS = (Suit('♡'), Suit('♢'))
 
 
-def ListOfCardValues(
-		grouped: Grouped_Type,
-		suit: Suit
-):
-
-	return [card.Rank for card in grouped[suit]]
+def ListOfCardValuesWrapper(grouped: Grouped_Type):
+	def ListOfCardValues(suit: Suit):
+		return [card.Rank for card in grouped[suit]]
+	return ListOfCardValues
 
 
 def MaxOfColour(
 		Colour: SuitTupleType,
 		grouped: Grouped_Type
 ):
-	
-	return max((suit for suit in grouped if suit in Colour), key=lambda suit: ListOfCardValues(grouped, suit))
+	return max((suit for suit in grouped if suit in Colour), key=ListOfCardValuesWrapper(grouped))
 
 
 def WhicheverSuitPresent(
 		Colour: SuitTupleType,
 		grouped: Grouped_Type
 ):
-	
 	return Colour[0 if Colour[0] in grouped else 1]
 
 
 def MaxSuit(grouped: Grouped_Type):
-	return max(grouped, key=lambda suit: ListOfCardValues(grouped, suit))
+	return max(grouped, key=ListOfCardValuesWrapper(grouped))
 
 
 def SortHand(
 		Hand: CardListTypeVar,
 		trumpsuit: Suit,
-		PlayedSuit: Optional[Suit] = None,
+		PlayedSuit: OptionalSuit = None,
         SuitTuple: SuitTupleType = (None, None),
-        Blacks=Blacks,
-        Reds=Reds
+        Blacks: SuitTupleType = BLACKS,
+        Reds: SuitTupleType = REDS
 ) -> CardListTypeVar:
 
 	if PlayedSuit:
@@ -59,9 +56,9 @@ def SortHand(
 	BlackSuitsPresent = 0
 
 	if not PlayedSuit:
-		Hand.sort(key=lambda card: card.ID, reverse=True)
+		Hand.sort(key=attrgetter('ID'), reverse=True)
 
-	for k, g in groupby(Hand, lambda card: card.Suit):
+	for k, g in groupby(Hand, attrgetter('Suit')):
 		grouped[k] = list(g)
 		if k.IsBlack:
 			BlackSuitsPresent += 1

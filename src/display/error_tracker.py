@@ -5,20 +5,19 @@ from fractions import Fraction
 from functools import lru_cache
 from dataclasses import dataclass
 
+from src.global_constants import ERROR_TITLE_FONT, ERROR_MESSAGES_FONT
 from src.display.abstract_text_rendering import TextBlitsMixin
 from src.display.surface_coordinator import SurfaceCoordinator
 
-from os import environ
-environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
+# noinspection PyUnresolvedReferences
+from src import pre_pygame_import
 from pygame.time import get_ticks as GetTicks
 
 if TYPE_CHECKING:
 	from collections import deque
-	from src.special_knock_types import Blittable
+	from src.special_knock_types import Blittable, T
 
 
-TITLE_FONT = 'ErrorTitleFont'
-MESSAGE_FONT = 'ErrorMessageFont'
 MESSAGE_LIFESPAN = 5000
 MAX_MESSAGE_NO = 5
 
@@ -43,15 +42,15 @@ class Errors(TextBlitsMixin, SurfaceCoordinator):
 	StartTime: int
 	Title: Blittable
 
-	def __post_init__(self):
+	def __post_init__(self) -> None:
 		self.AllSurfaces.append(self)
 		self.Initialise()
 
 	# noinspection PyAttributeOutsideInit
-	def Initialise(self):
+	def Initialise(self: T) -> T:
 		self.Pos = ErrorPosHelper(self.GameSurf.Width, self.GameSurf.Height)
-		self.TitleFont = self.Fonts[TITLE_FONT]
-		self.MessageFont = self.Fonts[MESSAGE_FONT]
+		self.TitleFont = self.Fonts[ERROR_TITLE_FONT]
+		self.MessageFont = self.Fonts[ERROR_MESSAGES_FONT]
 		return self
 
 	def Update(self, ForceUpdate: bool = False):
@@ -65,10 +64,10 @@ class Errors(TextBlitsMixin, SurfaceCoordinator):
 
 		self.GameSurf.surf.blits(self.Messages)
 
-	def Add(self, message):
+	def Add(self, message) -> None:
 		self.ThisPass.append(message)
 
-	def ErrorMessages(self):
+	def ErrorMessages(self) -> None:
 		if not self.ThisPass:
 			return None
 
@@ -92,5 +91,5 @@ class Errors(TextBlitsMixin, SurfaceCoordinator):
 			y += self.MessageFont.linesize
 
 	# Must define hash even though it's in the parent class, because it's a dataclass
-	def __hash__(self):
+	def __hash__(self) -> int:
 		return id(self)

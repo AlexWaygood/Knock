@@ -1,14 +1,20 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
 import sys
 from warnings import filterwarnings
 from logging import debug
 from os import chdir, environ
+from src.global_constants import MENU_SCREEN_FILL_COLOUR
+
+if TYPE_CHECKING:
+	from src.special_knock_types import ClientStartUpReturnables
 
 
 PYGAME_KEY_EVENT_DELAY = 1000
 PYGAME_KEY_EVENT_FREQUENCY = 50
 
 
-def StartupSequence():
+def StartupSequence() -> ClientStartUpReturnables:
 	# This is only relevant if you are using pyinstaller to convert this script into a .exe file.
 	if getattr(sys, 'frozen', False):
 		# noinspection PyUnresolvedReferences,PyProtectedMember
@@ -47,7 +53,7 @@ def StartupSequence():
 	PrintIntroMessage()
 	pg_init()
 	IP, Port, password, Theme, FontChoice, BoldFont = UserInputs(THEMES)
-	StartColour = ColourScheme(Theme).MenuScreen
+	StartColour = ColourScheme(Theme)[MENU_SCREEN_FILL_COLOUR]
 
 	if FontChoice:
 		from src.display.abstract_text_rendering import Fonts

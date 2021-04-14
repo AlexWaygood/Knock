@@ -1,9 +1,8 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, NamedTuple
 
-from os import environ
-environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
-
+# noinspection PyUnresolvedReferences
+from src import pre_pygame_import
 from pygame.cursors import (
 	diamond as DIAMOND_CURSOR,
 	compile as cursor_compile

@@ -8,13 +8,23 @@ from traceback_with_variables import printing_exc
 from src.network.network_abstract import Network, GetTime
 from src.misc import GetLogger
 
-from os import environ
-environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
+# noinspection PyUnresolvedReferences
+from src import pre_pygame_import
 from pygame.time import delay, get_ticks as GetTicks
 
 if TYPE_CHECKING:
 	from src.display.input_context import InputContext
-	from src.special_knock_types import OptionalClient
+	from src.special_knock_types import OptionalClient, ClientUpdateReturn
+
+
+CONNECTION_ERROR_MESSAGE_INTERVAL = 5
+PING_INTERVAL = 5
+CLIENT_DEFAULT_MESSAGE = 'ping'
+MESSAGE_TO_TERMINATE = '@T'
+
+
+def DetectBrokenConnection(LastUpdateTime: int):
+	return LastUpdateTime < GetTicks() - 10000
 
 
 class Client(Network):
@@ -82,7 +92,7 @@ class Client(Network):
 					print("OSError. Check you're connected to the internet?")
 					raise e
 
-			if (CurrentTime := time()) > Time + 5:
+			if (CurrentTime := time()) > Time + CONNECTION_ERROR_MESSAGE_INTERVAL:
 				print(
 					"Connection failed; trying again. "
 					"Check that the server script is running and you're connected to the internet."
@@ -90,8 +100,8 @@ class Client(Network):
 
 				Time = CurrentTime
 
-	def Update(self):
-		if (IsBroken := (self.LastUpdate < GetTicks() - 100000)) is self.ConnectionBroken:
+	def Update(self) -> ClientUpdateReturn:
+		if (IsBroken := (DetectBrokenConnection(self.LastUpdate))) is self.ConnectionBroken:
 			pass
 
 		elif IsBroken:
@@ -117,7 +127,7 @@ class Client(Network):
 		self.log.debug(f'Message received from server, {Message}.')
 		self.ReceiveQueue.put(Message)
 
-	def BlockingMessageToServer(self, message: str = 'ping'):
+	def BlockingMessageToServer(self, message: str = CLIENT_DEFAULT_MESSAGE):
 		if message:
 			self.SendQueue.put(message)
 
@@ -135,8 +145,8 @@ class Client(Network):
 				delay(100)
 
 				if self.SendQueue.empty():
-					if context.GameUpdatesNeeded or self.LastUpdate < (time() - 5):
-						self.ClientSend('ping')
+					if context.GameUpdatesNeeded or self.LastUpdate < (time() - PING_INTERVAL):
+						self.ClientSend(CLIENT_DEFAULT_MESSAGE)
 					continue
 
 				self.ClientSend(self.SendQueue.get())
@@ -144,7 +154,7 @@ class Client(Network):
 	def QueueMessage(self, message: str):
 		self.SendQueue.put(message)
 
-	def CloseDown(self):
+	def CloseDown(self) -> None:
 		self.log.debug('Attempting to close connection')
-		self.ClientSend('@T')
+		self.ClientSend(MESSAGE_TO_TERMINATE)
 		self.CloseConnection(self.conn)

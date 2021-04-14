@@ -7,6 +7,7 @@ from matplotlib.pyplot import (
 	show as plt_show
 )
 
+from os import path
 from typing import TYPE_CHECKING
 from itertools import product
 from PyQt5.QtGui import QIcon
@@ -14,8 +15,8 @@ from PyQt5.QtGui import QIcon
 from src.misc import GetDate
 from src.display.surface_coordinator import SurfaceCoordinator
 
-from os import path, environ
-environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
+# noinspection PyUnresolvedReferences
+from src import pre_pygame_import
 from pygame.locals import SYSTEM_CURSOR_WAIT
 from pygame.mouse import set_cursor
 from pygame.time import get_ticks as GetTicks
@@ -57,12 +58,12 @@ class InteractiveScoreboard(SurfaceCoordinator):
 		self.context = context
 		self.Data = self.game.Scoreboard
 
-	def save(self):
+	def save(self) -> None:
 		if not self.context.FireworksDisplay and self.Data.Initialised:
 			set_cursor(SYSTEM_CURSOR_WAIT)
 			self.Data.scoreboard.to_csv(FILE_SAVE_PATH)
 
-	def show(self):
+	def show(self) -> None:
 		Condition = (
 				self.client.ConnectionBroken
 				or self.context.FireworksDisplay

@@ -4,7 +4,14 @@ from typing import TYPE_CHECKING
 from src.players.players_abstract import Player
 
 if TYPE_CHECKING:
-	from src.special_knock_types import AnyCardList, NumberInput, OptionalTrump, OptionalSuit
+	from src.special_knock_types import (
+		AnyCardList,
+		NumberInput,
+		OptionalTrump,
+		OptionalSuit,
+		GameParameters,
+		EventsDictType
+	)
 
 
 class Game:
@@ -26,7 +33,7 @@ class Game:
 		self.BiddingSystem = BiddingSystem
 
 	@property
-	def StartCardNumber(self):
+	def StartCardNumber(self) -> int:
 		return self._StartCardNumber
 
 	@StartCardNumber.setter
@@ -44,22 +51,22 @@ class Game:
 		player.PlayCard(card, self.trumpsuit)
 		self.PlayedCards.append(card)
 
-	def GetGameParameters(self):
+	def GetGameParameters(self) -> GameParameters:
 		WhichRound = range(1, (self.StartCardNumber + 1))
 		HowManyCards = range(self.StartCardNumber, 0, -1)
 		WhoLeads = Player.cycle()
 		return WhichRound, HowManyCards, WhoLeads
 
-	def RoundCleanUp(self):
+	def RoundCleanUp(self) -> None:
 		self.TrumpCard = None
 		self.trumpsuit = None
 
-	def NewGameReset(self):
+	def NewGameReset(self) -> None:
 		self.StartCardNumber = 0
 		Player.NewGame()
 		self.StartPlay = False
 
-	def __repr__(self):
+	def __repr__(self) -> str:
 		return f'''Object representing the current state of gameplay. Current state:
 -StartPlay = {self.StartPlay}
 -RepeatGame = {self.RepeatGame}
@@ -70,7 +77,7 @@ class Game:
 -self.PlayedCards = {[repr(card) for card in self.PlayedCards]}'''
 
 
-def EventsDict():
+def EventsDict() -> EventsDictType:
 	return {
 		'GameInitialisation': 0,
 		'RoundStart': 0,

@@ -1,8 +1,8 @@
-from os import environ
-environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
+# noinspection PyUnresolvedReferences
+from src import pre_pygame_import
 
 
-def SetBlockedEvents():
+def SetBlockedEvents() -> None:
 	from pygame import (
 		AUDIODEVICEADDED,
 		AUDIODEVICEREMOVED,

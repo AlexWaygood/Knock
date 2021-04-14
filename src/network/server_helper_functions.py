@@ -6,14 +6,17 @@ from traceback_with_variables import printing_exc
 
 from src.players.players_server import ServerPlayer as Player
 from src.network.network_abstract import GetTime
-from os import environ
-environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
+# noinspection PyUnresolvedReferences
+from src import pre_pygame_import
 from pygame.time import delay
 
 if TYPE_CHECKING:
 	from src.network.network_server import Server
 	from socket import socket
 	from src.game.server_game import ServerGame as Game
+
+
+DEFAULT_SERVER_MESSAGE = 'pong'
 
 
 def CommsWithClient(
@@ -35,8 +38,8 @@ def CommsWithClient(
 		finally:
 			raise Exception('Connection was terminated.')
 
-	elif Result == 'pong' or player.NothingToSend():
-		player.ScheduleSend('pong')
+	elif Result == DEFAULT_SERVER_MESSAGE or player.NothingToSend():
+		player.ScheduleSend(DEFAULT_SERVER_MESSAGE)
 
 
 def EternalGameLoop(
@@ -51,6 +54,7 @@ def EternalGameLoop(
 			while True:
 				game.PlayGame()
 		finally:
+			# noinspection PyBroadException
 			try:
 				server.CloseDown()
 			except:

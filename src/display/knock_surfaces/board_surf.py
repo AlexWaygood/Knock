@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from functools import lru_cache
 
+from src.global_constants import STANDARD_BOARD_FONT, OPAQUE_OPACITY_KEY
 from src.display.abstract_surfaces.knock_surface_with_cards import KnockSurfaceWithCards
 from src.display.surface_coordinator import SurfaceCoordinator
 from src.display.abstract_text_rendering import TextBlitsMixin
@@ -11,11 +12,10 @@ from src.players.players_client import ClientPlayer as Player
 
 if TYPE_CHECKING:
 	from src.cards.client_card import ClientCard as Card
+	from src.special_knock_types import T, BlitsList
 
 
-# Two global constants
-COVER_RECT_START_OPACITY = 'OpaqueOpacity'  # Dictates the opacity of the CoverRects at the start of the game
-STANDARD_BOARD_FONT = 'StandardBoardFont'
+COVER_RECT_START_OPACITY = OPAQUE_OPACITY_KEY  # Dictates the opacity of the BoardSurf's CoverRects at the start of the game
 
 
 def DimensionFunctionGenerator(PlayerNo: int):
@@ -89,7 +89,7 @@ def BoardHeightHelper(
 class BoardSurface(KnockSurfaceWithCards, TextBlitsMixin):
 	__slots__ = 'PlayerTextPositions', 'NonrelativeBoardCentre', 'StandardFont', 'BoardDimensionsHelper'
 
-	def __init__(self):
+	def __init__(self) -> None:
 		self.BoardDimensionsHelper = DimensionFunctionGenerator(self.PlayerNo)
 		self.CardList = self.game.PlayedCards
 		self.CardFadeManager = OpacityFader(COVER_RECT_START_OPACITY, 'Board')
@@ -97,11 +97,11 @@ class BoardSurface(KnockSurfaceWithCards, TextBlitsMixin):
 		super().__init__()   # calls SurfDimensions()
 		SurfaceCoordinator.BoardSurf = self
 
-	def Initialise(self):
+	def Initialise(self: T) -> T:
 		self.StandardFont = self.Fonts[STANDARD_BOARD_FONT]
 		return super().Initialise()
 
-	def SurfDimensions(self):
+	def SurfDimensions(self) -> None:
 		self.Width = self.GameSurf.Width // 2
 		self.x = self.GameSurf.Height // 4
 		self.y = self.WindowMargin
@@ -111,7 +111,7 @@ class BoardSurface(KnockSurfaceWithCards, TextBlitsMixin):
 		CardRects, self.PlayerTextPositions = self.BoardDimensionsHelper(W, H, X, Y, L)
 		self.AddRectList(CardRects)
 
-	def SurfAndPos(self):
+	def SurfAndPos(self) -> None:
 		super().SurfAndPos()
 		self.NonrelativeBoardCentre = (self.attrs.centre[0] + self.x, self.attrs.centre[1] + self.y)
 
@@ -122,7 +122,7 @@ class BoardSurface(KnockSurfaceWithCards, TextBlitsMixin):
 	):
 		card.ReceiveRect(self.RectList[self.game.PlayerOrder[index]])
 
-	def GetSurfBlits(self):
+	def GetSurfBlits(self) -> BlitsList:
 		with self.game:
 			WhoseTurnPlayerIndex, TrickInProgress, RoundLeaderIndex = self.game.GetAttributes((
 				'WhoseTurnPlayerIndex', 'TrickInProgress', 'RoundLeaderIndex'

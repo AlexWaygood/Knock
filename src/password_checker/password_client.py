@@ -1,7 +1,9 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
+# noinspection PyPackageRequirements
 from Crypto.Util.Padding import pad
+# noinspection PyPackageRequirements
 from Crypto.Cipher.AES import block_size as AES_block_size
 
 from src.password_checker.password_abstract import PasswordChecker
@@ -23,7 +25,7 @@ class ClientPasswordChecker(PasswordChecker):
 		super().__init__(parent, conn)
 		self.ServerPublicKey = None
 		self.ClientPublicKey = self.GenerateKey()
-		self.type = 'Client'
+		self.type = self.Client_type
 		print('Exchanging keys...')
 		self.ExchangeKeys()
 
@@ -37,7 +39,7 @@ class ClientPasswordChecker(PasswordChecker):
 		self.conn.sendall(CipheredPassword)
 		self.conn.sendall(self.cipher.iv)
 
-	def ExchangeKeys(self):
+	def ExchangeKeys(self) -> None:
 		# The two sides exchange public keys.
 		# Both sides calculate a partial key using the two public keys, and their private key.
 		# The two sides exchange partial keys.

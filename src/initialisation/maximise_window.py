@@ -5,7 +5,10 @@ from ctypes import wintypes
 from msvcrt import get_osfhandle
 
 
-def MaximiseWindow():
+MAX_TERMINAL_HEIGHT = 200
+
+
+def MaximiseWindow() -> None:
 	# Maximise the console window
 	kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
 	user32 = ctypes.WinDLL('user32', use_last_error=True)
@@ -32,7 +35,7 @@ def MaximiseWindow():
 	hWnd = kernel32.GetConsoleWindow()
 
 	if cols and hWnd:
-		check_call('mode.com con cols={} lines={}'.format(cols, max(200, max_size.Y)))
+		check_call('mode.com con cols={} lines={}'.format(cols, max(MAX_TERMINAL_HEIGHT, max_size.Y)))
 		user32.ShowWindow(hWnd, SW_MAXIMIZE)
 
 	# Console window now maximised.

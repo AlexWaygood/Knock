@@ -2,12 +2,12 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from socket import gethostbyname
 from pprint import pprint
-from pyinputplus import inputCustom, inputMenu, inputYesNo
+from pyinputplus import inputCustom, inputMenu, inputYesNo, RetryLimitException
 from ipaddress import ip_address
-from os import environ
 
 from src.password_checker.password_abstract import PasswordInput
-environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
+# noinspection PyUnresolvedReferences
+from src import pre_pygame_import
 from pygame.font import init as pg_font_init, get_fonts
 
 if TYPE_CHECKING:
@@ -21,6 +21,7 @@ FONT_ENTRY_MAX_ATTEMPTS = 3
 def IPValidation(InputText: str):
 	"""Will raise an exception if the user has not entered a valid IP or hostname to connect to."""
 
+	# noinspection PyBroadException
 	try:
 		ip_address(InputText)
 	except:
@@ -33,6 +34,7 @@ def IPValidation(InputText: str):
 AllFonts = get_fonts()
 
 
+# noinspection PyDefaultArgument,PyShadowingNames
 def FontInput(FontName: str, AllFonts=AllFonts):
 	"""Will raise an exception if the user enters an invalid font name"""
 	assert FontName in AllFonts
@@ -42,6 +44,7 @@ def FontInput(FontName: str, AllFonts=AllFonts):
 SettingsChoices = ['Continue with default settings', 'Customise default font and colour theme for the game']
 
 
+# noinspection PyShadowingNames,PyDefaultArgument
 def UserInputs(
 		themes: ThemeTuple,
 		SettingsChoices=SettingsChoices,
@@ -97,7 +100,7 @@ def UserInputs(
 						limit=FONT_ENTRY_MAX_ATTEMPTS
 					)
 
-				except:
+				except RetryLimitException:
 					print('Defaulting to Times New Roman as you have failed to enter a valid font.')
 
 		if FontChoice:

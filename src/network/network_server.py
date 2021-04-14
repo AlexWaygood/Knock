@@ -9,13 +9,29 @@ from src.network.network_abstract import Network, GetTime
 from src.players.players_server import ServerPlayer as Player
 
 if TYPE_CHECKING:
-	from src.special_knock_types import NetworkFunction, ConnectionDict
+	from src.special_knock_types import NetworkFunction, ConnectionDict, ConnectionAddress
 	from socket import socket
 	from src.game.server_game import ServerGame as Game
+	from ipinfo.details import Details
 
 
 log = getLogger(__name__)
-AccessToken = '62e82f844db51d'
+ACCESS_TOKEN = '62e82f844db51d'
+
+
+def IP_info(
+		details: Details,
+		addr: ConnectionAddress
+):
+	messages = (
+		f'Attempted connection from {details.city}, {details.region}, {details.country_name} at {GetTime()}.',
+		f'IP, port: {addr}',
+		f'Hostname: {details.hostname}'
+	)
+
+	for m in messages:
+		print(m)
+		log.debug(m)
 
 
 class Server(Network):
@@ -34,17 +50,18 @@ class Server(Network):
 
 		if password:
 			try:
+				# noinspection PyUnresolvedReferences
 				from src.password_checker.password_server import ServerPasswordChecker as PasswordChecker
 				self.password_checker_class = PasswordChecker
 				PasswordChecker.password = password
-			except:
+			except ImportError:
 				print('Password import failed; will be unable to check passwords for attempted connections.')
 
 		if AccessToken:
 			try:
 				from ipinfo import getHandler
 				self.ip_handler = getHandler(AccessToken)
-			except:
+			except ImportError:
 				print("Encountered an error importing ipinfo; won't be able to provide info on IP addresses.")
 				log.debug("Encountered an error importing ipinfo; won't be able to provide info on IP addresses.")
 		else:
@@ -117,19 +134,10 @@ class Server(Network):
 		conn, addr = self.conn.accept()
 
 		if self.ip_handler:
+			# noinspection PyBroadException
 			try:
 				# Should change this to addr[0] when other computers need to connect
-				details = self.ip_handler.getDetails('86.14.41.223')
-
-				messages = [
-					f'Attempted connection from {details.city}, {details.region}, {details.country_name} at {GetTime()}.',
-					f'IP, port: {addr}',
-					f'Hostname: {details.hostname}'
-				]
-
-				for m in messages:
-					print(m)
-					log.debug(m)
+				IP_info(self.ip_handler.getDetails('86.14.41.223'), addr)
 
 			except:
 				m = f"Couldn't get requested info for this IP address {addr}."
@@ -144,7 +152,7 @@ class Server(Network):
 		if self.password:
 			Checker = self.password_checker_class(self, conn)
 
-			if not Checker.CheckPassword(conn):
+			if not Checker.CheckPassword():
 				m = f'Client {addr} entered the wrong password; declining attempted connection.'
 				print(m)
 				log.debug(m)
@@ -170,6 +178,6 @@ class Server(Network):
 		log.debug(f'Message received from client: {Message}.')
 		return Message
 
-	def CloseDown(self):
+	def CloseDown(self) -> None:
 		log.debug('Attempting to close the server down.')
 		self.ConnectionInfo = [self.CloseConnection(conn) for conn in self.ConnectionInfo]

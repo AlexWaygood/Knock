@@ -1,10 +1,22 @@
 from __future__ import annotations
 
+from os import path
 from random import randint
 from functools import lru_cache
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, NoReturn
 from queue import Queue
 from collections import deque
+
+from src.global_constants import (
+	HAND_CARD_FADE_KEY,
+	TRUMP_CARD_FADE_KEY,
+	BOARD_CARD_FADE_KEY,
+	SCOREBOARD_FILL_COLOUR,
+	MENU_SCREEN_FILL_COLOUR,
+	GAMEPLAY_FILL_COLOUR,
+	TEXT_DEFAULT_FILL_COLOUR,
+	FIREWORKS_FILL_COLOUR
+)
 
 from src.display.surface_coordinator import SurfaceCoordinator
 from src.display.abstract_text_rendering import TextBlitsMixin
@@ -31,8 +43,8 @@ from src.game.client_game import ClientGame as Game
 from src.players.players_client import ClientPlayer as Player
 from src.misc import GetLogger
 
-from os import environ, path
-environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
+# noinspection PyUnresolvedReferences
+from src import pre_pygame_import
 
 from pygame import (quit as pg_quit,
                     locals as pg_locals,
@@ -96,7 +108,7 @@ def ZoomOutHelper(NewVar: int,
 	return NewVar, (NewVar != OldVar)
 
 
-def ControlKeyDown():
+def ControlKeyDown() -> int:
 	return pg_key_get_mods() & pg_locals.KMOD_CTRL
 
 
@@ -132,12 +144,15 @@ class DisplayManager:
 
 		try:
 			# Try to calculate the size of the client's computer screen
+			# noinspection PyUnresolvedReferences
 			from screeninfo import get_monitors
 			Monitor = get_monitors()[0]
-			WindowX, WindowY = self.WindowX, self.WindowY = Monitor.width, Monitor.height
-		except:
-			WindowX, WindowY = self.WindowX, self.WindowY = DEFAULT_MAX_WIDTH, DEFAULT_MAX_HEIGHT
+			WindowX, WindowY = Monitor.width, Monitor.height
+		except ImportError:
+			WindowX, WindowY = DEFAULT_MAX_WIDTH, DEFAULT_MAX_HEIGHT
 
+		self.WindowX = WindowX
+		self.WindowY = WindowY
 		self.player = Player.player(playerindex)
 		self.game = Game.OnlyGame
 		self.clock = Clock()
@@ -196,7 +211,7 @@ class DisplayManager:
 			pg_locals.K_RIGHT: self.GameSurf.NudgeRight
 		}
 
-	def Run(self):
+	def Run(self) -> NoReturn:
 		self.log.debug('Launching pygame window.')
 		pg_display.set_icon(self.WindowIcon)
 		self.InitialiseWindow(pg_locals.RESIZABLE)
@@ -212,53 +227,53 @@ class DisplayManager:
 		while True:
 			self.Update()
 
-	def GetHandRects(self):
+	def GetHandRects(self) -> None:
 		self.HandSurf.GetHandRects()
 
-	def ClearHandRects(self):
+	def ClearHandRects(self) -> None:
 		self.HandSurf.ClearRectList()
 
-	def ActivateHand(self):
+	def ActivateHand(self) -> None:
 		self.HandSurf.Activate()
 
-	def DeactivateHand(self):
+	def DeactivateHand(self) -> None:
 		self.HandSurf.Deactivate()
 
 	def Blits(self, L: BlitsList):
 		self.GameSurf.surf.blits(L)
 
-	def GameInitialisationFade(self):
+	def GameInitialisationFade(self) -> None:
 		if not self.game.GamesPlayed:
-			self.GameSurf.FillFade('MenuScreen', 'GamePlay', 1000)
+			self.GameSurf.FillFade(MENU_SCREEN_FILL_COLOUR, GAMEPLAY_FILL_COLOUR, 1000)
 
 		self.ScoreboardSurf.RealInit()
-		self.ScoreboardSurf.FillFade('GamePlay', 'Scoreboard', 1000)
+		self.ScoreboardSurf.FillFade(GAMEPLAY_FILL_COLOUR, SCOREBOARD_FILL_COLOUR, 1000)
 
-	def RoundStartFade(self):
+	def RoundStartFade(self) -> None:
 		self.BoardSurf.Activate()
 		self.TrumpCardSurf.Activate()
 
-		TextBlitsMixin.TextFade('GamePlay', 'Black', 1000)
+		TextBlitsMixin.TextFade(GAMEPLAY_FILL_COLOUR, TEXT_DEFAULT_FILL_COLOUR, 1000)
 		self.HandSurf.Activate()
-		OpacityFader.CardFade(('HandCardFade', 'TrumpCardFade'), 1000, FadeIn=True)
+		OpacityFader.CardFade((HAND_CARD_FADE_KEY, TRUMP_CARD_FADE_KEY), 1000, FadeIn=True)
 
 	@staticmethod
-	def TrickEndFade():
-		OpacityFader.CardFade(('BoardCardFade',), 300, FadeIn=False)
+	def TrickEndFade() -> None:
+		OpacityFader.CardFade((BOARD_CARD_FADE_KEY,), 300, FadeIn=False)
 
-	def RoundEndFade(self):
+	def RoundEndFade(self) -> None:
 		self.HandSurf.Deactivate()
 
-		OpacityFader.CardFade(('TrumpCardFade',), 1000, FadeIn=False)
-		TextBlitsMixin.TextFade('Black', 'GamePlay', 1000)
+		OpacityFader.CardFade((TRUMP_CARD_FADE_KEY,), 1000, FadeIn=False)
+		TextBlitsMixin.TextFade(TEXT_DEFAULT_FILL_COLOUR, GAMEPLAY_FILL_COLOUR, 1000)
 
 		self.TrumpCardSurf.Deactivate()
 		self.BoardSurf.Deactivate()
 
-	def FireworksSequence(self):
+	def FireworksSequence(self) -> None:
 		# Fade the screen out incrementally to prepare for the fireworks display
-		self.ScoreboardSurf.FillFade('Scoreboard', 'GamePlay', 1000)
-		self.GameSurf.FillFade('GamePlay', 'Black', 1000)
+		self.ScoreboardSurf.FillFade(SCOREBOARD_FILL_COLOUR, GAMEPLAY_FILL_COLOUR, 1000)
+		self.GameSurf.FillFade(GAMEPLAY_FILL_COLOUR, FIREWORKS_FILL_COLOUR, 1000)
 
 		self.ScoreboardSurf.Deactivate()
 
@@ -274,15 +289,15 @@ class DisplayManager:
 				delay(100)
 
 		# Fade the screen back to maroon after the fireworks display.
-		self.GameSurf.FillFade('Black', 'GamePlay', 1000)
+		self.GameSurf.FillFade(FIREWORKS_FILL_COLOUR, GAMEPLAY_FILL_COLOUR, 1000)
 		delay(1000)
 
-	def QuitGame(self):
+	def QuitGame(self) -> NoReturn:
 		self.log.debug('Quitting game.')
 		pg_quit()
 		raise Exception('Game has ended.')
 
-	def Update(self):
+	def Update(self) -> None:
 		self.clock.tick(FRAMERATE)
 
 		Condition = (not pg_display.get_init() or not pg_display.get_surface())
@@ -367,13 +382,13 @@ class DisplayManager:
 		self.Window.fill(self.GameSurf.colour)
 		pg_display.update()
 
-	def RestartDisplay(self):
+	def RestartDisplay(self) -> None:
 		pg_display.quit()
 		pg_display.init()
 		pg_display.set_caption(self.WindowCaption)
 		pg_display.set_icon(self.WindowIcon)
 
-	def ZoomIn(self):
+	def ZoomIn(self) -> None:
 		if self.Fullscreen:
 			return None
 
@@ -390,7 +405,7 @@ class DisplayManager:
 		if ResizeNeeded1 or ResizeNeeded2:
 			self.NewWindowSize(WindowDimensions=(x, y), ToggleFullscreen=False)
 
-	def ZoomOut(self):
+	def ZoomOut(self) -> None:
 		x, y = self.WindowX, self.WindowY
 
 		if x == y == MINIMUM_WINDOW_DIMENSION:
@@ -500,7 +515,7 @@ class DisplayManager:
 			else:
 				self.UserInput.AddTextEvent(event.unicode)
 
-	def __repr__(self):
+	def __repr__(self) -> str:
 		return f'''Object for managing all variables related to pygame display on the client-side of the game. Current state:
 -MinGameWidth: {MIN_GAME_WIDTH}
 -MinGameHeight: {MIN_GAME_HEIGHT}

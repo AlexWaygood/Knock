@@ -1,13 +1,26 @@
+from typing import NoReturn
 from random import randint
 from traceback_with_variables import printing_exc
+
+from src.global_constants import (
+	CLASSIC_BIDDING_SYSTEM,
+	STANDARD_MASSIVE_FONT,
+	STANDARD_TITLE_FONT,
+	MESSAGE,
+	FONT,
+	GAME_UPDATES_NEEDED,
+	TYPING_NEEDED,
+	CLICK_TO_START,
+	GAME_RESET
+)
 
 from src.display.display_manager import DisplayManager
 from src.game.client_game import ClientGame as Game
 from src.players.players_client import ClientPlayer as Player
 from src.network.network_client import Client
 
-from os import environ
-environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
+# noinspection PyUnresolvedReferences
+from src import pre_pygame_import
 from pygame.time import delay
 
 
@@ -23,13 +36,13 @@ class ClientsideGameplay:
 		self.BiddingSystem: str = self.game.BiddingSystem
 		self.context = self.displayManager.InputContext
 
-	def Play(self):
+	def Play(self) -> NoReturn:
 		with printing_exc():
 			self.PlayTournament()
 
-	def PlayTournament(self):
+	def PlayTournament(self) -> NoReturn:
 		# Menu sequence
-		with self.context(TypingNeeded=True, Message='Please enter your name', font='Massive'):
+		with self.context(TypingNeeded=True, Message='Please enter your name', font=STANDARD_MASSIVE_FONT):
 			while isinstance(self.player.name, int):
 				delay(100)
 
@@ -37,9 +50,9 @@ class ClientsideGameplay:
 		delay(100)
 
 		Args = {
-			'Message': 'Waiting for all players to connect and enter their names',
-			'font': 'Massive',
-			'GameUpdatesNeeded': True
+			MESSAGE: 'Waiting for all players to connect and enter their names',
+			FONT: STANDARD_MASSIVE_FONT,
+			GAME_UPDATES_NEEDED: True
 		}
 
 		with self.context(**Args):
@@ -81,7 +94,7 @@ class ClientsideGameplay:
 
 		self.Type(text, WaitAfterwards=0)
 
-		with self.context(GameUpdatesNeeded=True, Message=text, font='Title'):
+		with self.context(GameUpdatesNeeded=True, Message=text, font=STANDARD_TITLE_FONT):
 			self.context.TypingNeeded = not self.playerindex()
 			while not self.game.StartCardNumber:
 				delay(100)
@@ -92,10 +105,10 @@ class ClientsideGameplay:
 		self.Type('Click to start the game for all players!', WaitAfterwards=0)
 
 		Args = {
-			'ClickToStart': True,
-			'GameUpdatesNeeded': True,
-			'Message': 'Click to start the game for all players!',
-			'font': 'Title'
+			CLICK_TO_START: True,
+			GAME_UPDATES_NEEDED: True,
+			MESSAGE: 'Click to start the game for all players!',
+			FONT: STANDARD_TITLE_FONT
 		}
 
 		with self.context(**Args):
@@ -140,7 +153,7 @@ class ClientsideGameplay:
 		self.displayManager.RoundStartFade()
 		delay(250)
 
-		if self.BiddingSystem == 'Classic':
+		if self.BiddingSystem == CLASSIC_BIDDING_SYSTEM:
 			self.ClassicBidding(RoundNumber, GamesPlayed)
 		else:
 			self.RandomBidding(RoundNumber, cardno, GamesPlayed)
@@ -181,10 +194,10 @@ class ClientsideGameplay:
 			self.Type('Cards for this round have been dealt; each player must decide what they will bid.')
 
 		Args = {
-			'GameUpdatesNeeded': True,
-			'TypingNeeded': True,
-			'Message': 'Please enter your bid:',
-			'font': 'Title'
+			GAME_UPDATES_NEEDED: True,
+			TYPING_NEEDED: True,
+			MESSAGE: 'Please enter your bid:',
+			FONT: STANDARD_TITLE_FONT
 		}
 
 		with self.context(**Args):
@@ -288,7 +301,7 @@ class ClientsideGameplay:
 		self.client.QueueMessage('@A')
 		self.displayManager.ClearHandRects()
 
-	def playerindex(self):
+	def playerindex(self) -> int:
 		# Has to be dynamic as the player's playerindex is liable to change
 		return self.player.playerindex
 
@@ -305,16 +318,16 @@ class ClientsideGameplay:
 			GameReset: bool = False
 	):
 		Args = {
-			'GameUpdatesNeeded': True,
-			'GameReset': GameReset
+			GAME_UPDATES_NEEDED: True,
+			GAME_RESET: GameReset
 		}
 
 		if GameReset:
-			M = 'Press the spacebar to play again with the same players, or close the window to exit the game.'
+			m = 'Press the spacebar to play again with the same players, or close the window to exit the game.'
 
 			Args.update({
-				'Message': M,
-				'font': 'Title'
+				MESSAGE: m,
+				FONT: STANDARD_TITLE_FONT
 			})
 
 		with self.context(**Args):

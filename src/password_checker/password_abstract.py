@@ -1,22 +1,50 @@
 """One class and two functions to allow for a password to be transmitted securely from client to server."""
 
 from __future__ import annotations
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 from secrets import choice
 
+# noinspection PyPackageRequirements
 from Crypto.Cipher.AES import MODE_CBC, new as AES_new
+# noinspection PyPackageRequirements
 from Crypto.Util.number import getPrime
 
-from src.misc import PrintableCharacters, DictLike
+from src.misc import DictLike
+from src.global_constants import PRINTABLE_CHARACTERS
 
 if TYPE_CHECKING:
+	from src.special_knock_types import OptionalBytes, OptionalCipherType, OptionalInt, OptionalStr
 	from src.network.network_abstract import Network
 	from socket import socket
-	# noinspection PyProtectedMember
+	# noinspection PyProtectedMember,PyPackageRequirements
 	from Crypto.Cipher._mode_cbc import CbcMode as CipherType
 
 
-PasswordLength = 32
+PASSWORD_LENGTH = 32
+SERVER_TYPE = 'Server'
+CLIENT_TYPE = 'Client'
+
+
+def KeyMaker() -> int:
+	return getPrime(18)
+
+
+def MakeCipher(FullKey: str, iv: OptionalBytes) -> CipherType:
+	return AES_new(FullKey.encode(), MODE_CBC, iv)
+
+
+def GeneratePassword() -> str:
+	"""Function to generate a random hexademical token, to be used as a password"""
+	return ''.join(choice(PRINTABLE_CHARACTERS) for _ in range(PASSWORD_LENGTH))
+
+
+def PasswordInput(text: str):
+	"""Function for validating a password that has been inputted by the user"""
+
+	if not text:
+		return None
+
+	assert len(text) == PASSWORD_LENGTH, f'Password must be a hexadecimal string of exactly {PASSWORD_LENGTH} characters.'
 
 
 class PasswordChecker(DictLike):
@@ -31,6 +59,10 @@ class PasswordChecker(DictLike):
 	__slots__ = 'parent', 'PrivateKey', 'ServerPublicKey', 'ClientPublicKey', 'conn', 'cipher',\
 	            'ServerPartialKey', 'ClientPartialKey', 'FullKey', 'type'
 
+	Server_type = SERVER_TYPE
+	Client_type = CLIENT_TYPE
+	PasswordLength = PASSWORD_LENGTH
+
 	def __init__(
 			self,
 			parent: Network,
@@ -42,14 +74,14 @@ class PasswordChecker(DictLike):
 		self.parent = parent
 		self.PrivateKey = self.GenerateKey()
 		self.conn = conn
-		self.cipher: Optional[CipherType] = None
-		self.ServerPartialKey: Optional[int] = None
-		self.ClientPartialKey: Optional[int] = None
-		self.FullKey: Optional[str] = None
+		self.cipher: OptionalCipherType = None
+		self.ServerPartialKey: OptionalInt = None
+		self.ClientPartialKey: OptionalInt = None
+		self.FullKey: OptionalStr = None
 
 	@staticmethod
-	def GenerateKey():
-		return getPrime(18)
+	def GenerateKey() -> int:
+		return KeyMaker()
 
 	def SendKey(
 			self,
@@ -57,7 +89,7 @@ class PasswordChecker(DictLike):
 			server: bool
 	):
 
-		key = str(self[f'{"Server" if server else "Client"}{"Partial" if Partial else "Public"}Key'])
+		key = str(self[f'{self.Server_type if server else self.Client_type}{"Partial" if Partial else "Public"}Key'])
 
 		if Partial:
 			key = f"{key}{''.join(('-' for _ in range(10 - len(key))))}"
@@ -72,31 +104,13 @@ class PasswordChecker(DictLike):
 
 		self[f'{self.type}{"Partial" if Partial else "Public"}Key'] = Key
 
-	def CalculatePartialKey(self):
+	def CalculatePartialKey(self) -> float:
 		return (self.ServerPublicKey ** self.PrivateKey) % self.ClientPublicKey
 
 	def CalculateFullKey(self, server: bool):
 		PartialKey = self.ClientPartialKey if server else self.ServerPartialKey
 		self.FullKey = hex(((PartialKey ** self.PrivateKey) % self.ClientPublicKey) ** 5)[:16]
 
-	def GetCipher(self, iv: Optional[bytes]):
-		self.cipher: CipherType = AES_new(self.FullKey.encode(), MODE_CBC, iv)
+	def GetCipher(self, iv: OptionalBytes):
+		self.cipher = MakeCipher(self.FullKey, iv)
 		return self.cipher
-
-
-def GeneratePassword(PasswordLength: int = PasswordLength,
-                     PrintableCharacters: str = PrintableCharacters):
-
-	"""Function to generate a random hexademical token, to be used as a password"""
-	return ''.join(choice(PrintableCharacters) for _ in range(PasswordLength))
-
-
-def PasswordInput(text: str,
-                  PasswordLength: int = PasswordLength):
-
-	"""Function for validating a password that has been inputted by the user"""
-
-	if not text:
-		return None
-
-	assert len(text) == PasswordLength, f'Password must be a hexadecimal string of exactly {PasswordLength} characters.'

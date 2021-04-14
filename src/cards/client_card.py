@@ -1,21 +1,29 @@
 from __future__ import annotations
 
-from os import environ, path
+from os import path
 from typing import TYPE_CHECKING
 from functools import lru_cache
 from PIL import Image
-
 from src.cards.server_card_suit_rank import Suit, AllCardIDs, ServerCard
 
-environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
+# noinspection PyUnresolvedReferences
+from src import pre_pygame_import
 from pygame.transform import rotozoom
 from pygame.image import fromstring as pg_image_fromstring
 
 if TYPE_CHECKING:
 	from fractions import Fraction
 	from pygame import Rect
-	from src.special_knock_types import RankType, Position, CardImageDict, TupledImageDict, OptionalSurface, \
-		OptionalRect, ClientCardList, ClientCardDict
+	from src.special_knock_types import (
+		RankType,
+		Position,
+		CardImageDict,
+		TupledImageDict,
+		OptionalSurface,
+		OptionalRect,
+		ClientCardList,
+		ClientCardDict
+	)
 
 
 # Two card-related global constants
@@ -87,11 +95,11 @@ class ClientCard(ServerCard):
 			return self.Rank.Value
 		return self.Rank.Value + 13 if self.Suit == trumpsuit else 0
 
-	def MoveColliderect(self, XMotion, YMotion):
+	def MoveColliderect(self, XMotion: float, YMotion: float):
 		self.colliderect.move_ip(XMotion, YMotion)
 
 	@classmethod
-	def UpdateAtrributes(cls):
+	def UpdateAtrributes(cls) -> None:
 		for card in cls.AllCardsList:
 			card.image = cls.CardImages[repr(card)]
 			card.surfandpos = (card.image, card.rect)

@@ -3,14 +3,14 @@ from typing import TYPE_CHECKING
 from functools import lru_cache
 from src.display.abstract_surfaces.knock_surface_with_cards import KnockSurfaceWithCards
 from src.display.faders import OpacityFader
+from src.global_constants import HAND_CARD_FADE_KEY, OPAQUE_OPACITY_KEY
 
 if TYPE_CHECKING:
 	from src.cards.client_card import ClientCard as Card
 
 
-# Two global constants
 HAND_SURFACE_X_COORDINATE = 0  # The Hand surface's Y-coordinate changes, but the X-coordinate never does
-COVER_RECT_START_OPACITY = 'OpaqueOpacity'
+COVER_RECT_START_OPACITY = OPAQUE_OPACITY_KEY
 
 
 @lru_cache
@@ -37,24 +37,24 @@ class HandSurface(KnockSurfaceWithCards):
 
 	x = HAND_SURFACE_X_COORDINATE
 
-	def __init__(self):
+	def __init__(self) -> None:
 		self.CardList = self.player.Hand
-		self.CardFadeManager = OpacityFader(COVER_RECT_START_OPACITY, 'Hand')
+		self.CardFadeManager = OpacityFader(COVER_RECT_START_OPACITY, HAND_CARD_FADE_KEY)
 		self.CardUpdateQueue = self.game.NewCardQueues.Hand
 		super().__init__()   # calls SurfDimensions()
 		self.HandRectsCalculated = False
 
 	# noinspection PyAttributeOutsideInit
-	def SurfDimensions(self):
+	def SurfDimensions(self) -> None:
 		self.y = self.GameSurf.Height - (self.CardY + self.WindowMargin)
 		self.Width = self.GameSurf.Width
 		self.Height = self.CardY + self.WindowMargin
 
-	def GetHandRects(self):
+	def GetHandRects(self) -> None:
 		self.AddRectList(GetHandRects(self.Width, self.WindowMargin, self.CardX, self.game.StartCardNumber))
 		self.HandRectsCalculated = True
 
-	def ClearRectList(self):
+	def ClearRectList(self) -> None:
 		self.RectList.clear()
 		self.CoverRects.clear()
 		self.HandRectsCalculated = False

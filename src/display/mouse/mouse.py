@@ -5,13 +5,13 @@ from dataclasses import dataclass
 from src.display.surface_coordinator import SurfaceCoordinator
 from src.display.mouse.cursors import Cursors
 
-from os import environ
-environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
+# noinspection PyUnresolvedReferences
+from src import pre_pygame_import
 from pygame.mouse import get_pressed, get_pos, set_cursor
 from pygame.time import get_ticks as GetTicks
 
 if TYPE_CHECKING:
-	from src.special_knock_types import Position
+	from src.special_knock_types import Position, Cursor_Type
 	from src.display.input_context import InputContext
 
 
@@ -54,19 +54,19 @@ class Scrollwheel:
 	DownTime: int
 	OriginalDownTime: int
 
-	def clicked(self):
+	def clicked(self) -> None:
 		self.IsDown = not self.IsDown
 		if self.IsDown:
 			self.DownPos = get_pos()
 			self.DownTime = self.OriginalDownTime = GetTicks()
 
-	def ComesUp(self):
+	def ComesUp(self) -> None:
 		self.IsDown = False
 
-	def IsMoving(self):
+	def IsMoving(self) -> bool:
 		return self.IsDown and GetTicks() > self.OriginalDownTime + 20
 
-	def GetMovement(self):
+	def GetMovement(self) -> Position:
 		# noinspection PyTupleAssignmentBalance
 		DownX, DownY, MouseX, MouseY = *self.DownPos, *get_pos()
 		return ((DownX - MouseX) / 200), ((DownY - MouseY) / 200)
@@ -90,7 +90,7 @@ class Mouse(SurfaceCoordinator):
 		self.AllSurfaces.append(self)
 
 	# **kwargs included because it might be passed ForceUpdate=True
-	def Update(self, **kwargs):
+	def Update(self, **kwargs) -> None:
 		if (cur := self.CursorValue()) != self.cursor:
 			self.cursor = cur
 			set_cursor(*cur)
@@ -106,7 +106,7 @@ class Mouse(SurfaceCoordinator):
 			):
 				self.game.ExecutePlay(self.CardHoverID, self.player.playerindex)
 
-	def CursorValue(self):
+	def CursorValue(self) -> Cursor_Type:
 		if self.client.ConnectionBroken:
 			return Cursors.Wait
 
@@ -141,7 +141,7 @@ class Mouse(SurfaceCoordinator):
 						cur = Cursors.IllegalMove
 		return cur
 
-	def __repr__(self):
+	def __repr__(self) -> str:
 		return f'''Object representing current state of the mouse. Current state:
 -cursor: {self.cursor}
 -CardHoverID: {self.CardHoverID}

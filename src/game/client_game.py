@@ -14,19 +14,19 @@ from src.cards.server_card_suit_rank import AllCardValues
 from src.cards.client_card import ClientCard as Card
 from src.network.network_client import Client
 
-from os import environ
-environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
+# noinspection PyUnresolvedReferences
+from src import pre_pygame_import
 from pygame.time import delay
 
 if TYPE_CHECKING:
-	from src.special_knock_types import NumberInput, OptionalClientGame, NumberList
+	from src.special_knock_types import NumberInput, OptionalClientGame, NumberList, T
 	from src.display.input_context import InputContext
 
 
 class NewCardQueues:
 	__slots__ = 'Hand', 'PlayedCards', 'TrumpCard'
 
-	def __init__(self):
+	def __init__(self) -> None:
 		self.Hand = Queue()
 		self.PlayedCards = Queue()
 		self.TrumpCard = Queue()
@@ -35,14 +35,14 @@ class NewCardQueues:
 class DoubleTrigger:
 	__slots__ = 'Client', 'Server'
 
-	def __init__(self):
+	def __init__(self) -> None:
 		self.Client = EventsDict()
 		self.Server = EventsDict()
 
-	def __enter__(self):
+	def __enter__(self: T) -> T:
 		return self
 
-	def __exit__(self, exc_type, exc_val, exc_tb):
+	def __exit__(self, exc_type, exc_val, exc_tb) -> bool:
 		return True
 
 
@@ -95,12 +95,12 @@ class ClientGame(Game, DictLike):
 
 		Card.MakePack()
 
-	def TimeToStart(self):
+	def TimeToStart(self) -> None:
 		self.StartPlay = True
 		self.client.QueueMessage('@S')
 
 	@property
-	def StartCardNumber(self):
+	def StartCardNumber(self) -> int:
 		return self._StartCardNumber
 
 	@StartCardNumber.setter
@@ -159,7 +159,7 @@ class ClientGame(Game, DictLike):
 		super().ExecutePlay(cardID, playerindex)
 		self.client.QueueMessage(f'@C{cardID}{playerindex}')
 
-	def EndTrick(self):
+	def EndTrick(self) -> Player:
 		WinningCard = max(self.PlayedCards, key=methodcaller('GetWinValue', self.PlayedCards[0].Suit, self.trumpsuit))
 		Winner = Player.PlayerWinsTrick(WinningCard.PlayedBy)
 
@@ -169,7 +169,7 @@ class ClientGame(Game, DictLike):
 
 		return Winner
 
-	def EndRound(self):
+	def EndRound(self) -> None:
 		self.WhoseTurnPlayerIndex = -1
 		self.TrickInProgress = False
 		Player.RoundCleanUp()
@@ -181,25 +181,26 @@ class ClientGame(Game, DictLike):
 			self.CardNumberThisRound -= 1
 			self.TrickNumber = 1
 
-	def NewGameReset(self):
+	def NewGameReset(self) -> None:
 		super().NewGameReset()
 		Player.NewGame()
 		self.RoundNumber = 1
 
-	def CheckForPlayerDeparture(self, CurrentPlayerNumber):
+	def CheckForPlayerDeparture(self, CurrentPlayerNumber: int) -> bool:
 		if self.StartPlay and self.PlayerNumber != CurrentPlayerNumber:
 			return True
+		return False
 
-	def __enter__(self):
+	def __enter__(self: T) -> T:
 		self.lock.acquire()
 		return self
 
-	def __exit__(self, exc_type, exc_val, exc_tb):
+	def __exit__(self, exc_type, exc_val, exc_tb) -> True:
 		self.lock.release()
 		return True
 
 	# PlayerNumber is given in the abstract_game repr
-	def __repr__(self):
+	def __repr__(self) -> str:
 		Added = f'''gameplayers = {Player.reprList()}
 GamesPlayed = {self.GamesPlayed}
 CardNumberThisRound = {self.CardNumberThisRound}

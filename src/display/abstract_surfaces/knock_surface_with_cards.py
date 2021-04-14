@@ -1,16 +1,17 @@
 from __future__ import annotations
 
 from typing import Sequence, TYPE_CHECKING
+from src.global_constants import GAMEPLAY_FILL_COLOUR
 from src.display.abstract_surfaces.knock_surface import KnockSurface
 from functools import lru_cache
 from dataclasses import dataclass
 
-from os import environ
-environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
+# noinspection PyUnresolvedReferences
+from src import pre_pygame_import
 from pygame import Surface, Rect
 
 if TYPE_CHECKING:
-	from src.special_knock_types import Position, RectList, CoverRectList
+	from src.special_knock_types import Position, RectList, CoverRectList, BlitsList
 	from src.cards.client_card import ClientCard as Card
 
 
@@ -21,10 +22,10 @@ class CoverRect:
 	surf: Surface
 	rect: Rect
 
-	def __post_init__(self):
+	def __post_init__(self) -> None:
 		self.surfandpos = (self.surf, self.rect)
 
-	def __hash__(self):
+	def __hash__(self) -> int:
 		return id(self)
 
 
@@ -32,8 +33,8 @@ class CoverRect:
 class KnockSurfaceWithCards(KnockSurface):
 	__slots__ = 'RectList', 'CardList', 'CoverRects', 'CardFadeManager', 'CardUpdateQueue', 'colour'
 
-	def __init__(self):
-		self.colour = self.ColourScheme.GamePlay
+	def __init__(self) -> None:
+		self.colour = self.ColourScheme[GAMEPLAY_FILL_COLOUR]
 		self.RectList: RectList = []
 		self.CoverRects: CoverRectList = []
 		super().__init__()
@@ -57,7 +58,7 @@ class KnockSurfaceWithCards(KnockSurface):
 		for cv in self.CoverRects:
 			cv.surf.set_alpha(self.CardFadeManager.GetOpacity())
 
-	def fill(self):
+	def fill(self) -> None:
 		self.surf.fill(self.colour)
 
 		for cv in self.CoverRects:
@@ -67,7 +68,7 @@ class KnockSurfaceWithCards(KnockSurface):
 			for cv in self.CoverRects:
 				cv.surf.set_alpha(FadeOpacity)
 
-	def GetSurfBlits(self):
+	def GetSurfBlits(self) -> BlitsList:
 		self.UpdateCardRects()
 		L = [card.surfandpos for card in self.CardList]
 

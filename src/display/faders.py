@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from typing import Sequence, TYPE_CHECKING
-from os import environ
-environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
+# noinspection PyUnresolvedReferences
+from src import pre_pygame_import
 from pygame.time import delay, get_ticks as GetTicks
 from src.display.colours import ColourScheme
 
 if TYPE_CHECKING:
-	from src.special_knock_types import Colour, OptionalColours
+	from src.special_knock_types import Colour, OptionalColours, IntOrBool
 
 
 class Fader:
@@ -48,7 +48,7 @@ class Fader:
 			return 255
 		return Step
 
-	def GetColour(self):
+	def GetColour(self) -> Colour:
 		if not self.Fade:
 			return self.colour
 
@@ -61,7 +61,7 @@ class Fader:
 		return [self.GetColourHelper(Elapsed, i) for i, _ in enumerate(self.FadeColour1)]
 
 	@classmethod
-	def AddColourScheme(cls):
+	def AddColourScheme(cls) -> None:
 		cls.colour_scheme: OptionalColours = ColourScheme.OnlyColourScheme
 
 
@@ -93,10 +93,10 @@ class OpacityFader(Fader):
 		super().__init__(StartOpacity)
 		self.AllOpacityFaders[name] = self
 
-	def FadeInProgress(self):
+	def FadeInProgress(self) -> IntOrBool:
 		return self.GetColour()[0] if self.Fade else False
 
-	def GetOpacity(self):
+	def GetOpacity(self) -> int:
 		return self.GetColour()[0]
 
 	@classmethod

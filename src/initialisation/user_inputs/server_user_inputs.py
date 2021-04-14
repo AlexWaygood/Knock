@@ -1,12 +1,18 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
 from pyinputplus import inputInt, inputMenu, inputCustom, inputYesNo
 from src.password_checker.password_abstract import GeneratePassword, PasswordInput
+from src.global_constants import CLASSIC_BIDDING_SYSTEM, RANDOM_BIDDING_SYSTEM
+
+if TYPE_CHECKING:
+	from src.special_knock_types import ServerUserInputsReturn
 
 
 MIN_PLAYERS = 2
 MAX_PLAYERS = 6
 
 
-def UserInputs():
+def UserInputs() -> ServerUserInputsReturn:
 	NumberOfPlayers = inputInt('How many players will be playing? ', min=MIN_PLAYERS, max=MAX_PLAYERS)
 	print()
 
@@ -22,7 +28,7 @@ def UserInputs():
 		blank=True
 	)
 
-	BiddingSystem = 'Random' if BiddingSystem == BiddingRuleChoices[1] else 'Classic'
+	BiddingSystem = RANDOM_BIDDING_SYSTEM if BiddingSystem == BiddingRuleChoices[1] else CLASSIC_BIDDING_SYSTEM
 	print()
 
 	PasswordChoices = [

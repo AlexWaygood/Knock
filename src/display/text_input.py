@@ -1,68 +1,68 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 from pyperclip import paste
 
-from src.misc import PrintableCharactersPlusSpace
+from src.global_constants import USER_INPUT_FONT, PRINTABLE_CHARACTERS_PLUS_SPACE
 from src.display.input_context import InputContext
 from src.display.abstract_text_rendering import TextBlitsMixin, GetCursor
 from src.display.surface_coordinator import SurfaceCoordinator
 
 if TYPE_CHECKING:
-	from src.display.abstract_text_rendering import FontAndLinesize
+	from src.special_knock_types import OptionalFont, T
 	from src.display.error_tracker import Errors
 
 
-FONT = 'UserInputFont'
 TEXT_COLOUR = (0, 0, 0)
 MAX_PLAYER_NAME_LENGTH = 30
 
 
+# noinspection PyBroadException
 @dataclass(eq=False)
 class TextInput(TextBlitsMixin, SurfaceCoordinator):
 	# Repr & hash automatically defined as it's a dataclass!
 	__slots__ = 'Text', 'font', 'context', 'error_tracker'
 
 	Text: str
-	font: Optional[FontAndLinesize]
+	font: OptionalFont
 	context: InputContext
 	error_tracker: Errors
 
-	def __post_init__(self):
+	def __post_init__(self) -> None:
 		self.AllSurfaces.append(self)
-		self.font = self.Fonts[FONT]
+		self.font = self.Fonts[USER_INPUT_FONT]
 
-	def Initialise(self):
-		self.font = self.Fonts[FONT]
+	def Initialise(self: T) -> T:
+		self.font = self.Fonts[USER_INPUT_FONT]
 		return self
 
-	def PasteEvent(self):
+	def PasteEvent(self) -> None:
 		if self.context.TypingNeeded:
 			t = paste()
 			try:
-				assert all(letter in PrintableCharactersPlusSpace for letter in t)
+				assert all(letter in PRINTABLE_CHARACTERS_PLUS_SPACE for letter in t)
 				self.Text += t
 			except:
 				pass
 
-	def ControlBackspaceEvent(self):
+	def ControlBackspaceEvent(self) -> None:
 		if self.Text and self.context.TypingNeeded:
 			self.Text = ' '.join(self.Text.split(' ')[:-1])
 
-	def NormalBackspaceEvent(self):
+	def NormalBackspaceEvent(self) -> None:
 		if self.Text and self.context.TypingNeeded:
 			self.Text = self.Text[:-1]
 
 	def AddTextEvent(self, EventUnicode: str):
-		if self.context.TypingNeeded and EventUnicode in PrintableCharactersPlusSpace:
+		if self.context.TypingNeeded and EventUnicode in PRINTABLE_CHARACTERS_PLUS_SPACE:
 			try:
 				self.Text += EventUnicode
 			except:
 				pass
 
 	# Need to keep **kwargs in as it might be passed ForceUpdate=True
-	def Update(self, **kwargs):
+	def Update(self, **kwargs) -> None:
 		if self.context.TypingNeeded:
 			with self.game as g:
 				PlayStarted = g.StartPlay
@@ -72,7 +72,7 @@ class TextInput(TextBlitsMixin, SurfaceCoordinator):
 			self.GameSurf.surf.blits(GetCursor(L, self.font))
 
 	# Must define hash even though it's in the parent class, because it's a dataclass
-	def __hash__(self):
+	def __hash__(self) -> int:
 		return id(self)
 
 	def ReportError(self, message: str):
@@ -81,7 +81,7 @@ class TextInput(TextBlitsMixin, SurfaceCoordinator):
 	def QueueClientMessage(self, message: str):
 		self.client.QueueMessage(message)
 
-	def EnterEvent(self):
+	def EnterEvent(self) -> None:
 		if not (self.Text and self.context.TypingNeeded):
 			return None
 

@@ -2,10 +2,12 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from logging import getLogger
 
+# noinspection PyPackageRequirements
 from Crypto.Util.Padding import unpad
+# noinspection PyPackageRequirements
 from Crypto.Cipher.AES import block_size as AES_block_size
 
-from src.password_checker.password_abstract import PasswordChecker, PasswordLength
+from src.password_checker.password_abstract import PasswordChecker
 
 if TYPE_CHECKING:
 	from socket import socket
@@ -26,14 +28,14 @@ class ServerPasswordChecker(PasswordChecker):
 		super().__init__(parent, conn)
 		self.ServerPublicKey = self.GenerateKey()
 		self.ClientPublicKey = None
-		self.type = 'Server'
+		self.type = self.Server_type
 
 		log.debug('Exchanging keys...')
 		print('Exchanging keys...')
 
 		self.ExchangeKeys()
 
-	def CheckPassword(self, PasswordLength: int = PasswordLength):
+	def CheckPassword(self) -> bool:
 		# The client sends us the password, encrypted using the full key, and the initialisation vector.
 		# The server uses the full key and the initialisation vector to calculate the cipher used to encrypt the password.
 		# The server decrypts the password that the client sent it.
@@ -42,7 +44,7 @@ class ServerPasswordChecker(PasswordChecker):
 		print('Receiving password from client...')
 		log.debug('Receiving password from client...')
 
-		CipheredPassword = self.parent.SubReceive(PasswordLength + 16, self.conn)
+		CipheredPassword = self.parent.SubReceive(self.PasswordLength + 16, self.conn)
 		iv = self.parent.SubReceive(16, self.conn)
 
 		print('Checking password...')
@@ -58,7 +60,7 @@ class ServerPasswordChecker(PasswordChecker):
 
 		return True
 
-	def ExchangeKeys(self):
+	def ExchangeKeys(self) -> None:
 		# The two sides exchange public keys.
 		# Both sides calculate a partial key using the two public keys, and their private key.
 		# The two sides exchange partial keys.

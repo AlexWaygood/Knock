@@ -1,13 +1,9 @@
-from string import ascii_letters, digits, punctuation
 from time import strftime, localtime
 from typing import Any, Sequence
 from logging import getLogger
 
-PrintableCharacters = ''.join((digits, ascii_letters, punctuation))
-PrintableCharactersPlusSpace = PrintableCharacters + ' '
 
-
-def GetDate():
+def GetDate() -> str:
 	return strftime("%d-%m-%Y", localtime())
 
 
@@ -29,7 +25,7 @@ class DictLike:
 
 
 class Log:
-	def debug(self, *args, **kwargs):
+	def debug(self, *args, **kwargs) -> None:
 		pass
 
 
