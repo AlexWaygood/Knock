@@ -4,26 +4,20 @@ from typing import TYPE_CHECKING
 from operator import attrgetter
 from itertools import groupby
 
-from src.global_constants import (
-	STANDARD_BOARD_FONT,
-	UNDERLINED_BOARD_FONT,
-	SCOREBOARD_TEXT_KEY_1,
-	TOP_LEFT_ALIGN,
-	TOP_RIGHT_ALIGN
-)
+import src.global_constants as gc
 
 from src.players.players_abstract import Player, Hand
 
 if TYPE_CHECKING:
-	from src.special_knock_types import ClientPlayerDict, ClientPlayerList, PositionList, PlayerNameList, StringGenerator, T
+	import src.special_knock_types as skt
 
 
 class ClientPlayer(Player):
 	__slots__ = 'Points', 'GamesWon', 'PointsThisRound', 'Tricks', 'RoundLeader', 'PointsLastRound', 'PosInTrick', \
 	            'Scoreboard'
 
-	_AllPlayers: ClientPlayerList
-	_AllPlayersDict: ClientPlayerDict
+	_AllPlayers: skt.ClientPlayerList
+	_AllPlayersDict: skt.ClientPlayerDict
 
 	def __init__(self, playerindex: int):
 		super().__init__(playerindex)
@@ -50,7 +44,7 @@ class ClientPlayer(Player):
 		return player
 
 	@classmethod
-	def GetNames(cls) -> PlayerNameList:
+	def GetNames(cls) -> skt.PlayerNameList:
 		return [str(player) for player in cls.iter()]
 
 	@classmethod
@@ -62,11 +56,11 @@ class ClientPlayer(Player):
 		[player.EndOfRound() for player in cls.iter()]
 
 	@classmethod
-	def HighestScoreFirst(cls) -> ClientPlayerList:
+	def HighestScoreFirst(cls) -> skt.ClientPlayerList:
 		return sorted(cls._AllPlayers, key=attrgetter('Points'), reverse=True)
 
 	@classmethod
-	def MostGamesWonFirst(cls) -> ClientPlayerList:
+	def MostGamesWonFirst(cls) -> skt.ClientPlayerList:
 		return sorted(cls._AllPlayers, reverse=True, key=attrgetter('GamesWon'))
 
 	@classmethod
@@ -86,7 +80,7 @@ class ClientPlayer(Player):
 			LMargin: int,
 			attr: str
 	):
-		gen = cls.HighestScoreFirst if attr == SCOREBOARD_TEXT_KEY_1 else cls.MostGamesWonFirst
+		gen = cls.HighestScoreFirst if attr == gc.SCOREBOARD_TEXT_KEY_1 else cls.MostGamesWonFirst
 		RightAlignX = SurfWidth - LMargin
 
 		return sum(
@@ -101,16 +95,16 @@ class ClientPlayer(Player):
 			RightAlignX: int,
 			attribute: str
 	):
-		value = self.Points if attribute == SCOREBOARD_TEXT_KEY_1 else self.GamesWon
+		value = self.Points if attribute == gc.SCOREBOARD_TEXT_KEY_1 else self.GamesWon
 
 		return [
-			(f'{self}:', {TOP_LEFT_ALIGN: (LeftAlignX, y)}),
-			(f'{value} {attribute}{"s" if value != 1 else ""}', {TOP_RIGHT_ALIGN: (RightAlignX, y)})
+			(f'{self}:', {gc.TOP_LEFT_ALIGN: (LeftAlignX, y)}),
+			(f'{value} {attribute}{"s" if value != 1 else ""}', {gc.TOP_RIGHT_ALIGN: (RightAlignX, y)})
 
 		]
 
 	@ classmethod
-	def BoardText(cls, *args, Positions: PositionList = None):
+	def BoardText(cls, *args, Positions: skt.PositionList = None):
 		# Must receive exactly the same arguments as Boardhelp() method below
 		AllBid = cls.AllBid()
 		return sum((player.Boardhelp(*args, AllBid, *Positions[i]) for i, player in cls.enumerate()), start=[])
@@ -127,7 +121,7 @@ class ClientPlayer(Player):
 			BaseY: int
 	):
 		condition = (WhoseTurn == self.playerindex and TrickInProgress and PlayedCardsNo < self.PlayerNo)
-		font = UNDERLINED_BOARD_FONT if condition else STANDARD_BOARD_FONT
+		font = gc.UNDERLINED_BOARD_FONT if condition else gc.STANDARD_BOARD_FONT
 		Bid = f'Bid {"unknown" if (Bid := self.Bid) == -1 else (Bid if AllBid else "received")}'
 		Tricks = f'{self.Tricks} trick{"" if self.Tricks == 1 else "s"}'
 
@@ -135,14 +129,14 @@ class ClientPlayer(Player):
 
 		PlayerText = [
 			(f'{self}', font, (BaseX, BaseY)),
-			(Bid, STANDARD_BOARD_FONT, Pos2),
-			(Tricks, STANDARD_BOARD_FONT, Pos3)
+			(Bid, gc.STANDARD_BOARD_FONT, Pos2),
+			(Tricks, gc.STANDARD_BOARD_FONT, Pos3)
 		]
 
 		Condition = (self.playerindex == RoundLeaderIndex and not AllBid)
 
 		if Condition:
-			PlayerText.append(('Leads this round', STANDARD_BOARD_FONT, (BaseX, (BaseY + (LineSize * 3)))))
+			PlayerText.append(('Leads this round', gc.STANDARD_BOARD_FONT, (BaseX, (BaseY + (LineSize * 3)))))
 
 		return PlayerText
 
@@ -157,7 +151,7 @@ class ClientPlayer(Player):
 		return f'Waiting for {WaitingText} to bid'
 
 	@classmethod
-	def BidText(cls) -> StringGenerator:
+	def BidText(cls) -> skt.StringGenerator:
 		yield f'{"All" if cls.PlayerNo != 2 else "Both"} players have now bid.'
 
 		if cls.AllEqualByAttribute('Bid'):
@@ -201,7 +195,7 @@ class ClientPlayer(Player):
 				yield f'{player} {"also " if AlsoNeeded else ""}{Verb} {Points} point{Ending}.'
 
 	@classmethod
-	def GameCleanUp(cls) -> StringGenerator:
+	def GameCleanUp(cls) -> skt.StringGenerator:
 		MaxPoints = max(player.Points for player in cls.iter())
 		Winners = [player.WinsGame() for player in cls.iter() if player.Points == MaxPoints]
 
@@ -217,7 +211,7 @@ class ClientPlayer(Player):
 			yield f'The joint winners of this game were {ListOfWinners}, with {MaxPoints} each!'
 
 	@classmethod
-	def TournamentLeaders(cls) -> StringGenerator:
+	def TournamentLeaders(cls) -> skt.StringGenerator:
 		MaxGamesWon = max(player.GamesWon for player in cls.iter())
 		Leaders = [player for player in cls.iter() if player.GamesWon == MaxGamesWon]
 
@@ -241,7 +235,7 @@ class ClientPlayer(Player):
 				Last = Leaders[-1]
 				yield f'{JoinedList} and {Last} lead so far in this tournament, {GamesWonText} each!'
 
-	def WinsGame(self: T) -> T:
+	def WinsGame(self: skt.T) -> skt.T:
 		self.GamesWon += 1
 		return self
 
@@ -250,7 +244,7 @@ class ClientPlayer(Player):
 		self.Points = 0
 		return self
 
-	def EndOfRound(self: T) -> T:
+	def EndOfRound(self: skt.T) -> skt.T:
 		self.Scoreboard = [self.Bid, self.Tricks]
 
 		# Have to redefine PointsThisRound variable in order to redefine PointsLastRound correctly.

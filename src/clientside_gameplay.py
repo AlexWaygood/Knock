@@ -2,17 +2,7 @@ from typing import NoReturn
 from random import randint
 from traceback_with_variables import printing_exc
 
-from src.global_constants import (
-	CLASSIC_BIDDING_SYSTEM,
-	STANDARD_MASSIVE_FONT,
-	STANDARD_TITLE_FONT,
-	MESSAGE,
-	FONT,
-	GAME_UPDATES_NEEDED,
-	TYPING_NEEDED,
-	CLICK_TO_START,
-	GAME_RESET
-)
+import src.global_constants as gc
 
 from src.display.display_manager import DisplayManager
 from src.game.client_game import ClientGame as Game
@@ -42,7 +32,7 @@ class ClientsideGameplay:
 
 	def PlayTournament(self) -> NoReturn:
 		# Menu sequence
-		with self.context(TypingNeeded=True, Message='Please enter your name', font=STANDARD_MASSIVE_FONT):
+		with self.context(TypingNeeded=True, Message='Please enter your name', font=gc.STANDARD_MASSIVE_FONT):
 			while isinstance(self.player.name, int):
 				delay(100)
 
@@ -50,9 +40,9 @@ class ClientsideGameplay:
 		delay(100)
 
 		Args = {
-			MESSAGE: 'Waiting for all players to connect and enter their names',
-			FONT: STANDARD_MASSIVE_FONT,
-			GAME_UPDATES_NEEDED: True
+			gc.MESSAGE: 'Waiting for all players to connect and enter their names',
+			gc.FONT: gc.STANDARD_MASSIVE_FONT,
+			gc.GAME_UPDATES_NEEDED: True
 		}
 
 		with self.context(**Args):
@@ -94,7 +84,7 @@ class ClientsideGameplay:
 
 		self.Type(text, WaitAfterwards=0)
 
-		with self.context(GameUpdatesNeeded=True, Message=text, font=STANDARD_TITLE_FONT):
+		with self.context(GameUpdatesNeeded=True, Message=text, font=gc.STANDARD_TITLE_FONT):
 			self.context.TypingNeeded = not self.playerindex()
 			while not self.game.StartCardNumber:
 				delay(100)
@@ -105,10 +95,10 @@ class ClientsideGameplay:
 		self.Type('Click to start the game for all players!', WaitAfterwards=0)
 
 		Args = {
-			CLICK_TO_START: True,
-			GAME_UPDATES_NEEDED: True,
-			MESSAGE: 'Click to start the game for all players!',
-			FONT: STANDARD_TITLE_FONT
+			gc.CLICK_TO_START: True,
+			gc.GAME_UPDATES_NEEDED: True,
+			gc.MESSAGE: 'Click to start the game for all players!',
+			gc.FONT: gc.STANDARD_TITLE_FONT
 		}
 
 		with self.context(**Args):
@@ -153,7 +143,7 @@ class ClientsideGameplay:
 		self.displayManager.RoundStartFade()
 		delay(250)
 
-		if self.BiddingSystem == CLASSIC_BIDDING_SYSTEM:
+		if self.BiddingSystem == gc.CLASSIC_BIDDING_SYSTEM:
 			self.ClassicBidding(RoundNumber, GamesPlayed)
 		else:
 			self.RandomBidding(RoundNumber, cardno, GamesPlayed)
@@ -194,10 +184,10 @@ class ClientsideGameplay:
 			self.Type('Cards for this round have been dealt; each player must decide what they will bid.')
 
 		Args = {
-			GAME_UPDATES_NEEDED: True,
-			TYPING_NEEDED: True,
-			MESSAGE: 'Please enter your bid:',
-			FONT: STANDARD_TITLE_FONT
+			gc.GAME_UPDATES_NEEDED: True,
+			gc.TYPING_NEEDED: True,
+			gc.MESSAGE: 'Please enter your bid:',
+			gc.FONT: gc.STANDARD_TITLE_FONT
 		}
 
 		with self.context(**Args):
@@ -318,16 +308,16 @@ class ClientsideGameplay:
 			GameReset: bool = False
 	):
 		Args = {
-			GAME_UPDATES_NEEDED: True,
-			GAME_RESET: GameReset
+			gc.GAME_UPDATES_NEEDED: True,
+			gc.GAME_RESET: GameReset
 		}
 
 		if GameReset:
 			m = 'Press the spacebar to play again with the same players, or close the window to exit the game.'
 
 			Args.update({
-				MESSAGE: m,
-				FONT: STANDARD_TITLE_FONT
+				gc.MESSAGE: m,
+				gc.FONT: gc.STANDARD_TITLE_FONT
 			})
 
 		with self.context(**Args):

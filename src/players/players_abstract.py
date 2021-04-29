@@ -7,9 +7,7 @@ from src.players.hand_sort_func import SortHand
 from itertools import cycle
 
 if TYPE_CHECKING:
-	from src.special_knock_types import CardListTypeVar, StringOrInt, PlayerDict, SuitTuple, PlayerList, OptionalSuit,\
-		PlayerTypeVar, AnyHand, T, PlayerNameList, AnyCardsIter
-
+	import src.special_knock_types as skt
 	from src.cards.server_card_suit_rank import ServerCard as Card
 	from src.cards.server_card_suit_rank import Suit
 
@@ -32,15 +30,15 @@ class Player:
 	"""Class object for representing a single player in the game."""
 	__slots__ = '_name', 'playerindex', 'Hand', 'Bid'
 
-	_AllPlayers: PlayerList = []
-	_AllPlayersDict: PlayerDict = {}
+	_AllPlayers: skt.PlayerList = []
+	_AllPlayersDict: skt.PlayerDict = {}
 	PlayerNo = 0
 
 	def __init__(self, playerindex: int):
-		self._name: StringOrInt = playerindex
+		self._name: skt.StringOrInt = playerindex
 		self.playerindex = playerindex
 		self.Bid = -1
-		self.Hand: AnyHand
+		self.Hand: skt.AnyHand
 
 	@classmethod
 	def MakePlayers(cls, n: int):
@@ -57,7 +55,7 @@ class Player:
 
 	@overload
 	@classmethod
-	def player(cls: PlayerTypeVar, index_or_key: StringOrInt) -> PlayerTypeVar:
+	def player(cls: skt.PlayerTypeVar, index_or_key: skt.StringOrInt) -> skt.PlayerTypeVar:
 		pass
 
 	# the player() method will work whether you supply a player's playerindex or name
@@ -72,15 +70,15 @@ class Player:
 		return cls._AllPlayersDict[index_or_key]
 
 	@classmethod
-	def iter(cls: T) -> List[T]:
+	def iter(cls: skt.T) -> List[skt.T]:
 		return cls._AllPlayers
 
 	@classmethod
-	def cycle(cls: T) -> cycle[T]:
+	def cycle(cls: skt.T) -> cycle[skt.T]:
 		return cycle(cls._AllPlayers)
 
 	@classmethod
-	def enumerate(cls: T) -> enumerate:
+	def enumerate(cls: skt.T) -> enumerate:
 		return enumerate(cls._AllPlayers)
 
 	@classmethod
@@ -93,7 +91,7 @@ class Player:
 		[player.ResetPlayer(cls.PlayerNo) for player in cls.iter()]
 
 	@classmethod
-	def reprList(cls) -> PlayerNameList:
+	def reprList(cls) -> skt.PlayerNameList:
 		return [repr(player) for player in cls.iter()]
 
 	@property
@@ -108,7 +106,7 @@ class Player:
 
 	def ReceiveCards(
 			self,
-			cards: CardListTypeVar,
+			cards: skt.CardListTypeVar,
 			TrumpSuit: Suit
 	):
 		# Must receive an argument in the form of a list
@@ -145,7 +143,7 @@ class Hand(UserList):
 	# noinspection PyAttributeOutsideInit
 	def NewHand(
 			self,
-			cards: CardListTypeVar,
+			cards: skt.CardListTypeVar,
 			TrumpSuit: Suit
 	):
 		self.data = cards
@@ -164,16 +162,16 @@ class Hand(UserList):
 	def sort(
 			self,
 			TrumpSuit: Suit,
-			PlayedSuit: OptionalSuit = None,
-			suit_tuple: SuitTuple = (None, None)
+			PlayedSuit: skt.OptionalSuit = None,
+			suit_tuple: skt.SuitTuple = (None, None)
 	):
-		self.data: CardListTypeVar = SortHand(self.data, TrumpSuit, PlayedSuit=PlayedSuit, SuitTuple=SuitTuple)
+		self.data: skt.CardListTypeVar = SortHand(self.data, TrumpSuit, PlayedSuit=PlayedSuit, SuitTuple=suit_tuple)
 
-	def __getitem__(self, item: StringOrInt):
+	def __getitem__(self, item: skt.StringOrInt):
 		try:
 			return super().__getitem__(item)
 		except IndexError:
 			return next(card for card in self.data if repr(card) == item)
 
-	def __iter__(self) -> AnyCardsIter:
+	def __iter__(self) -> skt.AnyCardsIter:
 		return iter(self.data)

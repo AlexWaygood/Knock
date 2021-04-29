@@ -14,16 +14,7 @@ from pygame.image import fromstring as pg_image_fromstring
 if TYPE_CHECKING:
 	from fractions import Fraction
 	from pygame import Rect
-	from src.special_knock_types import (
-		RankType,
-		Position,
-		CardImageDict,
-		TupledImageDict,
-		OptionalSurface,
-		OptionalRect,
-		ClientCardList,
-		ClientCardDict
-	)
+	import src.special_knock_types as skt
 
 
 # Two card-related global constants
@@ -43,7 +34,7 @@ def OpenImage(
 @lru_cache
 def CardResizer(
 		ResizeRatio: Fraction,
-		BaseCardImages: TupledImageDict
+		BaseCardImages: skt.TupledImageDict
 ):
 	return {ID: rotozoom(cardimage, 0, (1 / ResizeRatio)) for ID, cardimage in BaseCardImages}
 
@@ -51,31 +42,31 @@ def CardResizer(
 class ClientCard(ServerCard):
 	__slots__ = 'rect', 'colliderect', 'image', 'surfandpos'
 
-	AllCardsList: ClientCardList
-	AllCardDict: ClientCardDict
+	AllCardsList: skt.ClientCardList
+	AllCardDict: skt.ClientCardDict
 
-	BaseCardImages: CardImageDict = {}
-	CardImages: CardImageDict = {}
+	BaseCardImages: skt.CardImageDict = {}
+	CardImages: skt.CardImageDict = {}
 
 	OriginalImageDimensions = ORIGINAL_CARD_IMAGE_DIMENSIONS  # Used in the SurfaceCoordinator script
 
 	def __init__(
 			self,
-			rank: RankType,
+			rank: skt.RankType,
 			suit: str
 	):
 
 		super().__init__(rank, suit)
-		self.rect: OptionalRect = None
+		self.rect: skt.OptionalRect = None
 		self.colliderect = self.rect
-		self.image: OptionalSurface = None
+		self.image: skt.OptionalSurface = None
 		self.surfandpos = tuple()
 
 	def ReceiveRect(
 			self,
 			rect: Rect,
-			SurfPos: Position = None,
-			GameSurfPos: Position = None,
+			SurfPos: skt.Position = None,
+			GameSurfPos: skt.Position = None,
 			CardInHand: bool = False
 	):
 

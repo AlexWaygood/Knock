@@ -1,11 +1,6 @@
 from __future__ import annotations
 
-from matplotlib.pyplot import (
-	get_current_fig_manager,
-	subplots as plt_subplots,
-	rc as plt_rc,
-	show as plt_show
-)
+import matplotlib.pyplot as plt
 
 from os import path
 from typing import TYPE_CHECKING
@@ -77,12 +72,12 @@ class InteractiveScoreboard(SurfaceCoordinator):
 		set_cursor(SYSTEM_CURSOR_WAIT)
 
 		# Basically equivalent to matplotlib.init()
-		fig, ax = plt_subplots()
+		fig, ax = plt.subplots()
 
 		# hide axes
 		ax.axis('off')
 		ax.axis('tight')
-		plt_rc('font', family=STANDARD_FONT)
+		plt.rc('font', family=STANDARD_FONT)
 
 		# Set the window caption and the background colour for the window.
 		fig.canvas.set_window_title(WINDOW_CAPTION)
@@ -141,12 +136,12 @@ class InteractiveScoreboard(SurfaceCoordinator):
 
 		# Sort the formatting, make sure it will launch full screen, set the window icon.
 		fig.tight_layout()
-		manager = get_current_fig_manager()
+		manager = plt.get_current_fig_manager()
 		manager.window.showMaximized()
 		manager.window.setWindowIcon(QIcon(ICON_FILE_PATH))
 
 		# Launch the window.
-		plt_show()
+		plt.show()
 
 		# This will only be reached after the window is closed.
 		# Record what time the window is closed so that it doesn't get immediately relaunched by duplicate pygame events.

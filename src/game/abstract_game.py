@@ -4,14 +4,7 @@ from typing import TYPE_CHECKING
 from src.players.players_abstract import Player
 
 if TYPE_CHECKING:
-	from src.special_knock_types import (
-		AnyCardList,
-		NumberInput,
-		OptionalTrump,
-		OptionalSuit,
-		GameParameters,
-		EventsDictType
-	)
+	import src.special_knock_types as skt
 
 
 class Game:
@@ -27,9 +20,9 @@ class Game:
 		self.StartPlay = False
 		self.RepeatGame = True
 		self._StartCardNumber = 0
-		self.TrumpCard: OptionalTrump = tuple()
-		self.trumpsuit: OptionalSuit = None
-		self.PlayedCards: AnyCardList = []
+		self.TrumpCard: skt.OptionalTrump = tuple()
+		self.trumpsuit: skt.OptionalSuit = None
+		self.PlayedCards: skt.AnyCardList = []
 		self.BiddingSystem = BiddingSystem
 
 	@property
@@ -37,7 +30,7 @@ class Game:
 		return self._StartCardNumber
 
 	@StartCardNumber.setter
-	def StartCardNumber(self, number: NumberInput):
+	def StartCardNumber(self, number: skt.NumberInput):
 		self._StartCardNumber = int(number)
 
 	def ExecutePlay(
@@ -51,7 +44,7 @@ class Game:
 		player.PlayCard(card, self.trumpsuit)
 		self.PlayedCards.append(card)
 
-	def GetGameParameters(self) -> GameParameters:
+	def GetGameParameters(self) -> skt.GameParameters:
 		WhichRound = range(1, (self.StartCardNumber + 1))
 		HowManyCards = range(self.StartCardNumber, 0, -1)
 		WhoLeads = Player.cycle()
@@ -77,7 +70,7 @@ class Game:
 -self.PlayedCards = {[repr(card) for card in self.PlayedCards]}'''
 
 
-def EventsDict() -> EventsDictType:
+def EventsDict() -> skt.EventsDictType:
 	return {
 		'GameInitialisation': 0,
 		'RoundStart': 0,

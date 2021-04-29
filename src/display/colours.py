@@ -1,13 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from src.global_constants import (
-	SCOREBOARD_FILL_COLOUR,
-	MENU_SCREEN_FILL_COLOUR,
-	GAMEPLAY_FILL_COLOUR,
-	TEXT_DEFAULT_FILL_COLOUR,
-	Theme
-)
+import src.global_constants as gc
 
 from src.display.fireworks.firework_vars import FireworkVars
 from src.misc import DictLike
@@ -29,7 +23,7 @@ TRANSLUCENT_OPACITY = (0,)
 
 
 THEMES = (
-	Theme(
+	gc.Theme(
 		'Classic theme (dark red board)',
 		SILVER,
 		SILVER,
@@ -38,7 +32,7 @@ THEMES = (
 		BLACK
 	),
 
-	Theme(
+	gc.Theme(
 		'High contrast theme (orange board)',
 		LIGHT_GREY,
 		LIGHT_GREY,
@@ -51,7 +45,8 @@ THEMES = (
 
 # noinspection PyAttributeOutsideInit
 class ColourScheme(DictLike):
-	__slots__ = MENU_SCREEN_FILL_COLOUR, SCOREBOARD_FILL_COLOUR, GAMEPLAY_FILL_COLOUR, TEXT_DEFAULT_FILL_COLOUR
+	__slots__ = gc.MENU_SCREEN_FILL_COLOUR, gc.SCOREBOARD_FILL_COLOUR, gc.GAMEPLAY_FILL_COLOUR, \
+	            gc.TEXT_DEFAULT_FILL_COLOUR
 
 	OnlyColourScheme: OptionalColours   = None
 	OpaqueOpacity                       = OPAQUE_OPACITY

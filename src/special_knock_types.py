@@ -8,11 +8,12 @@ if TYPE_CHECKING:
 	from socket import socket
 	from itertools import cycle
 
+	from src.global_constants import Theme
 	from src.clientside_gameplay import ClientsideGameplay
 	from src.display.abstract_text_rendering import FontAndLinesize
 	from src.display.display_manager import DisplayManager
 	from src.display.abstract_surfaces.knock_surface_with_cards import CoverRect
-	from src.display.colours import ColourScheme, Theme
+	from src.display.colours import ColourScheme
 	from src.display.faders import ColourFader
 	from src.display.mouse.mouse import Scrollwheel
 

@@ -3,14 +3,7 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import TYPE_CHECKING, Optional
 
-from src.global_constants import (
-	NORMAL_SCOREBOARD_FONT,
-	UNDERLINED_SCOREBOARD_FONT,
-	SCOREBOARD_TEXT_KEY_1,
-	SCOREBOARD_TEXT_KEY_2,
-	SCOREBOARD_FILL_COLOUR,
-	TEXT_DEFAULT_FILL_COLOUR
-)
+import src.global_constants as gc
 
 from src.display.abstract_surfaces.knock_surface import KnockSurface
 from src.display.abstract_text_rendering import TextBlitsMixin
@@ -63,7 +56,7 @@ class Scoreboard(KnockSurface, TextBlitsMixin):
 
 	def RealInit(self) -> None:
 		super().__init__()    # calls SurfDimensions()
-		self.FillFade = ColourFader(SCOREBOARD_FILL_COLOUR)
+		self.FillFade = ColourFader(gc.SCOREBOARD_FILL_COLOUR)
 		self.GetSurf()
 		self.Initialised = True
 		self.OnScreen = True
@@ -75,8 +68,8 @@ class Scoreboard(KnockSurface, TextBlitsMixin):
 	def Initialise(self: T) -> Optional[T]:
 		if self.Initialised:
 			super().Initialise()
-			self.NormalFont = self.Fonts[NORMAL_SCOREBOARD_FONT]
-			self.UnderlinedFont = self.Fonts[UNDERLINED_SCOREBOARD_FONT]
+			self.NormalFont = self.Fonts[gc.NORMAL_SCOREBOARD_FONT]
+			self.UnderlinedFont = self.Fonts[gc.UNDERLINED_SCOREBOARD_FONT]
 			return self
 
 	def fill(self) -> None:
@@ -84,7 +77,7 @@ class Scoreboard(KnockSurface, TextBlitsMixin):
 
 	def SurfDimensions(self) -> None:
 		self.x = self.y = self.WindowMargin
-		self.TextColour = self.ColourScheme[TEXT_DEFAULT_FILL_COLOUR]
+		self.TextColour = self.ColourScheme[gc.TEXT_DEFAULT_FILL_COLOUR]
 		self.Width, self.Height, self.title, self.LeftMargin = self.DimensionsHelperFunc(
 			self.NormalFont,
 			self.UnderlinedFont,
@@ -109,7 +102,7 @@ class Scoreboard(KnockSurface, TextBlitsMixin):
 		ScoreboardBlits = [self.title]
 		NormalFont, LineSize = self.NormalFont, self.NormalFont.linesize
 		y = self.title[1] + LineSize
-		ScoreboardBlits, y = self.TextBlitsHelper(y, ScoreboardBlits, SCOREBOARD_TEXT_KEY_1)
+		ScoreboardBlits, y = self.TextBlitsHelper(y, ScoreboardBlits, gc.SCOREBOARD_TEXT_KEY_1)
 		y += LineSize * 2
 
 		Message1 = self.GetText(RoundText(RoundNo, StartCardNo), NormalFont, center=(self.attrs.centre[0], y))
@@ -120,6 +113,6 @@ class Scoreboard(KnockSurface, TextBlitsMixin):
 			y += LineSize * 3
 			ScoreboardBlits.append(self.GetText('-----', NormalFont, center=(self.attrs.centre[0], y)))
 			y += LineSize
-			ScoreboardBlits, y = self.TextBlitsHelper(y, ScoreboardBlits, SCOREBOARD_TEXT_KEY_2)
+			ScoreboardBlits, y = self.TextBlitsHelper(y, ScoreboardBlits, gc.SCOREBOARD_TEXT_KEY_2)
 
 		return ScoreboardBlits

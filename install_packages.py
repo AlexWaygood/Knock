@@ -3,11 +3,11 @@ from subprocess import check_call
 from sys import executable
 
 
-def install(packageArgs: Sequence):
+def install(packageArgs: Sequence) -> None:
     check_call([executable, "-m", "pip", "install", *packageArgs])
 
 
-def AllInstalled():
+def AllInstalled() -> bool:
     Success = True
 
     try:
@@ -39,6 +39,7 @@ def AllInstalled():
         install(('pandas',))
 
     try:
+        # noinspection PyPackageRequirements
         import Crypto
     except ImportError:
         Success = False

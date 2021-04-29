@@ -7,16 +7,7 @@ from typing import TYPE_CHECKING, NoReturn
 from queue import Queue
 from collections import deque
 
-from src.global_constants import (
-	HAND_CARD_FADE_KEY,
-	TRUMP_CARD_FADE_KEY,
-	BOARD_CARD_FADE_KEY,
-	SCOREBOARD_FILL_COLOUR,
-	MENU_SCREEN_FILL_COLOUR,
-	GAMEPLAY_FILL_COLOUR,
-	TEXT_DEFAULT_FILL_COLOUR,
-	FIREWORKS_FILL_COLOUR
-)
+import src.global_constants as gc
 
 from src.display.surface_coordinator import SurfaceCoordinator
 from src.display.abstract_text_rendering import TextBlitsMixin
@@ -46,9 +37,11 @@ from src.misc import GetLogger
 # noinspection PyUnresolvedReferences
 from src import pre_pygame_import
 
-from pygame import (quit as pg_quit,
-                    locals as pg_locals,
-                    display as pg_display)
+from pygame import (
+	quit as pg_quit,
+	locals as pgl,
+	display as pgd
+)
 
 from pygame.image import load as pg_image_load
 from pygame.time import Clock, delay, get_ticks as GetTicks
@@ -76,9 +69,9 @@ FRAMERATE = 100
 EXIT_FULLSCREEN_TOGGLE_AMOUNT = 100
 WINDOW_RESIZE_TOGGLE_AMOUNT = 20
 
-WINDOW_RESIZE_KEYS = (pg_locals.K_ESCAPE, pg_locals.K_TAB)
-GAME_REMATCH_KEYS = (pg_locals.K_SPACE, pg_locals.K_RETURN)
-ARROW_KEYS = (pg_locals.K_UP, pg_locals.K_DOWN, pg_locals.K_LEFT, pg_locals.K_RIGHT)
+WINDOW_RESIZE_KEYS = (pgl.K_ESCAPE, pgl.K_TAB)
+GAME_REMATCH_KEYS = (pgl.K_SPACE, pgl.K_RETURN)
+ARROW_KEYS = (pgl.K_UP, pgl.K_DOWN, pgl.K_LEFT, pgl.K_RIGHT)
 
 LOGGING_FREQUENCY = 1000
 CONNECTION_BROKEN_DELAY = 500
@@ -109,7 +102,7 @@ def ZoomOutHelper(NewVar: int,
 
 
 def ControlKeyDown() -> int:
-	return pg_key_get_mods() & pg_locals.KMOD_CTRL
+	return pg_key_get_mods() & pgl.KMOD_CTRL
 
 
 # Subclasses DictLike for easy attribute access in the main client script
@@ -192,36 +185,36 @@ class DisplayManager:
 		self.log = GetLogger(FrozenState)
 
 		self.ControlKeyFunctions = {
-			pg_locals.K_c: self.GameSurf.MoveToCentre,
-			pg_locals.K_q: self.QuitGame,
-			pg_locals.K_s: self.InteractiveScoreboard.save,
-			pg_locals.K_t: self.InteractiveScoreboard.show,
-			pg_locals.K_v: self.UserInput.PasteEvent,
-			pg_locals.K_BACKSPACE: self.UserInput.ControlBackspaceEvent,
-			pg_locals.K_PLUS: self.ZoomIn,
-			pg_locals.K_EQUALS: self.ZoomIn,
-			pg_locals.K_MINUS: self.ZoomOut,
-			pg_locals.K_UNDERSCORE: self.ZoomOut
+			pgl.K_c: self.GameSurf.MoveToCentre,
+			pgl.K_q: self.QuitGame,
+			pgl.K_s: self.InteractiveScoreboard.save,
+			pgl.K_t: self.InteractiveScoreboard.show,
+			pgl.K_v: self.UserInput.PasteEvent,
+			pgl.K_BACKSPACE: self.UserInput.ControlBackspaceEvent,
+			pgl.K_PLUS: self.ZoomIn,
+			pgl.K_EQUALS: self.ZoomIn,
+			pgl.K_MINUS: self.ZoomOut,
+			pgl.K_UNDERSCORE: self.ZoomOut
 		}
 
 		self.ArrowKeyFunctions = {
-			pg_locals.K_UP: self.GameSurf.NudgeUp,
-			pg_locals.K_DOWN: self.GameSurf.NudgeDown,
-			pg_locals.K_LEFT: self.GameSurf.NudgeLeft,
-			pg_locals.K_RIGHT: self.GameSurf.NudgeRight
+			pgl.K_UP: self.GameSurf.NudgeUp,
+			pgl.K_DOWN: self.GameSurf.NudgeDown,
+			pgl.K_LEFT: self.GameSurf.NudgeLeft,
+			pgl.K_RIGHT: self.GameSurf.NudgeRight
 		}
 
 	def Run(self) -> NoReturn:
 		self.log.debug('Launching pygame window.')
-		pg_display.set_icon(self.WindowIcon)
-		self.InitialiseWindow(pg_locals.RESIZABLE)
+		pgd.set_icon(self.WindowIcon)
+		self.InitialiseWindow(pgl.RESIZABLE)
 		self.RestartDisplay()
-		self.InitialiseWindow(pg_locals.RESIZABLE)
-		set_cursor(pg_locals.SYSTEM_CURSOR_WAIT)
+		self.InitialiseWindow(pgl.RESIZABLE)
+		set_cursor(pgl.SYSTEM_CURSOR_WAIT)
 		SurfaceCoordinator.AddSurfs()
 		self.GameSurf.GetSurf()
 		self.WindowCaption = DEFAULT_WINDOW_CAPTION
-		pg_display.set_caption(self.WindowCaption)
+		pgd.set_caption(self.WindowCaption)
 
 		self.log.debug('Starting main pygame loop.')
 		while True:
@@ -244,36 +237,36 @@ class DisplayManager:
 
 	def GameInitialisationFade(self) -> None:
 		if not self.game.GamesPlayed:
-			self.GameSurf.FillFade(MENU_SCREEN_FILL_COLOUR, GAMEPLAY_FILL_COLOUR, 1000)
+			self.GameSurf.FillFade(gc.MENU_SCREEN_FILL_COLOUR, gc.GAMEPLAY_FILL_COLOUR, 1000)
 
 		self.ScoreboardSurf.RealInit()
-		self.ScoreboardSurf.FillFade(GAMEPLAY_FILL_COLOUR, SCOREBOARD_FILL_COLOUR, 1000)
+		self.ScoreboardSurf.FillFade(gc.GAMEPLAY_FILL_COLOUR, gc.SCOREBOARD_FILL_COLOUR, 1000)
 
 	def RoundStartFade(self) -> None:
 		self.BoardSurf.Activate()
 		self.TrumpCardSurf.Activate()
 
-		TextBlitsMixin.TextFade(GAMEPLAY_FILL_COLOUR, TEXT_DEFAULT_FILL_COLOUR, 1000)
+		TextBlitsMixin.TextFade(gc.GAMEPLAY_FILL_COLOUR, gc.TEXT_DEFAULT_FILL_COLOUR, 1000)
 		self.HandSurf.Activate()
-		OpacityFader.CardFade((HAND_CARD_FADE_KEY, TRUMP_CARD_FADE_KEY), 1000, FadeIn=True)
+		OpacityFader.CardFade((gc.HAND_CARD_FADE_KEY, gc.TRUMP_CARD_FADE_KEY), 1000, FadeIn=True)
 
 	@staticmethod
 	def TrickEndFade() -> None:
-		OpacityFader.CardFade((BOARD_CARD_FADE_KEY,), 300, FadeIn=False)
+		OpacityFader.CardFade((gc.BOARD_CARD_FADE_KEY,), 300, FadeIn=False)
 
 	def RoundEndFade(self) -> None:
 		self.HandSurf.Deactivate()
 
-		OpacityFader.CardFade((TRUMP_CARD_FADE_KEY,), 1000, FadeIn=False)
-		TextBlitsMixin.TextFade(TEXT_DEFAULT_FILL_COLOUR, GAMEPLAY_FILL_COLOUR, 1000)
+		OpacityFader.CardFade((gc.TRUMP_CARD_FADE_KEY,), 1000, FadeIn=False)
+		TextBlitsMixin.TextFade(gc.TEXT_DEFAULT_FILL_COLOUR, gc.GAMEPLAY_FILL_COLOUR, 1000)
 
 		self.TrumpCardSurf.Deactivate()
 		self.BoardSurf.Deactivate()
 
 	def FireworksSequence(self) -> None:
 		# Fade the screen out incrementally to prepare for the fireworks display
-		self.ScoreboardSurf.FillFade(SCOREBOARD_FILL_COLOUR, GAMEPLAY_FILL_COLOUR, 1000)
-		self.GameSurf.FillFade(GAMEPLAY_FILL_COLOUR, FIREWORKS_FILL_COLOUR, 1000)
+		self.ScoreboardSurf.FillFade(gc.SCOREBOARD_FILL_COLOUR, gc.GAMEPLAY_FILL_COLOUR, 1000)
+		self.GameSurf.FillFade(gc.GAMEPLAY_FILL_COLOUR, gc.FIREWORKS_FILL_COLOUR, 1000)
 
 		self.ScoreboardSurf.Deactivate()
 
@@ -289,7 +282,7 @@ class DisplayManager:
 				delay(100)
 
 		# Fade the screen back to maroon after the fireworks display.
-		self.GameSurf.FillFade(FIREWORKS_FILL_COLOUR, GAMEPLAY_FILL_COLOUR, 1000)
+		self.GameSurf.FillFade(gc.FIREWORKS_FILL_COLOUR, gc.GAMEPLAY_FILL_COLOUR, 1000)
 		delay(1000)
 
 	def QuitGame(self) -> NoReturn:
@@ -300,20 +293,20 @@ class DisplayManager:
 	def Update(self) -> None:
 		self.clock.tick(FRAMERATE)
 
-		Condition = (not pg_display.get_init() or not pg_display.get_surface())
+		Condition = (not pgd.get_init() or not pgd.get_surface())
 
 		if self.game.CheckForPlayerDeparture(Player.number()) or Condition:
 			self.QuitGame()
 
-		pg_display.update()
+		pgd.update()
 		NewGameInfo, BrokenConnection = self.client.Update()
 
 		if BrokenConnection and self.WindowCaption != CONNECTION_BROKEN_CAPTION:
-			pg_display.set_caption(CONNECTION_BROKEN_CAPTION)
+			pgd.set_caption(CONNECTION_BROKEN_CAPTION)
 			self.WindowCaption = CONNECTION_BROKEN_CAPTION
 
 		elif not self.client.ConnectionBroken and self.WindowCaption == CONNECTION_BROKEN_CAPTION:
-			pg_display.set_caption(DEFAULT_WINDOW_CAPTION)
+			pgd.set_caption(DEFAULT_WINDOW_CAPTION)
 			self.WindowCaption = DEFAULT_WINDOW_CAPTION
 
 		if NewGameInfo:
@@ -349,10 +342,10 @@ class DisplayManager:
 	):
 		self.log.debug(f'NewWindowSize(ToggleFullscreen={ToggleFullscreen}, WindowDimensions={WindowDimensions}).')
 
-		if EventKey == pg_locals.K_ESCAPE and not self.Fullscreen:
+		if EventKey == pgl.K_ESCAPE and not self.Fullscreen:
 			return None
 
-		InitialiseArg = pg_locals.RESIZABLE
+		InitialiseArg = pgl.RESIZABLE
 
 		if ToggleFullscreen:
 			self.WindowX, self.WindowY = self.ScreenX, self.ScreenY
@@ -364,7 +357,7 @@ class DisplayManager:
 				self.RestartDisplay()
 			else:
 				self.WindowX, self.WindowY = self.ScreenX, self.ScreenY
-				InitialiseArg = pg_locals.FULLSCREEN
+				InitialiseArg = pgl.FULLSCREEN
 
 			self.Fullscreen = not self.Fullscreen
 		else:
@@ -378,15 +371,15 @@ class DisplayManager:
 
 	# noinspection PyAttributeOutsideInit
 	def InitialiseWindow(self, flags: int):
-		self.Window = pg_display.set_mode((self.WindowX, self.WindowY), flags=flags)
+		self.Window = pgd.set_mode((self.WindowX, self.WindowY), flags=flags)
 		self.Window.fill(self.GameSurf.colour)
-		pg_display.update()
+		pgd.update()
 
 	def RestartDisplay(self) -> None:
-		pg_display.quit()
-		pg_display.init()
-		pg_display.set_caption(self.WindowCaption)
-		pg_display.set_icon(self.WindowIcon)
+		pgd.quit()
+		pgd.init()
+		pgd.set_caption(self.WindowCaption)
+		pgd.set_icon(self.WindowIcon)
 
 	def ZoomIn(self) -> None:
 		if self.Fullscreen:
@@ -433,10 +426,10 @@ class DisplayManager:
 			event: Event,
 			EvType: int
 	):
-		if EvType == pg_locals.QUIT:
+		if EvType == pgl.QUIT:
 			self.QuitGame()
 
-		elif EvType == pg_locals.KEYDOWN:
+		elif EvType == pgl.KEYDOWN:
 			if self.Scrollwheel.IsDown:
 				self.Scrollwheel.ComesUp()
 
@@ -452,10 +445,10 @@ class DisplayManager:
 			else:
 				self.KeyDownEvents(event, EvKey)
 
-		elif EvType == pg_locals.VIDEORESIZE:
+		elif EvType == pgl.VIDEORESIZE:
 			self.VideoResizeEvent(event.size)
 
-		elif EvType == pg_locals.MOUSEBUTTONDOWN:
+		elif EvType == pgl.MOUSEBUTTONDOWN:
 			Button = event.button
 
 			# pushing the scrollwheel down will click the scrollwheel, no matter what else is going on
@@ -487,13 +480,13 @@ class DisplayManager:
 					self.Mouse.click = True
 
 		elif not self.InputContext.FireworksDisplay:
-			if EvType == pg_locals.MOUSEBUTTONUP:
+			if EvType == pgl.MOUSEBUTTONUP:
 				if (Button := event.button) == 1 and not self.client.ConnectionBroken:
 					self.Mouse.click = False
 				elif Button == 2 and GetTicks() > self.Scrollwheel.OriginalDownTime + SCROLLWHEEL_EVENT_FREQUENCY:
 					self.Scrollwheel.ComesUp()
 
-			elif EvType == pg_locals.MOUSEMOTION and pg_mouse_get_pressed(5)[0] and pg_mouse_get_pressed(5)[2]:
+			elif EvType == pgl.MOUSEMOTION and pg_mouse_get_pressed(5)[0] and pg_mouse_get_pressed(5)[2]:
 				self.GameSurf.MouseMove(event.rel)
 
 	def KeyDownEvents(
@@ -508,9 +501,9 @@ class DisplayManager:
 			if self.InputContext.GameReset and EvKey in GAME_REMATCH_KEYS:
 				self.game.RepeatGame = True
 				self.client.QueueMessage('@1')
-			elif EvKey == pg_locals.K_BACKSPACE:
+			elif EvKey == pgl.K_BACKSPACE:
 				self.UserInput.NormalBackspaceEvent()
-			elif EvKey == pg_locals.K_RETURN:
+			elif EvKey == pgl.K_RETURN:
 				self.UserInput.EnterEvent()
 			else:
 				self.UserInput.AddTextEvent(event.unicode)
