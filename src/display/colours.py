@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Type
 
 import src.global_constants as gc
 
@@ -7,7 +7,7 @@ from src.display.fireworks.firework_vars import FireworkVars
 from src.misc import DictLike
 
 if TYPE_CHECKING:
-	from src.special_knock_types import OptionalColours
+	from src.special_knock_types import OptionalColours, ColourSchemeTypeVar
 
 
 BLACK       = (0, 0, 0)
@@ -53,7 +53,8 @@ class ColourScheme(DictLike):
 	TranslucentOpacity                  = TRANSLUCENT_OPACITY
 
 	# This is only going to be called once, so we don't need to muck around with singleton patterns etc.
-	def __new__(cls, ThemeKey: str):
+	def __new__(cls: Type[ColourSchemeTypeVar], ThemeKey: str) -> ColourSchemeTypeVar:
+
 		cls.OnlyColourScheme = super(ColourScheme, cls).__new__(cls)
 		return cls.OnlyColourScheme
 

@@ -1,10 +1,10 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Type
 from enum import Enum, IntEnum
 from itertools import product
 
 if TYPE_CHECKING:
-    from src.special_knock_types import RankType, ServerCardList, ServerCardDict
+    from src.special_knock_types import CardTypeVar, RankType, ServerCardList, ServerCardDict
 
 
 # Two card-related global constants
@@ -86,10 +86,11 @@ class ServerCard:
     AllCardDict: ServerCardDict = {}
 
     def __new__(
-            cls,
+            cls: Type[CardTypeVar],
             rank: RankType,
             suit: str
-    ):
+    ) -> CardTypeVar:
+
         key = (Rank(rank), Suit(suit))
 
         try:
@@ -113,7 +114,7 @@ class ServerCard:
     def MakePack(cls) -> None:
         cls.AllCardsList = [cls(*value) for value in AllCardValues]
 
-    def AddToHand(self, playername: str):
+    def AddToHand(self: CardTypeVar, playername: str) -> CardTypeVar:
         self.PlayedBy = playername
         return self
 

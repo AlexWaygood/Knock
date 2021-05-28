@@ -104,7 +104,7 @@ class ClientPlayer(Player):
 		]
 
 	@ classmethod
-	def BoardText(cls, *args, Positions: skt.PositionList = None):
+	def BoardText(cls, *args, Positions: skt.PositionSequence = None):
 		# Must receive exactly the same arguments as Boardhelp() method below
 		AllBid = cls.AllBid()
 		return sum((player.Boardhelp(*args, AllBid, *Positions[i]) for i, player in cls.enumerate()), start=[])

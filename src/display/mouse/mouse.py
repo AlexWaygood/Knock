@@ -21,7 +21,7 @@ def ScrollwheelDownCursor(
 		MousePosX: int,
 		MousePosY: int,
 		MAGIC_NUMBER: int = 50
-):
+) -> Cursor_Type:
 	if MousePosX < (ScrollwheelDownX - MAGIC_NUMBER):
 		if MousePosY < (ScrollwheelDownY - MAGIC_NUMBER):
 			return Cursors.NorthWest

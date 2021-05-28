@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Tuple
 
 from functools import lru_cache
 from fractions import Fraction
@@ -11,6 +11,7 @@ from src.display.colours import ColourScheme
 from src.cards.client_card import ClientCard as Card
 from src.game.client_game import ClientGame as Game
 from src.network.network_client import Client
+from src.global_constants import ORIGINAL_CARD_IMAGE_DIMENSIONS
 
 if TYPE_CHECKING:
 	from src.players.players_client import ClientPlayer as Player
@@ -26,8 +27,9 @@ INPUT_POS_OFFSET = 50
 def GetDimensions(
 		GameX: int,
 		GameY: int,
-		CurrentCardDimensions: DimensionTuple = Card.OriginalImageDimensions
-):
+		CurrentCardDimensions: DimensionTuple = ORIGINAL_CARD_IMAGE_DIMENSIONS
+) -> Tuple[int, int, int, Fraction]:
+
 	"""This function is designed to be used both at the beginning of the game and midway through the game"""
 
 	# Calculate the required size of the card images, based on various ratios of surfaces that will appear on the screen.
@@ -64,7 +66,7 @@ class SurfaceCoordinator:
 	AllSurfaces: List[SurfaceCoordinator] = []
 
 	@classmethod
-	def AddClassVars(cls, player: Player):
+	def AddClassVars(cls, player: Player) -> None:
 		cls.game = Game.OnlyGame
 		cls.client = Client.OnlyClient
 		cls.ColourScheme = ColourScheme.OnlyColourScheme
@@ -110,14 +112,14 @@ class SurfaceCoordinator:
 			WindowX: int,
 			WindowY: int,
 			ResetPos: bool
-	):
+	) -> None:
 
 		cls.GameSurf.NewWindowSize(WindowX, WindowY, ResetPos)
 		cls.NewWindowSize1()
 		cls.NewWindowSize2()
 
 	@classmethod
-	def UpdateAll(cls, ForceUpdate: bool = False):
+	def UpdateAll(cls, ForceUpdate: bool = False) -> None:
 		if not cls.client.ConnectionBroken:
 			for surf in cls.AllSurfaces:
 				surf.Update(ForceUpdate=ForceUpdate)
@@ -125,7 +127,7 @@ class SurfaceCoordinator:
 	def Initialise(self: T) -> T:
 		return self
 
-	def Update(self, ForceUpdate: bool = False):
+	def Update(self, ForceUpdate: bool = False) -> None:
 		pass
 
 	def GetSurf(self) -> None:

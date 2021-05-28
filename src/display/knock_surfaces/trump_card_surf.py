@@ -1,6 +1,6 @@
 from __future__ import annotations
 from functools import lru_cache
-from typing import TYPE_CHECKING
+from typing import Tuple, TYPE_CHECKING
 
 from src.global_constants import TRUMP_CARD_FONT, TRUMP_CARD_FADE_KEY, OPAQUE_OPACITY_KEY
 from src.display.abstract_surfaces.knock_surface_with_cards import KnockSurfaceWithCards
@@ -9,7 +9,7 @@ from src.display.faders import OpacityFader
 
 if TYPE_CHECKING:
 	from src.cards.client_card import ClientCard as Card
-	from src.special_knock_types import T, BlitsList
+	from src.special_knock_types import TrumpSurfTypeVar, BlitsList, Position
 
 
 START_COVER_RECT_OPACITY = OPAQUE_OPACITY_KEY
@@ -22,7 +22,7 @@ def TrumpCardDimensionsHelper(
 		CardX: int,
 		CardY: int,
 		NormalLinesize: int
-):
+) -> Tuple[int, int, int, Position]:
 	return (GameX - (CardX + 50)), (CardX + 2), (CardY + int(NormalLinesize * 2.5) + 10), (1, int(NormalLinesize * 2.5))
 
 
@@ -36,7 +36,7 @@ class TrumpCardSurface(KnockSurfaceWithCards, TextBlitsMixin):
 		self.CardUpdateQueue = self.game.NewCardQueues.TrumpCard
 		super().__init__()   # Calls SurfDimensions()
 
-	def Initialise(self: T) -> T:
+	def Initialise(self: TrumpSurfTypeVar) -> TrumpSurfTypeVar:
 		self.font = self.Fonts[TRUMP_CARD_FONT]
 		return super().Initialise()
 
@@ -46,11 +46,7 @@ class TrumpCardSurface(KnockSurfaceWithCards, TextBlitsMixin):
 		self.y = self.WindowMargin
 		self.AddRectList((TrumpCardPos,))
 
-	def UpdateCard(
-			self,
-			card: Card,
-			index: int
-	):
+	def UpdateCard(self, card: Card, index: int) -> None:
 		card.ReceiveRect(self.RectList[0])
 
 	def GetSurfBlits(self) -> BlitsList:

@@ -30,7 +30,7 @@ class BaseKnockSurface:
 			y: int,
 			width: int,
 			height: int
-	):
+	) -> Dimensions:
 
 		return Dimensions(Rect(x, y, width, height), ((width / 2), (height / 2)), (width, height), (x, y))
 
@@ -39,7 +39,7 @@ class BaseKnockSurface:
 
 	# Static method, but kept in this namespace for lrucaching reasons
 	@lru_cache
-	def GetSurfHelper(self, dimensions: Position):
+	def GetSurfHelper(self, dimensions: Position) -> Surface:
 		return Surface(dimensions)
 
 	def GetSurf(self) -> None:

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Tuple
 from functools import lru_cache
 
 from src.global_constants import STANDARD_BOARD_FONT, OPAQUE_OPACITY_KEY
@@ -12,7 +12,7 @@ from src.players.players_client import ClientPlayer as Player
 
 if TYPE_CHECKING:
 	from src.cards.client_card import ClientCard as Card
-	from src.special_knock_types import T, BlitsList
+	from src.special_knock_types import BoardSurfaceTypeVar, BlitsList, PositionSequence
 
 
 COVER_RECT_START_OPACITY = OPAQUE_OPACITY_KEY  # Dictates the opacity of the BoardSurf's CoverRects at the start of the game
@@ -26,7 +26,8 @@ def DimensionFunctionGenerator(PlayerNo: int):
 			CardX: int,
 			CardY: int,
 			NormalLinesize: int
-	):
+	) -> Tuple[PositionSequence, PositionSequence]:
+
 		BoardFifth = SurfHeight // 5
 
 		TripleLinesize = 3 * NormalLinesize
@@ -81,7 +82,7 @@ def BoardHeightHelper(
 		GameSurfHeight: int,
 		WindowMargin: int,
 		CardY: int
-):
+) -> int:
 	return min(Width, (GameSurfHeight - WindowMargin - (CardY + 40)))
 
 
@@ -97,7 +98,7 @@ class BoardSurface(KnockSurfaceWithCards, TextBlitsMixin):
 		super().__init__()   # calls SurfDimensions()
 		SurfaceCoordinator.BoardSurf = self
 
-	def Initialise(self: T) -> T:
+	def Initialise(self: BoardSurfaceTypeVar) -> BoardSurfaceTypeVar:
 		self.StandardFont = self.Fonts[STANDARD_BOARD_FONT]
 		return super().Initialise()
 
@@ -115,11 +116,7 @@ class BoardSurface(KnockSurfaceWithCards, TextBlitsMixin):
 		super().SurfAndPos()
 		self.NonrelativeBoardCentre = (self.attrs.centre[0] + self.x, self.attrs.centre[1] + self.y)
 
-	def UpdateCard(
-			self,
-			card: Card,
-			index: int
-	):
+	def UpdateCard(self, card: Card, index: int) -> None:
 		card.ReceiveRect(self.RectList[self.game.PlayerOrder[index]])
 
 	def GetSurfBlits(self) -> BlitsList:

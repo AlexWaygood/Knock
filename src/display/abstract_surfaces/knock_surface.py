@@ -4,7 +4,7 @@ from src.display.abstract_surfaces.base_knock_surface import BaseKnockSurface
 from src.display.surface_coordinator import SurfaceCoordinator
 
 if TYPE_CHECKING:
-	from src.special_knock_types import T, BlitsList
+	from src.special_knock_types import KnockSurfaceTypeVar, BlitsList
 
 
 class KnockSurface(BaseKnockSurface, SurfaceCoordinator):
@@ -23,12 +23,12 @@ class KnockSurface(BaseKnockSurface, SurfaceCoordinator):
 		self.OnScreen = False
 
 	# This method is used from __init__ and from NewWindowSize
-	def Initialise(self: T) -> T:
+	def Initialise(self: KnockSurfaceTypeVar) -> KnockSurfaceTypeVar:
 		self.SurfDimensions()
 		self.SurfAndPos()
 		return self
 
-	def Update(self, ForceUpdate: bool = False):
+	def Update(self, ForceUpdate: bool = False) -> None:
 		if self.OnScreen:
 			with self.game:
 				ServerIteration = self.game.Triggers.Server.Surfaces[repr(self)]

@@ -11,7 +11,7 @@ from pygame.locals import K_UP, K_DOWN, K_LEFT, K_RIGHT
 from pygame.key import get_pressed as pg_key_get_pressed
 
 if TYPE_CHECKING:
-	from src.special_knock_types import OptionalClientHand, OptionalScrollwheel, Position, Colour, Blittable
+	import src.special_knock_types as skt
 
 
 ARROW_KEY_NUDGE_AMOUNT = 20         # Controls how much an arrow-key press will move the game surface during gameplay.
@@ -27,7 +27,7 @@ class GameSurface(BaseKnockSurface):
 
 	def __init__(
 			self,
-			StartColour: Colour,
+			StartColour: skt.Colour,
 			WindowWidth: int,
 			WindowHeight: int,
 			MinRectWidth: int,
@@ -38,7 +38,7 @@ class GameSurface(BaseKnockSurface):
 		self.colour = StartColour
 		SurfaceCoordinator.GameSurf = self
 		self.FillFade = ColourFader(START_FILL_COLOUR)
-		self.scrollwheel: OptionalScrollwheel = None
+		self.scrollwheel: skt.OptionalScrollwheel = None
 
 		self.x = 0
 		self.y = 0
@@ -51,13 +51,13 @@ class GameSurface(BaseKnockSurface):
 		self.MinRectHeight = MinRectHeight
 
 		self.SurfAndPos()
-		self.Hand: OptionalClientHand = None
+		self.Hand: skt.OptionalClientHand = None
 
 	def SurfAndPos(self) -> None:
 		super().SurfAndPos()
 		self.topleft = self.attrs.topleft
 
-	def Update(self) -> Blittable:
+	def Update(self) -> skt.Blittable:
 		if self.scrollwheel.IsMoving():
 			self.MouseMove(self.scrollwheel.GetMovement())
 
@@ -74,28 +74,28 @@ class GameSurface(BaseKnockSurface):
 		self.attrs.rect.topleft = self.topleft
 		self.surfandpos = (self.surf, self.attrs.rect)
 
-	def NudgeUp(self, ArrowShift: bool = True, TidyUpNeeded: bool = True):
+	def NudgeUp(self, ArrowShift: bool = True, TidyUpNeeded: bool = True) -> None:
 		self.YShift(ARROW_KEY_NUDGE_AMOUNT, ArrowShift=ArrowShift,  TidyUpNeeded=TidyUpNeeded)
 
-	def NudgeDown(self, ArrowShift: bool = True, TidyUpNeeded: bool = True):
+	def NudgeDown(self, ArrowShift: bool = True, TidyUpNeeded: bool = True) -> None:
 		self.YShift(-ARROW_KEY_NUDGE_AMOUNT, ArrowShift=ArrowShift,  TidyUpNeeded=TidyUpNeeded)
 
-	def NudgeLeft(self, ArrowShift: bool = True, TidyUpNeeded: bool = True):
+	def NudgeLeft(self, ArrowShift: bool = True, TidyUpNeeded: bool = True) -> None:
 		self.XShift(-ARROW_KEY_NUDGE_AMOUNT, ArrowShift=ArrowShift,  TidyUpNeeded=TidyUpNeeded)
 
-	def NudgeRight(self, ArrowShift: bool = True, TidyUpNeeded: bool = True):
+	def NudgeRight(self, ArrowShift: bool = True, TidyUpNeeded: bool = True) -> None:
 		self.XShift(ARROW_KEY_NUDGE_AMOUNT, ArrowShift=ArrowShift, TidyUpNeeded=TidyUpNeeded)
 
-	def MouseMove(self, Motion: Position):
+	def MouseMove(self: skt.GameSurfaceTypeVar, Motion: skt.Position) -> skt.GameSurfaceTypeVar:
 		self.XShift(Motion[0], TidyUpNeeded=False).YShift(Motion[1])
 		return self
 
 	def XShift(
-			self,
+			self: skt.GameSurfaceTypeVar,
 			Amount: float,
 			ArrowShift: bool = False,
 			TidyUpNeeded: bool = True
-	):
+	) -> skt.GameSurfaceTypeVar:
 
 		NewCoordinate = self.x + Amount
 		NewCoordinate = min(self.WindowWidth, NewCoordinate) if Amount > 0 else max(-self.Width, NewCoordinate)
@@ -114,11 +114,11 @@ class GameSurface(BaseKnockSurface):
 		return self
 
 	def YShift(
-			self,
+			self: skt.GameSurfaceTypeVar,
 			Amount: float,
 			ArrowShift: bool = False,
 			TidyUpNeeded: bool = True
-	):
+	) -> skt.GameSurfaceTypeVar:
 
 		NewCoordinate = self.y + Amount
 		NewCoordinate = min(self.WindowHeight, NewCoordinate) if Amount > 0 else max(-self.Height, NewCoordinate)
@@ -148,7 +148,7 @@ class GameSurface(BaseKnockSurface):
 			WindowX: int,
 			WindowY: int,
 			ResetPos: bool
-	):
+	) -> skt.Position:
 
 		NewWidth, NewHeight = WindowX, WindowY
 

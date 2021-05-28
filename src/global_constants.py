@@ -77,3 +77,5 @@ FIREWORKS_DISPLAY = 'FireworksDisplay'
 # Constants for passwords and text input.
 PRINTABLE_CHARACTERS = ''.join((digits, ascii_letters, punctuation))
 PRINTABLE_CHARACTERS_PLUS_SPACE = PRINTABLE_CHARACTERS + ' '
+
+ORIGINAL_CARD_IMAGE_DIMENSIONS = (691, 1056)

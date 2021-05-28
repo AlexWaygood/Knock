@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Sequence, TYPE_CHECKING
+from typing import Tuple, TYPE_CHECKING
 from src.global_constants import GAMEPLAY_FILL_COLOUR
 from src.display.abstract_surfaces.knock_surface import KnockSurface
 from functools import lru_cache
@@ -11,7 +11,7 @@ from src import pre_pygame_import
 from pygame import Surface, Rect
 
 if TYPE_CHECKING:
-	from src.special_knock_types import Position, RectList, CoverRectList, BlitsList
+	from src.special_knock_types import Position, RectList, CoverRectList, BlitsList, PositionSequence
 	from src.cards.client_card import ClientCard as Card
 
 
@@ -46,13 +46,13 @@ class KnockSurfaceWithCards(KnockSurface):
 			CardX: int,
 			CardY: int,
 			*CardPositions: Position
-	):
+	) -> Tuple[RectList, CoverRectList]:
 
 		a = [Rect(p[0], p[1], CardX, CardY) for p in CardPositions]
 		b = [CoverRect(Surface((CardX, CardY)), rect) for rect in a]
 		return a, b
 
-	def AddRectList(self, CardPositions: Sequence[Position]):
+	def AddRectList(self, CardPositions: PositionSequence) -> None:
 		self.RectList, self.CoverRects = self.RectListHelper(self.CardX, self.CardY, *CardPositions)
 
 		for cv in self.CoverRects:
@@ -77,7 +77,7 @@ class KnockSurfaceWithCards(KnockSurface):
 
 		return L
 
-	def UpdateCardRects(self, ForceUpdate: bool = False):
+	def UpdateCardRects(self, ForceUpdate: bool = False) -> None:
 		UpdateNeeded = False
 
 		if not self.CardUpdateQueue.empty():
@@ -89,9 +89,5 @@ class KnockSurfaceWithCards(KnockSurface):
 				self.UpdateCard(card, i)
 
 	# Placeholder method, to be overriden higher up in the inheritance chain
-	def UpdateCard(
-			self,
-			card: Card,
-			index: int
-	):
+	def UpdateCard(self, card: Card, index: int) -> None:
 		pass

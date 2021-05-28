@@ -6,6 +6,7 @@ from src.display.faders import OpacityFader
 from src.global_constants import HAND_CARD_FADE_KEY, OPAQUE_OPACITY_KEY
 
 if TYPE_CHECKING:
+	from src.special_knock_types import PositionSequence
 	from src.cards.client_card import ClientCard as Card
 
 
@@ -19,7 +20,8 @@ def GetHandRects(
 		WindowMargin: int,
 		CardX: int,
 		StartNumber: int
-):
+) -> PositionSequence:
+
 	x = WindowMargin
 	DoubleWindowMargin = x * 2
 	PotentialBuffer = CardX // 2
@@ -59,11 +61,7 @@ class HandSurface(KnockSurfaceWithCards):
 		self.CoverRects.clear()
 		self.HandRectsCalculated = False
 
-	def UpdateCard(
-			self,
-			card: Card,
-			index: int
-	):
+	def UpdateCard(self, card: Card, index: int) -> None:
 		card.ReceiveRect(self.RectList[index], self.attrs.topleft, self.GameSurf.attrs.topleft, CardInHand=True)
 
 	# Update, GetSurfBlits & Initialise methods not defined here as the base class doesn't need to be overridden.

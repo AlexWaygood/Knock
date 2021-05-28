@@ -3,7 +3,7 @@ from __future__ import annotations
 from functools import lru_cache, singledispatch
 from fractions import Fraction
 from time import time
-from typing import overload, TYPE_CHECKING
+from typing import overload, TYPE_CHECKING, List
 
 from src.misc import DictLike
 from src.display.faders import ColourFader
@@ -16,7 +16,7 @@ from pygame import Surface
 from pygame.font import SysFont
 
 if TYPE_CHECKING:
-	from src.special_knock_types import BlitsList, Colour, PositionOrBlitsList, OptionalColourFader
+	from src.special_knock_types import Blittable, BlitsList, Colour, PositionOrBlitsList, OptionalColourFader
 
 
 DEFAULT_TYPING_CURSOR_COLOUR = (0, 0, 0)
@@ -45,7 +45,7 @@ class FontAndLinesize:
 	def render(self, *args) -> Surface:
 		return self.font.render(*args)
 
-	def size(self, text: str):
+	def size(self, text: str) -> float:
 		return self.font.size(text)
 
 	def __hash__(self) -> int:
@@ -74,7 +74,7 @@ def _(TextAndPos: list, font: FontAndLinesize) -> BlitsList:
 
 
 @lru_cache
-def FontMachine(GameX: int, GameY: int):
+def FontMachine(GameX: int, GameY: int) -> List[FontAndLinesize]:
 	x = 10
 	NormalFont = SysFont(DEFAULT_FONT, x, bold=DEFAULT_BOLD)
 	UnderLineFont = SysFont(DEFAULT_FONT, x, bold=DEFAULT_BOLD)
@@ -93,14 +93,14 @@ def FontMachine(GameX: int, GameY: int):
 
 	UnderLineFont.set_underline(True)
 
-	return [
-		FontAndLinesize(font) for font in (
-			NormalFont,
-			UnderLineFont,
-			SysFont(DEFAULT_FONT, TITLE_FONT_SIZE, bold=DEFAULT_BOLD),
-			SysFont(DEFAULT_FONT, MASSIVE_FONT_SIZE, bold=DEFAULT_BOLD)
-		)
-	]
+	fonts = (
+		NormalFont,
+		UnderLineFont,
+		SysFont(DEFAULT_FONT, TITLE_FONT_SIZE, bold=DEFAULT_BOLD),
+		SysFont(DEFAULT_FONT, MASSIVE_FONT_SIZE, bold=DEFAULT_BOLD)
+	)
+
+	return [FontAndLinesize(font) for font in fonts]
 
 
 class Fonts(DictLike):
@@ -111,20 +111,11 @@ class Fonts(DictLike):
 	DefaultFont = DEFAULT_FONT
 
 	@classmethod
-	def SetDefaultFont(
-			cls,
-			font: str,
-			BoldFont: bool
-	):
+	def SetDefaultFont(cls, font: str, BoldFont: bool) -> None:
 		cls.DefaultFont = font
 		cls.DefaultBold = BoldFont
 
-	def __init__(
-			self,
-			GameX: int,
-			GameY: int
-	):
-
+	def __init__(self, GameX: int, GameY: int):
 		Normal, UnderLine, Title, Massive = FontMachine(GameX, GameY)
 
 		self.Normal = Normal
@@ -170,10 +161,10 @@ class TextBlitsMixin:
 			font: FontAndLinesize,
 			colour: Colour,
 			**kwargs
-	):
+	) -> Blittable:
 
-		text = font.render(text, False, colour)
-		return text, text.get_rect(**kwargs)
+		rendered = font.render(text, False, colour)
+		return rendered, rendered.get_rect(**kwargs)
 
 	# noinspection PyUnresolvedReferences
 	# Can't add TextFadeManager to __slots__ as this would lead to a class-inheritance conflict
@@ -182,7 +173,7 @@ class TextBlitsMixin:
 			text: str,
 			font: FontAndLinesize,
 			**kwargs
-	):
+	) -> Blittable:
 		return self.GetTextHelper(text, font, self.TextFade.GetColour(), **kwargs)
 
 	# This method can't be inherited by dataclasses, which have to explicitly redefine __hash__()

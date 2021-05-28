@@ -24,11 +24,7 @@ class Fader:
 		self.FadeColour2 = tuple()
 		self.TimeToTake = 0
 
-	def DoFade(self,
-	           colour1: Colour,
-	           colour2: Colour,
-	           TimeToTake: int):
-
+	def DoFade(self, colour1: Colour, colour2: Colour, TimeToTake: int) -> None:
 		self.Fade = True
 		self.StartTime = GetTicks()
 		self.FadeColour1 = colour1
@@ -36,17 +32,13 @@ class Fader:
 		self.TimeToTake = TimeToTake
 		self.EndTime = GetTicks() + TimeToTake
 
-	def GetColourHelper(
-			self,
-			ElapsedTime: int,
-			i: int
-	):
+	def GetColourHelper(self, ElapsedTime: int, i: int) -> int:
 		Step = self.FadeColour1[i] + (((self.FadeColour2[i] - self.FadeColour1[i]) / self.TimeToTake) * ElapsedTime)
 		if Step < 0:
 			return 0
 		if Step > 255:
 			return 255
-		return Step
+		return int(Step)
 
 	def GetColour(self) -> Colour:
 		if not self.Fade:
@@ -73,7 +65,7 @@ class ColourFader(Fader):
 			colour1: str,
 			colour2: str,
 			TimeToTake: int
-	):
+	) -> None:
 		self.DoFade(self.colour_scheme[colour1], self.colour_scheme[colour2], TimeToTake)
 		delay(TimeToTake)
 		while self.Fade:
@@ -105,7 +97,7 @@ class OpacityFader(Fader):
 			Surfaces: Sequence[str],
 			TimeToTake: int,
 			FadeIn: bool
-	):
+	) -> None:
 
 		Opacity1, Opacity2 = (255, 0) if FadeIn else (0, 255)
 

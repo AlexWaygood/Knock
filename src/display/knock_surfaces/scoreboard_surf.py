@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Tuple
 
 import src.global_constants as gc
 
@@ -11,7 +11,7 @@ from src.display.faders import ColourFader
 from src.players.players_client import ClientPlayer as Player
 
 if TYPE_CHECKING:
-	from src.special_knock_types import BlitsList, T
+	from src.special_knock_types import BlitsList, ScoreboardSurfTypeVar, Blittable
 	from src.display.abstract_text_rendering import FontAndLinesize
 
 
@@ -34,7 +34,8 @@ def DimensionFunctionGenerator(PlayerNo: int):
 			NormalFont: FontAndLinesize,
 			UnderlinedFont: FontAndLinesize,
 			GamesPlayed: int
-	):
+	) -> Tuple[int, int, Blittable, int]:
+
 		NormalLineSize = NormalFont.linesize
 		LeftMargin = int(NormalLineSize * 1.75)
 		MaxPointsText = max(NormalFont.size(f'{player}: 188 points')[0] for player in Player.iter())
@@ -65,7 +66,7 @@ class Scoreboard(KnockSurface, TextBlitsMixin):
 		if self.Initialised:
 			super().GetSurf()
 
-	def Initialise(self: T) -> Optional[T]:
+	def Initialise(self: ScoreboardSurfTypeVar) -> Optional[ScoreboardSurfTypeVar]:
 		if self.Initialised:
 			super().Initialise()
 			self.NormalFont = self.Fonts[gc.NORMAL_SCOREBOARD_FONT]
@@ -89,7 +90,8 @@ class Scoreboard(KnockSurface, TextBlitsMixin):
 			y: int,
 			ToBlit: BlitsList,
 			attr: str
-	):
+	) -> Tuple[BlitsList, int]:
+
 		font, linesize, width, Margin = self.NormalFont, self.NormalFont.linesize, self.Width, self.LeftMargin
 		ToBlit += [self.GetText(t[0], font, **t[1]) for t in Player.ScoreboardText(linesize, y, width, Margin, attr)]
 		return ToBlit, (y + (linesize * self.PlayerNo))

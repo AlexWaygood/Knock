@@ -5,7 +5,7 @@ from src.display.abstract_text_rendering import TextBlitsMixin
 from src.display.surface_coordinator import SurfaceCoordinator
 
 if TYPE_CHECKING:
-	from src.special_knock_types import T
+	from src.special_knock_types import InputContextTypeVar, ExitArg1, ExitArg2, ExitArg3
 
 
 @dataclass(eq=False, unsafe_hash=True)
@@ -40,14 +40,20 @@ class InputContext(TextBlitsMixin, SurfaceCoordinator):
 			*self.GetTextHelper(self.Message, self.Fonts[self.font], (0, 0, 0), center=center)
 		)
 
-	def __call__(self: T, **kwargs) -> T:
+	def __call__(self: InputContextTypeVar, **kwargs) -> InputContextTypeVar:
 		# noinspection PyArgumentList
 		self.__init__(**kwargs)
 		return self
 
-	def __enter__(self: T) -> T:
+	def __enter__(self: InputContextTypeVar) -> InputContextTypeVar:
 		return self
 
-	def __exit__(self: T, exc_type, exc_val, exc_tb) -> T:
+	def __exit__(
+			self: InputContextTypeVar,
+			exc_type: ExitArg1,
+			exc_val: ExitArg2,
+			exc_tb: ExitArg3
+	) -> InputContextTypeVar:
+
 		self.__init__()
 		return self

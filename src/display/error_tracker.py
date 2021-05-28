@@ -15,7 +15,7 @@ from pygame.time import get_ticks as GetTicks
 
 if TYPE_CHECKING:
 	from collections import deque
-	from src.special_knock_types import Blittable, T
+	from src.special_knock_types import Blittable, Position, ErrorTrackerTypeVar
 
 
 MESSAGE_LIFESPAN = 5000
@@ -24,10 +24,7 @@ MAX_MESSAGE_NO = 5
 
 # Magic numbers based on the principle of "what looks good on my laptop."
 @lru_cache
-def ErrorPosHelper(
-		GameX: int,
-		GameY: int
-):
+def ErrorPosHelper(GameX: int, GameY: int) -> Position:
 	return int(GameX * Fraction(550, 683)), int(GameY * Fraction(125, 192))
 
 
@@ -47,13 +44,13 @@ class Errors(TextBlitsMixin, SurfaceCoordinator):
 		self.Initialise()
 
 	# noinspection PyAttributeOutsideInit
-	def Initialise(self: T) -> T:
+	def Initialise(self: ErrorTrackerTypeVar) -> ErrorTrackerTypeVar:
 		self.Pos = ErrorPosHelper(self.GameSurf.Width, self.GameSurf.Height)
 		self.TitleFont = self.Fonts[ERROR_TITLE_FONT]
 		self.MessageFont = self.Fonts[ERROR_MESSAGES_FONT]
 		return self
 
-	def Update(self, ForceUpdate: bool = False):
+	def Update(self, ForceUpdate: bool = False) -> None:
 		self.ErrorMessages()
 
 		if self.Messages and GetTicks() > self.StartTime + MESSAGE_LIFESPAN:

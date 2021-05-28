@@ -306,10 +306,7 @@ WEST_ARROW_HOTSPOT  = (17, 4)
 NW_ARROW_HOTSPOT    = (32, 6)
 
 
-def MakeCursor(
-		Arrow: ArrowCursor,
-		Hotspot: Position
-):
+def MakeCursor(Arrow: ArrowCursor, Hotspot: Position) -> Cursor_Type:
 	return (len(Arrow[0]), len(Arrow)), Hotspot, *cursor_compile(Arrow)
 
 

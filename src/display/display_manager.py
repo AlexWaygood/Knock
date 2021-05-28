@@ -3,7 +3,7 @@ from __future__ import annotations
 from os import path
 from random import randint
 from functools import lru_cache
-from typing import TYPE_CHECKING, NoReturn
+from typing import TYPE_CHECKING, NoReturn, Type
 from queue import Queue
 from collections import deque
 
@@ -51,7 +51,7 @@ from pygame.key import get_mods as pg_key_get_mods
 
 if TYPE_CHECKING:
 	from pygame.event import Event
-	from src.special_knock_types import BlitsList, DimensionTuple, OptionalDisplayManager, Colour
+	import src.special_knock_types as skt
 
 
 MIN_GAME_WIDTH = 1186
@@ -82,9 +82,9 @@ DEFAULT_NETWORK_MESSAGE = 'pong'
 def ZoomInHelper(
 		NewVar: int,
 		OldVar: int,
-		ScreenSize: DimensionTuple,
+		ScreenSize: skt.DimensionTuple,
 		index: int
-):
+) -> skt.ZoomReturnable:
 
 	if NewVar > (s := ScreenSize[index]):
 		NewVar = s
@@ -92,9 +92,11 @@ def ZoomInHelper(
 
 
 @lru_cache
-def ZoomOutHelper(NewVar: int,
-                  OldVar: int,
-                  MinimumDimension: int = 10):
+def ZoomOutHelper(
+		NewVar: int,
+        OldVar: int,
+        MinimumDimension: int = 10
+) -> skt.ZoomReturnable:
 
 	if NewVar < MinimumDimension:
 		NewVar = MinimumDimension
@@ -114,16 +116,17 @@ class DisplayManager:
 	            'LastDisplayLog', 'WindowCaption', 'InteractiveScoreboard', 'Scrollwheel', 'clock', 'player', 'game', \
 	            'ControlKeyFunctions', 'ArrowKeyFunctions', 'log'
 
-	OnlyDisplayManager: OptionalDisplayManager = None
+	OnlyDisplayManager: skt.OptionalDisplayManager = None
 
 	# This is only going to be called once, so we don't need to muck around with singleton patterns etc.
 	# This is so the displayManager instance can be accessed in the clientside_gameplay thread.
 	def __new__(
-			cls,
+			cls: Type[skt.DisplayManagerTypeVar],
 			playerindex: int,
 			FrozenState: bool,
-			StartColour: Colour
-	):
+			StartColour: skt.Colour
+	) -> skt.DisplayManagerTypeVar:
+
 		# noinspection PyDunderSlots,PyUnresolvedReferences
 		cls.OnlyDisplayManager = super(DisplayManager, cls).__new__(cls)
 		return cls.OnlyDisplayManager
@@ -132,7 +135,7 @@ class DisplayManager:
 			self,
 			playerindex: int,
 			FrozenState: bool,
-			StartColour: Colour
+			StartColour: skt.Colour
 	):
 
 		try:
@@ -232,7 +235,7 @@ class DisplayManager:
 	def DeactivateHand(self) -> None:
 		self.HandSurf.Deactivate()
 
-	def Blits(self, L: BlitsList):
+	def Blits(self, L: skt.BlitsList) -> None:
 		self.GameSurf.surf.blits(L)
 
 	def GameInitialisationFade(self) -> None:
@@ -290,7 +293,7 @@ class DisplayManager:
 		pg_quit()
 		raise Exception('Game has ended.')
 
-	def Update(self) -> None:
+	def Update(self) -> skt.ItMightReturn:
 		self.clock.tick(FRAMERATE)
 
 		Condition = (not pgd.get_init() or not pgd.get_surface())
@@ -338,8 +341,9 @@ class DisplayManager:
 			self,
 			EventKey: int = 0,
 			ToggleFullscreen: bool = False,
-			WindowDimensions: DimensionTuple = None
-	):
+			WindowDimensions: skt.DimensionTuple = None
+	) -> None:
+
 		self.log.debug(f'NewWindowSize(ToggleFullscreen={ToggleFullscreen}, WindowDimensions={WindowDimensions}).')
 
 		if EventKey == pgl.K_ESCAPE and not self.Fullscreen:
@@ -370,7 +374,7 @@ class DisplayManager:
 			surf.UpdateCardRects(ForceUpdate=True)
 
 	# noinspection PyAttributeOutsideInit
-	def InitialiseWindow(self, flags: int):
+	def InitialiseWindow(self, flags: int) -> None:
 		self.Window = pgd.set_mode((self.WindowX, self.WindowY), flags=flags)
 		self.Window.fill(self.GameSurf.colour)
 		pgd.update()
@@ -412,7 +416,7 @@ class DisplayManager:
 		if ResizeNeeded1 or ResizeNeeded2:
 			self.NewWindowSize(WindowDimensions=(x, y), ToggleFullscreen=self.Fullscreen)
 
-	def VideoResizeEvent(self, NewSize: DimensionTuple):
+	def VideoResizeEvent(self, NewSize: skt.DimensionTuple) -> None:
 		# Videoresize events are triggered on exiting/entering fullscreen as well as manual resizing;
 		# we only want it to be triggered after a manual resize.
 
@@ -421,11 +425,7 @@ class DisplayManager:
 		else:
 			self.NewWindowSize(WindowDimensions=NewSize)
 
-	def HandleEvent(
-			self,
-			event: Event,
-			EvType: int
-	):
+	def HandleEvent(self, event: Event, EvType: int) -> skt.ItMightReturn:
 		if EvType == pgl.QUIT:
 			self.QuitGame()
 
@@ -493,7 +493,7 @@ class DisplayManager:
 			self,
 			event: Event,
 			EvKey: int
-	):
+	) -> None:
 		if not self.InputContext.FireworksDisplay and EvKey in ARROW_KEYS:
 			self.ArrowKeyFunctions[EvKey]()
 
