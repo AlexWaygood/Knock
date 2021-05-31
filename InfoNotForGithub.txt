@@ -1,6 +1,0 @@
-Daniel IP is 192.168.1.251
-VM IP is 192.168.0.15
-Hostname, if the Dynu-update app is running, is alexknockparty.mywire.org
-Port number for server-side script is 5555
-Password length is 32 for PasswordChecker script
-IPInfo Access token is '62e82f844db51d'

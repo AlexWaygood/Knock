@@ -6,11 +6,10 @@ from secrets import choice
 
 # noinspection PyPackageRequirements
 from Crypto.Cipher.AES import MODE_CBC, new as AES_new
-# noinspection PyPackageRequirements
-from Crypto.Util.number import getPrime
 
 from src.misc import DictLike
 from src.global_constants import PRINTABLE_CHARACTERS
+from src.secret_passwords import PASSWORD_LENGTH, PRIME_N
 
 if TYPE_CHECKING:
 	from src.special_knock_types import OptionalBytes, OptionalCipherType, OptionalInt, OptionalStr
@@ -18,15 +17,16 @@ if TYPE_CHECKING:
 	from socket import socket
 	# noinspection PyProtectedMember,PyPackageRequirements
 	from Crypto.Cipher._mode_cbc import CbcMode as CipherType
+	# noinspection PyPackageRequirements
+	from Crypto.Util.number import getPrime
 
 
-PASSWORD_LENGTH = 32
 SERVER_TYPE = 'Server'
 CLIENT_TYPE = 'Client'
 
 
 def KeyMaker() -> int:
-	return getPrime(18)
+	return getPrime(PRIME_N)
 
 
 def MakeCipher(FullKey: str, iv: OptionalBytes) -> CipherType:
@@ -81,6 +81,11 @@ class PasswordChecker(DictLike):
 
 	@staticmethod
 	def GenerateKey() -> int:
+		"""
+		Will generate a prime number of a certain length,
+		depending on the settings specified in secret_passwords.py
+		"""
+
 		return KeyMaker()
 
 	def SendKey(

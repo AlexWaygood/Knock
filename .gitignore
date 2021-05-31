@@ -1,3 +1,4 @@
 /build
 /dist
 /Images/Cards/PyinstallerIcon.ico
+src/secret_passwords.py

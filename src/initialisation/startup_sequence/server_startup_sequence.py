@@ -13,10 +13,10 @@ def StartupSequence() -> ServerStartUpReturnables:
 	from src.initialisation.user_inputs.server_user_inputs import UserInputs
 	from src.initialisation.logging_config import LoggingConfig
 
-	from src.network.network_server import Server, ACCESS_TOKEN
+	from src.network.network_server import Server
 	from src.game.server_game import ServerGame as Game
 
 	LoggingConfig(False)
 	PrintIntroMessage()
 	NumberOfPlayers, BiddingSystem, password, ManuallyVerify = UserInputs()
-	return Server(ACCESS_TOKEN, password), Game(BiddingSystem, NumberOfPlayers), (ManuallyVerify == 'yes')
+	return Server(password), Game(BiddingSystem, NumberOfPlayers), (ManuallyVerify == 'yes')

@@ -8,6 +8,12 @@ from pyinputplus import inputYesNo
 from src.network.network_abstract import Network, GetTime
 from src.players.players_server import ServerPlayer as Player
 
+# noinspection PyBroadException
+try:
+	from src.secret_passwords import ACCESS_TOKEN
+except:
+	ACCESS_TOKEN = ''
+
 if TYPE_CHECKING:
 	from src.special_knock_types import NetworkFunction, ConnectionDict, ConnectionAddress
 	from socket import socket
@@ -16,7 +22,6 @@ if TYPE_CHECKING:
 
 
 log = getLogger(__name__)
-ACCESS_TOKEN = '62e82f844db51d'
 
 
 def IP_info(
@@ -38,12 +43,7 @@ def IP_info(
 class Server(Network):
 	__slots__ = 'ConnectionInfo', 'ip_handler', 'password_checker_class', 'password'
 
-	def __init__(
-			self,
-			AccessToken: str,
-			password: str
-	) -> None:
-
+	def __init__(self, password: str) -> None:
 		super().__init__()
 		self.ConnectionInfo: ConnectionDict = {}
 		self.ip_handler = None
@@ -52,17 +52,16 @@ class Server(Network):
 
 		if password:
 			try:
-				# noinspection PyUnresolvedReferences
 				from src.password_checker.password_server import ServerPasswordChecker as PasswordChecker
 				self.password_checker_class = PasswordChecker
 				PasswordChecker.password = password
-			except ImportError:
+			except ModuleNotFoundError:
 				print('Password import failed; will be unable to check passwords for attempted connections.')
 
-		if AccessToken:
+		if ACCESS_TOKEN:
 			try:
 				from ipinfo import getHandler
-				self.ip_handler = getHandler(AccessToken)
+				self.ip_handler = getHandler(ACCESS_TOKEN)
 			except ImportError:
 				print("Encountered an error importing ipinfo; won't be able to provide info on IP addresses.")
 				log.debug("Encountered an error importing ipinfo; won't be able to provide info on IP addresses.")
@@ -139,9 +138,7 @@ class Server(Network):
 		if self.ip_handler:
 			# noinspection PyBroadException
 			try:
-				# Should change this to addr[0] when other computers need to connect
-				IP_info(self.ip_handler.getDetails('86.14.41.223'), addr)
-
+				IP_info(self.ip_handler.getDetails(addr[0]), addr)
 			except:
 				m = f"Couldn't get requested info for this IP address {addr}."
 				print(m)
@@ -183,4 +180,4 @@ class Server(Network):
 
 	def CloseDown(self) -> None:
 		log.debug('Attempting to close the server down.')
-		self.ConnectionInfo = [self.CloseConnection(conn) for conn in self.ConnectionInfo]
+		[self.CloseConnection(conn) for conn in self.ConnectionInfo]
