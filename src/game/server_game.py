@@ -13,7 +13,7 @@ from src import pre_pygame_import
 from pygame.time import delay
 
 if TYPE_CHECKING:
-	from src.special_knock_types import NumberInput, ServerCardList
+	from src.special_knock_types import NumberInput, ServerCardList, OptionalStr
 
 
 DEFAULT_NETWORK_MESSAGE = 'pong'
@@ -27,7 +27,7 @@ class ServerGame(Game):
 			self,
 			BiddingSystem: str,
 			PlayerNumber: int
-	):
+	) -> None:
 		super().__init__(BiddingSystem)
 
 		# The PlayerNumber is set as an instance variable on the server side but a class variable on the client side.
@@ -115,7 +115,7 @@ class ServerGame(Game):
 		# Wait until all players have logged their new playerindex.
 		self.WaitForPlayers('NewGameReset')
 
-	def PlayRound(self, cardnumber: int):
+	def PlayRound(self, cardnumber: int) -> None:
 		# Make a new pack of cards, set the trumpsuit.
 		Pack = Card.AllCardsList.copy()
 		shuffle(Pack)
@@ -177,7 +177,7 @@ class ServerGame(Game):
 		))
 
 
-def CardsToString(L: ServerCardList):
+def CardsToString(L: ServerCardList) -> OptionalStr:
 	if not L:
 		return 'None'
 	return '--'.join([f'{Card.AllCardsList.index(card)}-{card.PlayedBy}' for card in L])

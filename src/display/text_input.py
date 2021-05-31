@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import suppress
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 from pyperclip import paste
@@ -10,7 +11,7 @@ from src.display.abstract_text_rendering import TextBlitsMixin, GetCursor
 from src.display.surface_coordinator import SurfaceCoordinator
 
 if TYPE_CHECKING:
-	from src.special_knock_types import OptionalFont, T
+	from src.special_knock_types import OptionalFont
 	from src.display.error_tracker import Errors
 
 
@@ -33,18 +34,16 @@ class TextInput(TextBlitsMixin, SurfaceCoordinator):
 		self.AllSurfaces.append(self)
 		self.font = self.Fonts[USER_INPUT_FONT]
 
-	def Initialise(self: T) -> T:
+	def Initialise(self) -> TextInput:
 		self.font = self.Fonts[USER_INPUT_FONT]
 		return self
 
 	def PasteEvent(self) -> None:
 		if self.context.TypingNeeded:
 			t = paste()
-			try:
+			with suppress(BaseException):
 				assert all(letter in PRINTABLE_CHARACTERS_PLUS_SPACE for letter in t)
 				self.Text += t
-			except:
-				pass
 
 	def ControlBackspaceEvent(self) -> None:
 		if self.Text and self.context.TypingNeeded:
@@ -54,12 +53,10 @@ class TextInput(TextBlitsMixin, SurfaceCoordinator):
 		if self.Text and self.context.TypingNeeded:
 			self.Text = self.Text[:-1]
 
-	def AddTextEvent(self, EventUnicode: str):
+	def AddTextEvent(self, EventUnicode: str) -> None:
 		if self.context.TypingNeeded and EventUnicode in PRINTABLE_CHARACTERS_PLUS_SPACE:
-			try:
+			with suppress(BaseException):
 				self.Text += EventUnicode
-			except:
-				pass
 
 	# Need to keep **kwargs in as it might be passed ForceUpdate=True
 	def Update(self, **kwargs) -> None:
@@ -75,10 +72,10 @@ class TextInput(TextBlitsMixin, SurfaceCoordinator):
 	def __hash__(self) -> int:
 		return id(self)
 
-	def ReportError(self, message: str):
+	def ReportError(self, message: str) -> None:
 		self.error_tracker.Add(message)
 
-	def QueueClientMessage(self, message: str):
+	def QueueClientMessage(self, message: str) -> None:
 		self.client.QueueMessage(message)
 
 	def EnterEvent(self) -> None:

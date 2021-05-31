@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-from src.cards.server_card_suit_rank import Suit
+from typing import TYPE_CHECKING, List
+from src.cards.server_card_suit_rank import Suit, Rank
 from itertools import groupby
 from operator import attrgetter
+from functools import partial
 
 if TYPE_CHECKING:
 	from src.special_knock_types import SuitTuple as SuitTupleType, CardListTypeVar, Grouped_Type, OptionalSuit
@@ -13,28 +14,20 @@ BLACKS = (Suit('♣'), Suit('♠'))
 REDS = (Suit('♡'), Suit('♢'))
 
 
-def ListOfCardValuesWrapper(grouped: Grouped_Type):
-	def ListOfCardValues(suit: Suit):
-		return [card.Rank for card in grouped[suit]]
-	return ListOfCardValues
+def ListOfCardValues(grouped: Grouped_Type, suit: Suit) -> List[Rank]:
+	return [card.Rank for card in grouped[suit]]
 
 
-def MaxOfColour(
-		Colour: SuitTupleType,
-		grouped: Grouped_Type
-):
-	return max((suit for suit in grouped if suit in Colour), key=ListOfCardValuesWrapper(grouped))
+def MaxOfColour(Colour: SuitTupleType, grouped: Grouped_Type) -> Suit:
+	return max((suit for suit in grouped if suit in Colour), key=partial(ListOfCardValues, grouped))
 
 
-def WhicheverSuitPresent(
-		Colour: SuitTupleType,
-		grouped: Grouped_Type
-):
+def WhicheverSuitPresent(Colour: SuitTupleType, grouped: Grouped_Type) -> Suit:
 	return Colour[0 if Colour[0] in grouped else 1]
 
 
-def MaxSuit(grouped: Grouped_Type):
-	return max(grouped, key=ListOfCardValuesWrapper(grouped))
+def MaxSuit(grouped: Grouped_Type) -> Suit:
+	return max(grouped, key=partial(ListOfCardValues, grouped))
 
 
 def SortHand(

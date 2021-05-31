@@ -32,7 +32,7 @@ class GameSurface(BaseKnockSurface):
 			WindowHeight: int,
 			MinRectWidth: int,
 			MinRectHeight: int
-	):
+	) -> None:
 
 		super().__init__()
 		self.colour = StartColour
@@ -86,17 +86,11 @@ class GameSurface(BaseKnockSurface):
 	def NudgeRight(self, ArrowShift: bool = True, TidyUpNeeded: bool = True) -> None:
 		self.XShift(ARROW_KEY_NUDGE_AMOUNT, ArrowShift=ArrowShift, TidyUpNeeded=TidyUpNeeded)
 
-	def MouseMove(self: skt.GameSurfaceTypeVar, Motion: skt.Position) -> skt.GameSurfaceTypeVar:
+	def MouseMove(self, Motion: skt.Position) -> GameSurface:
 		self.XShift(Motion[0], TidyUpNeeded=False).YShift(Motion[1])
 		return self
 
-	def XShift(
-			self: skt.GameSurfaceTypeVar,
-			Amount: float,
-			ArrowShift: bool = False,
-			TidyUpNeeded: bool = True
-	) -> skt.GameSurfaceTypeVar:
-
+	def XShift(self, Amount: float, ArrowShift: bool = False, TidyUpNeeded: bool = True) -> GameSurface:
 		NewCoordinate = self.x + Amount
 		NewCoordinate = min(self.WindowWidth, NewCoordinate) if Amount > 0 else max(-self.Width, NewCoordinate)
 		self.Hand.MoveColliderects((NewCoordinate - self.x), 0)
@@ -113,13 +107,7 @@ class GameSurface(BaseKnockSurface):
 
 		return self
 
-	def YShift(
-			self: skt.GameSurfaceTypeVar,
-			Amount: float,
-			ArrowShift: bool = False,
-			TidyUpNeeded: bool = True
-	) -> skt.GameSurfaceTypeVar:
-
+	def YShift(self, Amount: float, ArrowShift: bool = False, TidyUpNeeded: bool = True) -> GameSurface:
 		NewCoordinate = self.y + Amount
 		NewCoordinate = min(self.WindowHeight, NewCoordinate) if Amount > 0 else max(-self.Height, NewCoordinate)
 		self.Hand.MoveColliderects(0, (NewCoordinate - self.y))

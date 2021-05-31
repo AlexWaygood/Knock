@@ -15,7 +15,7 @@ from pygame.time import delay
 
 if TYPE_CHECKING:
 	from src.display.abstract_text_rendering import FontAndLinesize
-	from src.special_knock_types import SurfaceList, T
+	from src.special_knock_types import SurfaceList
 	from queue import Queue
 
 
@@ -37,13 +37,15 @@ class Typewriter(SurfaceCoordinator):
 		self.AllSurfaces.append(self)
 		self.font = self.Fonts[TYPEWRITER_FONT]
 
-	def Initialise(self: T) -> T:
+	def Initialise(self) -> Typewriter:
 		self.font = self.Fonts[TYPEWRITER_FONT]
 		return self
 
-	def Type(self,
-	         text: str,
-	         WaitAfterwards: int):
+	def Type(
+			self,
+			text: str,
+			WaitAfterwards: int
+	) -> None:
 
 		self.Q.put(text)
 

@@ -16,7 +16,8 @@ from typing import (
 	Iterable,
 	Generator,
 	NoReturn,
-	Type
+	Type,
+	Literal
 )
 
 if not TYPE_CHECKING:
@@ -29,21 +30,15 @@ from itertools import cycle
 from src.global_constants import Theme
 from src.clientside_gameplay import ClientsideGameplay
 
+from src.display.surface_coordinator import SurfaceCoordinator
 from src.display.abstract_surfaces.knock_surface import KnockSurface
 from src.display.abstract_surfaces.knock_surface_with_cards import CoverRect
-
-from src.display.knock_surfaces.board_surf import BoardSurface
-from src.display.knock_surfaces.game_surf import GameSurface
-from src.display.knock_surfaces.scoreboard_surf import Scoreboard
-from src.display.knock_surfaces.trump_card_surf import TrumpCardSurface
 
 from src.display.abstract_text_rendering import FontAndLinesize
 from src.display.display_manager import DisplayManager
 from src.display.colours import ColourScheme
 from src.display.faders import ColourFader
 from src.display.mouse.mouse import Scrollwheel
-from src.display.error_tracker import Errors
-from src.display.input_context import InputContext
 
 from src.players.players_abstract import Player, Hand
 from src.players.players_server import ServerPlayer
@@ -71,7 +66,7 @@ ServerCardList = List[ServerCard]
 ClientCardList = List[ClientCard]
 ServerCardDict = Dict[Tuple[Rank, Suit], ServerCard]
 ClientCardDict = Dict[Tuple[Rank, Suit], ClientCard]
-CardListTypeVar = TypeVar('CardListTypeVar', ServerCardList, ClientCardList)
+CardListTypeVar = TypeVar('CardListTypeVar', bound=List[ServerCard])
 Grouped_Type = Dict[Suit, CardListTypeVar]
 OptionalTrump = Tuple[Optional[ServerCard]]
 AnyCardList = List[Union[ServerCard, ClientCard]]
@@ -102,9 +97,10 @@ RankType = Union[int, str]
 StringOrInt = Union[int, str]
 NumberInput = Union[int, str]
 
-UpdaterDict = Dict[str, int]
+StringFontPositionList = List[Tuple[str, FontAndLinesize, Position]]
+ScoreboardTextArgsList = List[Tuple[str, Dict[str, Position]]]
 
-PlayerTypeVar = TypeVar('PlayerTypeVar', Player, ClientPlayer, ServerPlayer)
+UpdaterDict = Dict[str, int]
 
 PlayerList = List[Player]
 ClientPlayerList = List[ClientPlayer]
@@ -135,7 +131,6 @@ ArrowCursor = Sequence[str]
 Cursor_Type = Tuple[DimensionTuple, Position, Sequence[int]]
 
 OptionalFont = Optional[FontAndLinesize]
-T = TypeVar('T')
 IntOrBool = Union[int, bool]
 GameParameters = Tuple[range, range, cycle]
 EventsDictType = Dict[str, int]
@@ -145,7 +140,6 @@ ClientStartUpReturnables = Tuple[Client, ClientsideGameplay, DisplayManager]
 ServerStartUpReturnables = Tuple[Server, ServerGame, bool]
 ServerUserInputsReturn = Tuple[int, str, str, bool]
 ClientUpdateReturn = Tuple[Optional[str], bool]
-AnyCardsIter = Iterable[CardListTypeVar]
 
 ZoomReturnable = Tuple[int, bool]
 ItMightReturn = Optional[NoReturn]
@@ -153,16 +147,17 @@ ItMightReturn = Optional[NoReturn]
 # TypeVars
 CardTypeVar = TypeVar('CardTypeVar', bound=ServerCard)
 KnockSurfaceTypeVar = TypeVar('KnockSurfaceTypeVar', bound=KnockSurface)
-BoardSurfaceTypeVar = TypeVar('BoardSurfaceTypeVar', bound=BoardSurface)
-GameSurfaceTypeVar = TypeVar('GameSurfaceTypeVar', bound=GameSurface)
-ScoreboardSurfTypeVar = TypeVar('ScoreboardSurfTypeVar', bound=Scoreboard)
-TrumpSurfTypeVar = TypeVar('TrumpSurfTypeVar', bound=TrumpCardSurface)
 ColourSchemeTypeVar = TypeVar('ColourSchemeTypeVar', bound=ColourScheme)
-DisplayManagerTypeVar = TypeVar('DisplayManagerTypeVar', bound=DisplayManager)
-ErrorTrackerTypeVar = TypeVar('ErrorTrackerTypeVar', bound=Errors)
-InputContextTypeVar = TypeVar('InputContextTypeVar', bound=InputContext)
+SurfaceCoordinatorTypeVar = TypeVar('SurfaceCoordinatorTypeVar', bound=SurfaceCoordinator)
+
+PlayerTypeVar = TypeVar('PlayerTypeVar', bound=Player)
+
+AnyCardsIter = Iterable[CardTypeVar]
+ServerCardIter = Iterable[ServerCard]
+ClientCardIter = Iterable[ClientCard]
 
 # __exit__ types
 ExitArg1 = Optional[Type[BaseException]]
 ExitArg2 = Optional[BaseException]
 ExitArg3 = Optional[TracebackType]
+LiteralTrue = Literal[True]

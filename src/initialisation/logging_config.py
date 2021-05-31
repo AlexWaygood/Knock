@@ -6,7 +6,7 @@ from src.misc import GetDate
 
 
 # noinspection PyArgumentList
-def LoggingConfig(ClientSide: bool):
+def LoggingConfig(ClientSide: bool) -> None:
 	basicConfig(
 		filename=path.join('DebugLogs', ("Client" if ClientSide else "Server"), f'{GetDate()}.txt'),
 		level=DEBUG,

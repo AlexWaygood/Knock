@@ -58,7 +58,7 @@ class Theme(NamedTuple):
 	Scoreboard:     Colour
 	GamePlay:       Colour
 	TextDefault:    Colour
-	Fireworks: Colour
+	Fireworks:      Colour
 
 
 CLASSIC_BIDDING_SYSTEM = 'Classic'

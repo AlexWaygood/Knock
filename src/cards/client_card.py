@@ -45,7 +45,7 @@ class ClientCard(ServerCard):
 			self,
 			rank: skt.RankType,
 			suit: str
-	):
+	) -> None:
 
 		super().__init__(rank, suit)
 		self.rect: skt.OptionalRect = None

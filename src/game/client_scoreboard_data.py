@@ -27,14 +27,14 @@ class Scoreboard:
 
 	def UpdateScores(self, RoundNumber: int, CardNumber: int) -> None:
 		NewRow = DataFrame(
-			[[RoundNumber, CardNumber] + Player.GetScoreboard()],
+			[[RoundNumber, CardNumber] + Player.ScoreboardThisRound()],
 			columns=self.columns
 		)
 
 		self.scoreboard = concat(self.scoreboard, NewRow, ignore_index=True)
 		self.DisplayScoreboard = self.FillBlanks(RoundNumber)
 
-	def FillBlanks(self, RoundNumber: int):
+	def FillBlanks(self, RoundNumber: int) -> DataFrame:
 		Blanks = DataFrame([
 			([x, y] + [None for _ in range(self.PlayerNoTimes4)])
 

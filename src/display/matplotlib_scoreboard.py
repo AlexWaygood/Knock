@@ -48,7 +48,7 @@ CUMULATIVE_SCORE_COLUMN_COLOUR_2 = 'xkcd:baby blue'
 class InteractiveScoreboard(SurfaceCoordinator):
 	__slots__ = 'LastClose', 'context', 'Data'
 
-	def __init__(self, context: InputContext):
+	def __init__(self, context: InputContext) -> None:
 		self.LastClose = 0
 		self.context = context
 		self.Data = self.game.Scoreboard

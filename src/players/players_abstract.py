@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, overload, List
+from typing import TYPE_CHECKING, overload, List, Type
 from collections import UserList
 from functools import singledispatchmethod
 from src.players.hand_sort_func import SortHand
@@ -10,6 +10,7 @@ if TYPE_CHECKING:
 	import src.special_knock_types as skt
 	from src.cards.server_card_suit_rank import ServerCard as Card
 	from src.cards.server_card_suit_rank import Suit
+	from src.players.players_client import ClientHand
 
 
 # @singledispatchmethod decorator is currently buggy; this is a workaround
@@ -34,14 +35,14 @@ class Player:
 	_AllPlayersDict: skt.PlayerDict = {}
 	PlayerNo = 0
 
-	def __init__(self, playerindex: int):
+	def __init__(self, playerindex: int) -> None:
 		self._name: skt.StringOrInt = playerindex
 		self.playerindex = playerindex
 		self.Bid = -1
 		self.Hand: skt.AnyHand
 
 	@classmethod
-	def MakePlayers(cls, n: int):
+	def MakePlayers(cls, n: int) -> None:
 		cls.PlayerNo = n
 		cls._AllPlayers = [cls(i) for i in range(n)]
 
@@ -50,35 +51,36 @@ class Player:
 		return len(cls._AllPlayers)
 
 	@classmethod
-	def first(cls) -> Player:
+	def first(cls: Type[skt.PlayerTypeVar]) -> skt.PlayerTypeVar:
 		return cls._AllPlayers[0]
 
 	@overload
 	@classmethod
-	def player(cls: skt.PlayerTypeVar, index_or_key: skt.StringOrInt) -> skt.PlayerTypeVar:
-		pass
+	def player(cls: Type[skt.PlayerTypeVar], index_or_key: skt.StringOrInt) -> skt.PlayerTypeVar:
+		...
 
 	# the player() method will work whether you supply a player's playerindex or name
 	@singledispatchmethod
 	@classmethod
-	def player(cls, index_or_key: int):
+	def player(cls: Type[skt.PlayerTypeVar], index_or_key: int) -> skt.PlayerTypeVar:
 		return cls._AllPlayers[index_or_key]
 
 	@player.register
 	@classmethod
-	def _(cls, index_or_key: str):
+	def _(cls: Type[skt.PlayerTypeVar], index_or_key: str) -> skt.PlayerTypeVar:
 		return cls._AllPlayersDict[index_or_key]
 
 	@classmethod
-	def iter(cls: skt.T) -> List[skt.T]:
+	def iter(cls: Type[skt.PlayerTypeVar]) -> List[skt.PlayerTypeVar]:
 		return cls._AllPlayers
 
 	@classmethod
-	def cycle(cls: skt.T) -> cycle[skt.T]:
+	def cycle(cls: Type[skt.PlayerTypeVar]) -> cycle[skt.PlayerTypeVar]:
 		return cycle(cls._AllPlayers)
 
+	# noinspection PyUnresolvedReferences
 	@classmethod
-	def enumerate(cls: skt.T) -> enumerate:
+	def enumerate(cls: Type[skt.PlayerTypeVar]) -> enumerate[skt.PlayerTypeVar]:
 		return enumerate(cls._AllPlayers)
 
 	@classmethod
@@ -99,30 +101,26 @@ class Player:
 		return self._name
 
 	@name.setter
-	def name(self, n: str):
+	def name(self, n: str) -> None:
 		self._name = n
 		self.Hand.playername = n
 		self._AllPlayersDict[n] = self
 
 	def ReceiveCards(
-			self,
+			self: skt.PlayerTypeVar,
 			cards: skt.CardListTypeVar,
 			TrumpSuit: Suit
-	):
+	) -> skt.PlayerTypeVar:
+
 		# Must receive an argument in the form of a list
 		self.Hand.NewHand(cards, TrumpSuit)
 		return self
 
-	def PlayCard(
-			self,
-			card: Card,
-			TrumpSuit: Suit
-	):
-
+	def PlayCard(self, card: Card, TrumpSuit: Suit) -> None:
 		self.Hand.RemoveCard(card, TrumpSuit)
 
 	# This is kept as a separate method to the classmethod version, as it is extended in players_client.py.
-	def ResetPlayer(self, PlayerNo: int):
+	def ResetPlayer(self: skt.PlayerTypeVar, PlayerNo: int) -> skt.PlayerTypeVar:
 		self.playerindex = (self.playerindex + 1) if self.playerindex < (PlayerNo - 1) else 0
 		return self
 
@@ -141,20 +139,12 @@ class Hand(UserList):
 		self.playername = ''  # Is set when the player's name is set -- see the Player class
 
 	# noinspection PyAttributeOutsideInit
-	def NewHand(
-			self,
-			cards: skt.CardListTypeVar,
-			TrumpSuit: Suit
-	):
+	def NewHand(self, cards: skt.CardListTypeVar, TrumpSuit: Suit) -> None:
 		self.data = cards
 		self.sort(TrumpSuit)
 		[card.AddToHand(self.playername) for card in self.data]
 
-	def RemoveCard(
-			self,
-			card: Card,
-			TrumpSuit: Suit
-	):
+	def RemoveCard(self, card: Card, TrumpSuit: Suit) -> None:
 		suitTuple = (self.data[0].Suit, self.data[-1].Suit)
 		self.data.remove(card)
 		self.sort(TrumpSuit, PlayedSuit=card.Suit, suit_tuple=suitTuple)
@@ -164,14 +154,23 @@ class Hand(UserList):
 			TrumpSuit: Suit,
 			PlayedSuit: skt.OptionalSuit = None,
 			suit_tuple: skt.SuitTuple = (None, None)
-	):
+	) -> None:
+
 		self.data: skt.CardListTypeVar = SortHand(self.data, TrumpSuit, PlayedSuit=PlayedSuit, SuitTuple=suit_tuple)
 
-	def __getitem__(self, item: skt.StringOrInt):
+	def __getitem__(self, item: skt.StringOrInt) -> skt.CardTypeVar:
 		try:
 			return super().__getitem__(item)
 		except IndexError:
 			return next(card for card in self.data if repr(card) == item)
+
+	@overload
+	def __iter__(self: Hand) -> skt.ServerCardIter:
+		...
+
+	@overload
+	def __iter__(self: ClientHand) -> skt.ClientCardIter:
+		...
 
 	def __iter__(self) -> skt.AnyCardsIter:
 		return iter(self.data)

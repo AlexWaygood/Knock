@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 	from src.players.players_client import ClientPlayer as Player
 	from src.display.knock_surfaces.game_surf import GameSurface
 	from src.display.knock_surfaces.board_surf import BoardSurface
-	from src.special_knock_types import Position, DimensionTuple, T
+	from src.special_knock_types import Position, DimensionTuple, SurfaceCoordinatorTypeVar
 
 
 INPUT_POS_OFFSET = 50
@@ -124,7 +124,7 @@ class SurfaceCoordinator:
 			for surf in cls.AllSurfaces:
 				surf.Update(ForceUpdate=ForceUpdate)
 
-	def Initialise(self: T) -> T:
+	def Initialise(self: SurfaceCoordinatorTypeVar) -> SurfaceCoordinatorTypeVar:
 		return self
 
 	def Update(self, ForceUpdate: bool = False) -> None:

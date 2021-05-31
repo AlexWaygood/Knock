@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, NoReturn
 from socket import SHUT_RDWR
 from traceback_with_variables import printing_exc
 
@@ -22,7 +22,8 @@ DEFAULT_SERVER_MESSAGE = 'pong'
 def CommsWithClient(
 		S: Server,
 		conn: socket,
-		game: Game) -> None:
+		game: Game
+) -> None:
 
 	data = S.receive(conn)
 	Result = game.Operations[data[:2]](data)
@@ -45,7 +46,7 @@ def CommsWithClient(
 def EternalGameLoop(
 		game: Game,
 		server: Server
-):
+) -> NoReturn:
 	with printing_exc():
 		while not Player.AllPlayersHaveJoinedTheGame():
 			delay(100)

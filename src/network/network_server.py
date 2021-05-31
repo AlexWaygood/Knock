@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from select import select
 from logging import getLogger
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, NoReturn, Literal, Union
 from pyinputplus import inputYesNo
 
 from src.network.network_abstract import Network, GetTime
@@ -22,7 +22,8 @@ ACCESS_TOKEN = '62e82f844db51d'
 def IP_info(
 		details: Details,
 		addr: ConnectionAddress
-):
+) -> None:
+
 	messages = (
 		f'Attempted connection from {details.city}, {details.region}, {details.country_name} at {GetTime()}.',
 		f'IP, port: {addr}',
@@ -41,7 +42,8 @@ class Server(Network):
 			self,
 			AccessToken: str,
 			password: str
-	):
+	) -> None:
+
 		super().__init__()
 		self.ConnectionInfo: ConnectionDict = {}
 		self.ip_handler = None
@@ -75,7 +77,8 @@ class Server(Network):
 			ManuallyVerify: bool,
 			CommsFunction: NetworkFunction,
 			game: Game
-	):
+	) -> NoReturn:
+
 		log.debug('Initialising server...')
 		print('Initialising server...')
 		self.conn.bind((IP, port))
@@ -129,7 +132,7 @@ class Server(Network):
 	        NumberOfClients: int,
 	        ManuallyVerify: bool,
 	        game: Game
-	):
+	) -> Union[Literal[0], socket]:
 
 		conn, addr = self.conn.accept()
 
@@ -168,8 +171,8 @@ class Server(Network):
 
 		return conn
 
-	def receive(self, conn: socket):
-		Message = self.SubReceive(self.DefaultTinyMessageSize, conn)
+	def receive(self, conn: socket) -> str:
+		Message = self.SubReceive(self.DefaultTinyMessageSize, conn).decode()
 		Message = Message.split('-')[0]
 
 		if Message[0].isdigit() and Message[1].isdigit():

@@ -15,7 +15,7 @@ class Fader:
 
 	colour_scheme: OptionalColours = None
 
-	def __init__(self, colour: str, *args, **kwargs):
+	def __init__(self, colour: str, *args, **kwargs) -> None:
 		self.Fade = False
 		self.StartTime = 0
 		self.EndTime = 0
@@ -81,7 +81,8 @@ class OpacityFader(Fader):
 			self,
 			StartOpacity: str,
 			name: str
-	):
+	) -> None:
+
 		super().__init__(StartOpacity)
 		self.AllOpacityFaders[name] = self
 

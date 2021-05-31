@@ -3,7 +3,7 @@ from __future__ import annotations
 from functools import lru_cache, singledispatch
 from fractions import Fraction
 from time import time
-from typing import overload, TYPE_CHECKING, List
+from typing import overload, TYPE_CHECKING, List, Tuple
 
 from src.misc import DictLike
 from src.display.faders import ColourFader
@@ -33,7 +33,7 @@ class FontAndLinesize:
 	"""Class for holding data about various fonts that will be used frequently in the game"""
 	__slots__ = 'font', 'linesize', 'Cursor'
 
-	def __init__(self, font: SysFont):
+	def __init__(self, font: SysFont) -> None:
 		self.font = font
 		self.linesize = font.get_linesize()
 		self.Cursor = Surface((DEFAULT_TYPING_CURSOR_WIDTH, self.linesize))
@@ -45,7 +45,7 @@ class FontAndLinesize:
 	def render(self, *args) -> Surface:
 		return self.font.render(*args)
 
-	def size(self, text: str) -> float:
+	def size(self, text: str) -> Tuple[float, float]:
 		return self.font.size(text)
 
 	def __hash__(self) -> int:
@@ -115,7 +115,7 @@ class Fonts(DictLike):
 		cls.DefaultFont = font
 		cls.DefaultBold = BoldFont
 
-	def __init__(self, GameX: int, GameY: int):
+	def __init__(self, GameX: int, GameY: int) -> None:
 		Normal, UnderLine, Title, Massive = FontMachine(GameX, GameY)
 
 		self.Normal = Normal

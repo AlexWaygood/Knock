@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, NoReturn
 from queue import Queue
 from time import time
 from traceback_with_variables import printing_exc
@@ -23,8 +23,8 @@ CLIENT_DEFAULT_MESSAGE = 'ping'
 MESSAGE_TO_TERMINATE = '@T'
 
 
-def DetectBrokenConnection(LastUpdateTime: int):
-	return LastUpdateTime < GetTicks() - 10000
+def DetectBrokenConnection(LastUpdateTime: int) -> bool:
+	return LastUpdateTime < (GetTicks() - 10000)
 
 
 class Client(Network):
@@ -39,7 +39,8 @@ class Client(Network):
 			IP: str,
 			port: int,
 			password: str,
-	):
+	) -> Client:
+
 		# noinspection PyDunderSlots,PyUnresolvedReferences
 		cls.OnlyClient = super(Client, cls).__new__(cls)
 		return cls.OnlyClient
@@ -50,7 +51,8 @@ class Client(Network):
 			IP: str,
 			port: int,
 			password: str,
-	):
+	) -> NoReturn:
+
 		super().__init__()
 		self.addr = (IP, port)
 		self.SendQueue = Queue()
@@ -116,8 +118,8 @@ class Client(Network):
 
 		return (None if self.ReceiveQueue.empty() else self.ReceiveQueue.get()), self.ConnectionBroken
 
-	def receive(self, connecting: bool = False):
-		Message = self.SubReceive(self.DefaultTinyMessageSize, self.conn)
+	def receive(self, connecting: bool = False) -> None:
+		Message = self.SubReceive(self.DefaultTinyMessageSize, self.conn).decode()
 		Message = Message.split('-')[0]
 
 		if Message[0].isdigit() and Message[1].isdigit() and not connecting:
@@ -127,19 +129,23 @@ class Client(Network):
 		self.log.debug(f'Message received from server, {Message}.')
 		self.ReceiveQueue.put(Message)
 
-	def BlockingMessageToServer(self, message: str = CLIENT_DEFAULT_MESSAGE):
+	def BlockingMessageToServer(
+			self,
+			message: str = CLIENT_DEFAULT_MESSAGE
+	) -> None:
+
 		if message:
 			self.SendQueue.put(message)
 
 		while not self.SendQueue.empty():
 			delay(100)
 
-	def ClientSend(self, message: str):
+	def ClientSend(self, message: str) -> None:
 		self.send(message, self.conn)
 		self.log.debug(f'Message sent to server, {message}.')
 		self.receive()
 
-	def UpdateLoop(self, context: InputContext):
+	def UpdateLoop(self, context: InputContext) -> NoReturn:
 		with printing_exc():
 			while True:
 				delay(100)
@@ -151,7 +157,7 @@ class Client(Network):
 
 				self.ClientSend(self.SendQueue.get())
 
-	def QueueMessage(self, message: str):
+	def QueueMessage(self, message: str) -> None:
 		self.SendQueue.put(message)
 
 	def CloseDown(self) -> None:

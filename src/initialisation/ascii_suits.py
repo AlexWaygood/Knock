@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 from PIL import Image
 from fractions import Fraction
 from os import path, get_terminal_size
+from typing import List, Iterator
 
 from rich.text import Text
 from rich.panel import Panel
@@ -32,12 +35,14 @@ TEXT_TO_PRINT = ''.join((
 ))
 
 
-def GetPath(name: str):
+def GetPath(name: str) -> str:
 	return path.join('Images', 'Suits', f'{name}.png')
 
 
-def ConvertImage(name: str,
-                 NewWidth: int):
+def ConvertImage(
+		name: str,
+		NewWidth: int
+) -> List[str]:
 
 	im = Image.open(GetPath(name))
 	ratio = Fraction(im.size[1], im.size[0]) * IMAGE_RESIZE_RATIO
@@ -47,7 +52,7 @@ def ConvertImage(name: str,
 
 
 # noinspection PyUnboundLocalVariable
-def ASCIISuits(TextLength: int):
+def ASCIISuits(TextLength: int) -> Iterator[str]:
 	try:
 		terminal = get_terminal_size()
 		width, height = terminal.columns, terminal.lines

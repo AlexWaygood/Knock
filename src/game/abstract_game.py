@@ -13,7 +13,7 @@ class Game:
 	__slots__ = 'StartPlay', 'RepeatGame', 'PlayerNumber', '_StartCardNumber', 'PlayedCards', 'TrumpCard', 'trumpsuit',\
 	            'Triggers', 'BiddingSystem'
 
-	def __init__(self, BiddingSystem: str):
+	def __init__(self, BiddingSystem: str) -> None:
 		# The PlayerNumber is set as an instance variable on the server side but a class variable on the client side.
 		# So we don't bother with it here.
 
@@ -30,14 +30,14 @@ class Game:
 		return self._StartCardNumber
 
 	@StartCardNumber.setter
-	def StartCardNumber(self, number: skt.NumberInput):
+	def StartCardNumber(self, number: skt.NumberInput) -> None:
 		self._StartCardNumber = int(number)
 
 	def ExecutePlay(
 			self,
 			cardID: str,
 			playerindex: int
-	):
+	) -> None:
 
 		player = Player.player(playerindex)
 		card = player.Hand[cardID]

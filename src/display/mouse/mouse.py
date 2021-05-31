@@ -79,7 +79,8 @@ class Mouse(SurfaceCoordinator):
 			self,
 			ScoreboardButton,
 			context: InputContext
-	):
+	) -> None:
+
 		self.context = context
 		self.Scrollwheel = Scrollwheel(False, tuple(), 0, 0)
 		self.cursor = Cursors.Default

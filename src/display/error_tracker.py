@@ -15,7 +15,7 @@ from pygame.time import get_ticks as GetTicks
 
 if TYPE_CHECKING:
 	from collections import deque
-	from src.special_knock_types import Blittable, Position, ErrorTrackerTypeVar
+	from src.special_knock_types import Blittable, Position
 
 
 MESSAGE_LIFESPAN = 5000
@@ -44,7 +44,7 @@ class Errors(TextBlitsMixin, SurfaceCoordinator):
 		self.Initialise()
 
 	# noinspection PyAttributeOutsideInit
-	def Initialise(self: ErrorTrackerTypeVar) -> ErrorTrackerTypeVar:
+	def Initialise(self) -> Errors:
 		self.Pos = ErrorPosHelper(self.GameSurf.Width, self.GameSurf.Height)
 		self.TitleFont = self.Fonts[ERROR_TITLE_FONT]
 		self.MessageFont = self.Fonts[ERROR_MESSAGES_FONT]

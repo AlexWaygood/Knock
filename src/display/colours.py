@@ -58,7 +58,7 @@ class ColourScheme(DictLike):
 		cls.OnlyColourScheme = super(ColourScheme, cls).__new__(cls)
 		return cls.OnlyColourScheme
 
-	def __init__(self, ThemeKey: str):
+	def __init__(self, ThemeKey: str) -> None:
 		ChosenTheme = next(theme for theme in THEMES if theme.Description == ThemeKey)
 
 		for slot in self.__slots__:

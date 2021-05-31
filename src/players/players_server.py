@@ -8,7 +8,7 @@ from src import pre_pygame_import
 from pygame.time import delay
 
 if TYPE_CHECKING:
-	from src.special_knock_types import ServerCardList, ConnectionAddress, ServerPlayerList, ServerPlayerDict, T
+	import src.special_knock_types as skt
 	from src.cards.server_card_suit_rank import Suit
 
 
@@ -19,7 +19,7 @@ class SendQ:
 		self.Q = Queue(maxsize=1)
 		self.LastUpdate = ''
 
-	def put(self, data) -> None:
+	def put(self, data: str) -> None:
 		if data != self.LastUpdate:
 			if self.Q.full():
 				self.Q.get()
@@ -32,33 +32,40 @@ class SendQ:
 	def empty(self) -> bool:
 		return self.Q.empty()
 
-	def __enter__(self: T) -> T:
+	def __enter__(self) -> SendQ:
 		return self
 
-	def __exit__(self, exc_type, exc_val, exc_tb) -> bool:
+	def __exit__(
+			self,
+			exc_type: skt.ExitArg1,
+			exc_val: skt.ExitArg2,
+			exc_tb: skt.ExitArg3
+	) -> bool:
+
 		return exc_type is Empty
 
 
 class ServerPlayer(Player):
 	__slots__ = 'SendQ', 'addr', 'LastUpdate', 'ActionComplete'
 
-	_AllPlayers: ServerPlayerList
-	_AllPlayersDict: ServerPlayerDict
+	_AllPlayers: skt.ServerPlayerList
+	_AllPlayersDict: skt.ServerPlayerDict
 
-	def __init__(self, playerindex: int):
+	def __init__(self, playerindex: int) -> None:
 		super().__init__(playerindex)
 		self.SendQ = SendQ()
-		self.addr: ConnectionAddress = tuple()
+		self.addr: skt.ConnectionAddress = tuple()
 		self.ActionComplete = False
 		self.Hand = Hand()
 
 	@classmethod
 	def NewPack(
 			cls,
-			Pack: ServerCardList,
+			Pack: skt.ServerCardList,
 			CardNo: int,
 			trumpsuit: Suit
-	):
+	) -> None:
+
 		[player.ReceiveCards([Pack.pop() for _ in range(CardNo)], trumpsuit) for player in cls.iter()]
 
 	@classmethod
@@ -66,7 +73,8 @@ class ServerPlayer(Player):
 			cls,
 			name: str,
 			playerindex: int
-	):
+	) -> bool:
+
 		cls.player(playerindex).name = name
 		return all(isinstance(player.name, str) for player in cls.iter())
 
@@ -80,11 +88,12 @@ class ServerPlayer(Player):
 			cls,
 			index: int,
 			Bid: int
-	):
+	) -> None:
+
 		cls.player(index).Bid = Bid
 
 	@classmethod
-	def PlayerActionCompleted(cls, index: int):
+	def PlayerActionCompleted(cls, index: int) -> None:
 		cls.player(index).ActionComplete = True
 
 	@classmethod
@@ -105,9 +114,10 @@ class ServerPlayer(Player):
 
 	def connect(
 			self,
-			addr: ConnectionAddress,
+			addr: skt.ConnectionAddress,
 			gameInfo: str
-	):
+	) -> ServerPlayer:
+
 		self.addr = addr
 		self.SendQ.put(gameInfo)
 		return self
@@ -118,12 +128,12 @@ class ServerPlayer(Player):
 			f'addr: {self.addr}. ActionComplete: {self.ActionComplete}.'
 		))
 
-	def MakeBid(self, number: int):
+	def MakeBid(self, number: int) -> ServerPlayer:
 		self.Bid = number
 		self.ActionComplete = True
 		return self
 
-	def ScheduleSend(self, GameString: str):
+	def ScheduleSend(self, GameString: str) -> None:
 		self.SendQ.put(GameString)
 
 	def NothingToSend(self) -> bool:

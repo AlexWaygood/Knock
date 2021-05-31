@@ -11,20 +11,20 @@ from src.display.faders import ColourFader
 from src.players.players_client import ClientPlayer as Player
 
 if TYPE_CHECKING:
-	from src.special_knock_types import BlitsList, ScoreboardSurfTypeVar, Blittable
+	from src.special_knock_types import BlitsList, Blittable
 	from src.display.abstract_text_rendering import FontAndLinesize
 
 
 SCOREBOARD_TITLE = 'SCOREBOARD'
 
 
-def TrickText(TrickNo: int, CardNo: int):
+def TrickText(TrickNo: int, CardNo: int) -> str:
 	if TrickNo:
 		return f'Trick {TrickNo} of {CardNo}'
 	return 'Trick not in progress'
 
 
-def RoundText(RoundNo: int, StartCardNo: int):
+def RoundText(RoundNo: int, StartCardNo: int) -> str:
 	return f'Round {RoundNo} of {StartCardNo}'
 
 
@@ -34,7 +34,7 @@ def DimensionFunctionGenerator(PlayerNo: int):
 			NormalFont: FontAndLinesize,
 			UnderlinedFont: FontAndLinesize,
 			GamesPlayed: int
-	) -> Tuple[int, int, Blittable, int]:
+	) -> Tuple[float, float, Blittable, int]:
 
 		NormalLineSize = NormalFont.linesize
 		LeftMargin = int(NormalLineSize * 1.75)
@@ -66,7 +66,7 @@ class Scoreboard(KnockSurface, TextBlitsMixin):
 		if self.Initialised:
 			super().GetSurf()
 
-	def Initialise(self: ScoreboardSurfTypeVar) -> Optional[ScoreboardSurfTypeVar]:
+	def Initialise(self) -> Optional[Scoreboard]:
 		if self.Initialised:
 			super().Initialise()
 			self.NormalFont = self.Fonts[gc.NORMAL_SCOREBOARD_FONT]

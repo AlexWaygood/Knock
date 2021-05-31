@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from contextlib import suppress
+from typing import TYPE_CHECKING, Tuple
 from threading import RLock
 from itertools import chain
 from queue import Queue
@@ -19,7 +20,7 @@ from src import pre_pygame_import
 from pygame.time import delay
 
 if TYPE_CHECKING:
-	from src.special_knock_types import NumberInput, OptionalClientGame, NumberList, T
+	import src.special_knock_types as skt
 	from src.display.input_context import InputContext
 
 
@@ -39,10 +40,16 @@ class DoubleTrigger:
 		self.Client = EventsDict()
 		self.Server = EventsDict()
 
-	def __enter__(self: T) -> T:
+	def __enter__(self) -> DoubleTrigger:
 		return self
 
-	def __exit__(self, exc_type, exc_val, exc_tb) -> bool:
+	def __exit__(
+			self,
+			exc_type: skt.ExitArg1,
+			exc_val: skt.ExitArg2,
+			exc_tb: skt.ExitArg3
+	) -> skt.LiteralTrue:
+
 		return True
 
 
@@ -53,7 +60,7 @@ class ClientGame(Game, DictLike):
 
 	# The PlayerNumber is set as an instance variable on the server side but a class variable on the client side.
 	PlayerNumber = 0
-	OnlyGame: OptionalClientGame = None
+	OnlyGame: skt.OptionalClientGame = None
 
 	# This is only going to be called once, so we don't need to muck around with singleton patterns etc.
 	def __new__(
@@ -61,7 +68,8 @@ class ClientGame(Game, DictLike):
 			BiddingSystem: str,
 			PlayerNumber: int,
 			FrozenState: bool
-	):
+	) -> ClientGame:
+
 		cls.PlayerNumber = PlayerNumber
 		cls.OnlyGame = super(ClientGame, cls).__new__(cls)
 		return cls.OnlyGame
@@ -71,7 +79,8 @@ class ClientGame(Game, DictLike):
 			BiddingSystem: str,
 			PlayerNumber: int,
 			FrozenState: bool
-	):
+	) -> None:
+
 		super().__init__(BiddingSystem)
 
 		self.FrozenState = FrozenState
@@ -88,7 +97,7 @@ class ClientGame(Game, DictLike):
 		self.TrickInProgress = False
 		self.TrickNumber = 0
 		self.WhoseTurnPlayerIndex = -1
-		self.PlayerOrder: NumberList = []
+		self.PlayerOrder: skt.NumberList = []
 		self.RoundLeaderIndex = -1
 		self.MaxCardNumber = 51 // PlayerNumber
 		self.NewCardQueues = NewCardQueues()
@@ -104,11 +113,11 @@ class ClientGame(Game, DictLike):
 		return self._StartCardNumber
 
 	@StartCardNumber.setter
-	def StartCardNumber(self, number: NumberInput):
+	def StartCardNumber(self, number: skt.NumberInput) -> None:
 		self._StartCardNumber = int(number)
 		self.Scoreboard.SetUp(self._StartCardNumber)
 
-	def AttributeWait(self, attr: str):
+	def AttributeWait(self, attr: str) -> None:
 		with self.Triggers as s:
 			while s.Server[attr] == s.Client[attr]:
 				delay(100)
@@ -121,7 +130,7 @@ class ClientGame(Game, DictLike):
 			cardnumber: int,
 			RoundLeaderIndex: int,
 			RoundNumber: int
-	):
+	) -> None:
 		self.CardNumberThisRound = cardnumber
 		self.RoundLeaderIndex = RoundLeaderIndex
 		self.RoundNumber = RoundNumber
@@ -131,7 +140,7 @@ class ClientGame(Game, DictLike):
 			TrickNumber: int,
 			FirstPlayerIndex: int,
 			player: Player
-	):
+	) -> Tuple[skt.NumberList, int]:
 		self.TrickInProgress = True
 		self.TrickNumber = TrickNumber
 		self.PlayerOrder = list(chain(range(FirstPlayerIndex, self.PlayerNumber), range(FirstPlayerIndex)))
@@ -142,7 +151,8 @@ class ClientGame(Game, DictLike):
 			self,
 			context: InputContext,
 			Pos: int
-	):
+	) -> None:
+
 		with context(GameUpdatesNeeded=True):
 			for i, val in enumerate(self.PlayerOrder):
 				self.WhoseTurnPlayerIndex = val
@@ -155,7 +165,8 @@ class ClientGame(Game, DictLike):
 			self,
 			cardID: str,
 			playerindex: int
-	):
+	) -> None:
+
 		super().ExecutePlay(cardID, playerindex)
 		self.client.QueueMessage(f'@C{cardID}{playerindex}')
 
@@ -191,11 +202,17 @@ class ClientGame(Game, DictLike):
 			return True
 		return False
 
-	def __enter__(self: T) -> T:
+	def __enter__(self) -> ClientGame:
 		self.lock.acquire()
 		return self
 
-	def __exit__(self, exc_type, exc_val, exc_tb) -> True:
+	def __exit__(
+			self,
+			exc_type: skt.ExitArg1,
+			exc_val: skt.ExitArg2,
+			exc_tb: skt.ExitArg3
+	) -> skt.LiteralTrue:
+
 		self.lock.release()
 		return True
 
@@ -219,7 +236,7 @@ MaxCardNumber = {self.MaxCardNumber}
 			self,
 			String: str,
 			playerindex: int
-	):
+	) -> None:
 
 		StringList = String.split('---')
 
@@ -250,26 +267,24 @@ MaxCardNumber = {self.MaxCardNumber}
 		self.StartCardNumber = int(TournamentString[2])
 
 		if not self.TrumpCard:
-			try:
+			with suppress(KeyError):
 				self.TrumpCard = (Card(AttemptToInt(TournamentString[3]), TournamentString[4]),)
 				self.trumpsuit = self.TrumpCard[0].Suit
 				self.NewCardQueues.TrumpCard.put(1)
-			except KeyError:
-				pass
 
 		if (Hand := StringList[4]) != 'None' and not Player.player(playerindex).Hand:
 			Player.player(playerindex).Hand.NewHand(CardsFromString(Hand))
 			self.NewCardQueues.Hand.put(1)
 
 
-def AttemptToInt(string: str):
+def AttemptToInt(string: str) -> skt.StringOrInt:
 	try:
 		return int(string)
 	except ValueError:
 		return string
 
 
-def CardsFromString(L: str):
+def CardsFromString(L: str) -> skt.ClientCardList:
 	cards = [s.split('-') for s in L.split('--')]
 	cards = [AllCardValues[int[c[0]]] for c in cards]
 	return [Card(*c) for c in cards]

@@ -20,7 +20,7 @@ class ClientPasswordChecker(PasswordChecker):
 			parent: Client,
 			conn: socket,
 			password: str
-	):
+	) -> None:
 
 		super().__init__(parent, conn)
 		self.ServerPublicKey = None

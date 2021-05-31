@@ -38,7 +38,7 @@ def GeneratePassword() -> str:
 	return ''.join(choice(PRINTABLE_CHARACTERS) for _ in range(PASSWORD_LENGTH))
 
 
-def PasswordInput(text: str):
+def PasswordInput(text: str) -> None:
 	"""Function for validating a password that has been inputted by the user"""
 
 	if not text:
@@ -69,7 +69,7 @@ class PasswordChecker(DictLike):
 			conn: socket,
 			*args,
 			**kwargs
-	):
+	) -> None:
 
 		self.parent = parent
 		self.PrivateKey = self.GenerateKey()
@@ -87,7 +87,7 @@ class PasswordChecker(DictLike):
 			self,
 			Partial: bool,
 			server: bool
-	):
+	) -> None:
 
 		key = str(self[f'{self.Server_type if server else self.Client_type}{"Partial" if Partial else "Public"}Key'])
 
@@ -96,7 +96,7 @@ class PasswordChecker(DictLike):
 
 		self.conn.sendall(key.encode())
 
-	def ReceiveKey(self, Partial: bool):
+	def ReceiveKey(self, Partial: bool) -> None:
 		Key = self.parent.SubReceive((10 if Partial else 6), self.conn).decode()
 
 		if Partial:
@@ -107,10 +107,10 @@ class PasswordChecker(DictLike):
 	def CalculatePartialKey(self) -> float:
 		return (self.ServerPublicKey ** self.PrivateKey) % self.ClientPublicKey
 
-	def CalculateFullKey(self, server: bool):
+	def CalculateFullKey(self, server: bool) -> None:
 		PartialKey = self.ClientPartialKey if server else self.ServerPartialKey
 		self.FullKey = hex(((PartialKey ** self.PrivateKey) % self.ClientPublicKey) ** 5)[:16]
 
-	def GetCipher(self, iv: OptionalBytes):
+	def GetCipher(self, iv: OptionalBytes) -> CipherType:
 		self.cipher = MakeCipher(self.FullKey, iv)
 		return self.cipher

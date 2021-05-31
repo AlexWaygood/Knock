@@ -9,7 +9,7 @@ from src.display.faders import OpacityFader
 
 if TYPE_CHECKING:
 	from src.cards.client_card import ClientCard as Card
-	from src.special_knock_types import TrumpSurfTypeVar, BlitsList, Position
+	from src.special_knock_types import BlitsList, Position
 
 
 START_COVER_RECT_OPACITY = OPAQUE_OPACITY_KEY
@@ -36,7 +36,7 @@ class TrumpCardSurface(KnockSurfaceWithCards, TextBlitsMixin):
 		self.CardUpdateQueue = self.game.NewCardQueues.TrumpCard
 		super().__init__()   # Calls SurfDimensions()
 
-	def Initialise(self: TrumpSurfTypeVar) -> TrumpSurfTypeVar:
+	def Initialise(self) -> TrumpCardSurface:
 		self.font = self.Fonts[TRUMP_CARD_FONT]
 		return super().Initialise()
 

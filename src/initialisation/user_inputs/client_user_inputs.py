@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Tuple
 from socket import gethostbyname
 from pprint import pprint
 from pyinputplus import inputCustom, inputMenu, inputYesNo, RetryLimitException
@@ -18,7 +18,7 @@ DEFAULT_THEME_INDEX = 0
 FONT_ENTRY_MAX_ATTEMPTS = 3
 
 
-def IPValidation(InputText: str):
+def IPValidation(InputText: str) -> str:
 	"""Will raise an exception if the user has not entered a valid IP or hostname to connect to."""
 
 	# noinspection PyBroadException
@@ -35,7 +35,7 @@ AllFonts = get_fonts()
 
 
 # noinspection PyDefaultArgument,PyShadowingNames
-def FontInput(FontName: str, AllFonts=AllFonts):
+def FontInput(FontName: str, AllFonts=AllFonts) -> str:
 	"""Will raise an exception if the user enters an invalid font name"""
 	assert FontName in AllFonts
 	return FontName
@@ -49,7 +49,8 @@ def UserInputs(
 		themes: ThemeTuple,
 		SettingsChoices=SettingsChoices,
 		AllFonts=AllFonts
-):
+) -> Tuple[str, int, str, str, str, bool]:
+
 	# IP = 'alexknockparty.mywire.org'
 	IP = '127.0.0.1'
 	print('Connecting to local host.')

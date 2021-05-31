@@ -19,7 +19,7 @@ def GetTime() -> str:
 	return datetime.now().strftime("%H:%M:%S")
 
 
-def PadMessage(Message: Any):
+def PadMessage(Message: Any) -> str:
 	return f'{Message:-<{DEFAULT_TINY_MESSAGE_SIZE}}'
 
 
@@ -36,7 +36,8 @@ class Network:
 	def SubReceive(
 			AmountToReceive: int,
 			conn: socket
-	):
+	) -> bytes:
+
 		response = []
 
 		while AmountToReceive > 0:
@@ -44,10 +45,10 @@ class Network:
 			AmountToReceive -= len(chunk)
 			response.append(chunk)
 
-		return b''.join(response).decode()
+		return b''.join(response)
 
 	@staticmethod
-	def CloseConnection(conn: socket):
+	def CloseConnection(conn: socket) -> None:
 		conn.shutdown(SHUT_RDWR)
 		conn.close()
 
@@ -55,7 +56,8 @@ class Network:
 	def send(
 			message: str,
 	        conn: socket
-	):
+	) -> None:
+
 		# Create a header telling the other computer the size of the data we want to send.
 		# Turn the header into a fixed-length message using f-string left-alignment, encode it, send it.
 		# Then send the main message itself.

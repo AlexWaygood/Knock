@@ -21,9 +21,11 @@ log = getLogger(__name__)
 class ServerPasswordChecker(PasswordChecker):
 	password = ''
 
-	def __init__(self,
-	             parent: Server,
-	             conn: socket):
+	def __init__(
+			self,
+			parent: Server,
+			conn: socket
+	) -> None:
 
 		super().__init__(parent, conn)
 		self.ServerPublicKey = self.GenerateKey()

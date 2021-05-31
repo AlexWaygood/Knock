@@ -12,7 +12,7 @@ from src.players.players_client import ClientPlayer as Player
 
 if TYPE_CHECKING:
 	from src.cards.client_card import ClientCard as Card
-	from src.special_knock_types import BoardSurfaceTypeVar, BlitsList, PositionSequence
+	from src.special_knock_types import BlitsList, PositionSequence
 
 
 COVER_RECT_START_OPACITY = OPAQUE_OPACITY_KEY  # Dictates the opacity of the BoardSurf's CoverRects at the start of the game
@@ -98,7 +98,7 @@ class BoardSurface(KnockSurfaceWithCards, TextBlitsMixin):
 		super().__init__()   # calls SurfDimensions()
 		SurfaceCoordinator.BoardSurf = self
 
-	def Initialise(self: BoardSurfaceTypeVar) -> BoardSurfaceTypeVar:
+	def Initialise(self) -> BoardSurface:
 		self.StandardFont = self.Fonts[STANDARD_BOARD_FONT]
 		return super().Initialise()
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 from os import path
 from random import randint
 from functools import lru_cache
-from typing import TYPE_CHECKING, NoReturn, Type
+from typing import TYPE_CHECKING, NoReturn
 from queue import Queue
 from collections import deque
 
@@ -121,11 +121,11 @@ class DisplayManager:
 	# This is only going to be called once, so we don't need to muck around with singleton patterns etc.
 	# This is so the displayManager instance can be accessed in the clientside_gameplay thread.
 	def __new__(
-			cls: Type[skt.DisplayManagerTypeVar],
+			cls,
 			playerindex: int,
 			FrozenState: bool,
 			StartColour: skt.Colour
-	) -> skt.DisplayManagerTypeVar:
+	) -> DisplayManager:
 
 		# noinspection PyDunderSlots,PyUnresolvedReferences
 		cls.OnlyDisplayManager = super(DisplayManager, cls).__new__(cls)
@@ -136,7 +136,7 @@ class DisplayManager:
 			playerindex: int,
 			FrozenState: bool,
 			StartColour: skt.Colour
-	):
+	) -> None:
 
 		try:
 			# Try to calculate the size of the client's computer screen

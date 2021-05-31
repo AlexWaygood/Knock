@@ -17,7 +17,7 @@ from pygame.time import delay
 class ClientsideGameplay:
 	__slots__ = 'game', 'displayManager', 'typewriter', 'client', 'player', 'BiddingSystem', 'context'
 
-	def __init__(self, playerindex: int):
+	def __init__(self, playerindex: int) -> None:
 		self.game = Game.OnlyGame
 		self.displayManager = DisplayManager.OnlyDisplayManager
 		self.typewriter = self.displayManager.Typewriter
@@ -53,7 +53,7 @@ class ClientsideGameplay:
 			self.PlayGame(self.game.GamesPlayed)
 			self.game.GamesPlayed += 1
 
-	def PlayGame(self, GamesPlayed: int):
+	def PlayGame(self, GamesPlayed: int) -> None:
 		self.GameInitialisation(GamesPlayed)
 		self.AttributeWait('StartNumberSet')
 
@@ -62,7 +62,7 @@ class ClientsideGameplay:
 
 		self.EndGame(GamesPlayed)
 
-	def GameInitialisation(self, GamesPlayed: int):
+	def GameInitialisation(self, GamesPlayed: int) -> None:
 		if GamesPlayed:
 			Message = 'NEW GAME STARTING:'
 			self.Type(Message, WaitAfterwards=1000)
@@ -115,7 +115,7 @@ class ClientsideGameplay:
 			cardno: int,
 			RoundLeader: Player,
 			GamesPlayed: int,
-	):
+	) -> None:
 
 		self.game.StartRound(cardno, RoundLeader.playerindex, RoundNumber)
 
@@ -178,7 +178,7 @@ class ClientsideGameplay:
 			self,
 			RoundNumber: int,
 			GamesPlayed: int
-	):
+	) -> None:
 
 		if RoundNumber == 1 and not GamesPlayed:
 			self.Type('Cards for this round have been dealt; each player must decide what they will bid.')
@@ -208,7 +208,7 @@ class ClientsideGameplay:
 			RoundNumber: int,
 			cardnumber: int,
 			GamesPlayed: int
-	):
+	) -> None:
 
 		if RoundNumber == 1 and not GamesPlayed:
 			self.Type('Cards for this round have been dealt; each player must now bid.')
@@ -236,7 +236,7 @@ class ClientsideGameplay:
 			FirstPlayerIndex: int,
 			TrickNumber: int,
 			CardNumberThisRound: int,
-	):
+	) -> int:
 
 		PlayerOrder, PosInTrick = self.game.StartTrick(TrickNumber, FirstPlayerIndex, self.player)
 		self.client.QueueMessage('@A')
@@ -266,7 +266,7 @@ class ClientsideGameplay:
 
 		return Winner.playerindex
 
-	def EndGame(self, GamesPlayed: int):
+	def EndGame(self, GamesPlayed: int) -> None:
 		self.displayManager.DeactivateHand()
 
 		# Announce the final scores + who won the game.
@@ -299,14 +299,15 @@ class ClientsideGameplay:
 			self,
 			message: str,
 			WaitAfterwards: int = 1200
-	):
+	) -> None:
 		self.typewriter.Type(message, WaitAfterwards=WaitAfterwards)
 
 	def AttributeWait(
 			self,
 			Attribute: str,
 			GameReset: bool = False
-	):
+	) -> None:
+
 		Args = {
 			gc.GAME_UPDATES_NEEDED: True,
 			gc.GAME_RESET: GameReset

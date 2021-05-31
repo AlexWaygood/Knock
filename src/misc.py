@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 from time import strftime, localtime
-from typing import Any, Sequence
-from logging import getLogger
+from typing import Any, Sequence, Union
+from logging import Logger, getLogger
 
 
 def GetDate() -> str:
@@ -10,17 +12,17 @@ def GetDate() -> str:
 class DictLike:
 	__slots__ = tuple()
 
-	def __getitem__(self, item: str):
+	def __getitem__(self, item: str) -> Any:
 		return getattr(self, item)
 
 	def __setitem__(
 			self,
 			key: str,
 			value: Any
-	):
+	) -> None:
 		setattr(self, key, value)
 
-	def GetAttributes(self, attrs: Sequence[str]):
+	def GetAttributes(self, attrs: Sequence[str]) -> Sequence[Any]:
 		return [self[attr] for attr in attrs]
 
 
@@ -29,5 +31,5 @@ class Log:
 		pass
 
 
-def GetLogger(FrozenState: bool):
+def GetLogger(FrozenState: bool) -> Union[Log, Logger]:
 	return Log() if FrozenState else getLogger(__name__)

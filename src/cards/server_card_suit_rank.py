@@ -104,7 +104,8 @@ class ServerCard:
             self,
             rank: RankType,
             suit: str
-    ):
+    ) -> None:
+
         self.Rank = Rank(rank)
         self.Suit = Suit(suit)
         self.ID = (self.Rank, self.Suit)
