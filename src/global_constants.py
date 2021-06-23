@@ -78,4 +78,7 @@ FIREWORKS_DISPLAY = 'FireworksDisplay'
 PRINTABLE_CHARACTERS = ''.join((digits, ascii_letters, punctuation))
 PRINTABLE_CHARACTERS_PLUS_SPACE = PRINTABLE_CHARACTERS + ' '
 
+# The original size of the images used for the cards
 ORIGINAL_CARD_IMAGE_DIMENSIONS = (691, 1056)
+
+#

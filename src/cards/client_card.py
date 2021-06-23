@@ -21,7 +21,6 @@ PATH_TO_CARD_IMAGES = path.join('Images', 'Cards', 'Compressed')
 
 
 def OpenImage(ID: str, ResizeRatio: Fraction) -> Surface:
-
 	im = Image.open(path.join(PATH_TO_CARD_IMAGES, f'{ID}.jpg')).convert("RGB")
 	im = im.resize((int(im.size[0] / ResizeRatio), int(im.size[1] / ResizeRatio)))
 	return pg_image_fromstring(im.tobytes(), im.size, im.mode).convert()

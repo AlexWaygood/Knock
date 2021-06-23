@@ -10,11 +10,11 @@ if TYPE_CHECKING:
 # Two card-related global constants
 
 RANK_MAPPER = {
-        'J': 'Jack',
-        'Q': 'Queen',
-        'K': 'King',
-        'A': 'Ace'
-    }
+    'J': 'Jack',
+    'Q': 'Queen',
+    'K': 'King',
+    'A': 'Ace'
+}
 
 BLACKS = ('♣', '♠')
 
@@ -75,7 +75,7 @@ class Suit(str, Enum):  # Mixing in 'str' as a class means that we'll be able to
 AllCardValues = list(product(Rank, Suit))
 
 # Imported by the ClientCard script
-AllCardIDs = [f'{ID[0]!r}{ID[1]!r}' for ID in AllCardValues]
+AllCardIDs = [f'{rank!r}{suit!r}' for (rank, suit) in AllCardValues]
 
 
 class ServerCard:
@@ -113,7 +113,7 @@ class ServerCard:
 
     @classmethod
     def MakePack(cls) -> None:
-        cls.AllCardsList = [cls(*value) for value in AllCardValues]
+        cls.AllCardsList = [cls(rank, suit) for (rank, suit) in AllCardValues]
 
     def AddToHand(self: CardTypeVar, playername: str) -> CardTypeVar:
         self.PlayedBy = playername
