@@ -1,67 +1,97 @@
+"""A class representing the Surface onto which the player's hand will be blitted, and a helper function."""
+
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 from functools import lru_cache
-from src.display.abstract_surfaces.knock_surface_with_cards import KnockSurfaceWithCards
+from src import Position
+from src.display.abstract_surfaces import KnockSurfaceWithCards
 from src.display.faders import OpacityFader
-from src.global_constants import HAND_CARD_FADE_KEY, OPAQUE_OPACITY_KEY
+from src.config import game
+from src.static_constants import CardFaderNames, OPAQUE_OPACITY_KEY
 
 if TYPE_CHECKING:
-	from src.special_knock_types import PositionSequence
 	from src.cards.client_card import ClientCard as Card
 
 
-HAND_SURFACE_X_COORDINATE = 0  # The Hand surface's Y-coordinate changes, but the X-coordinate never does
-COVER_RECT_START_OPACITY = OPAQUE_OPACITY_KEY
+COVER_RECT_START_OPACITY: Final = OPAQUE_OPACITY_KEY
 
 
 @lru_cache
-def GetHandRects(
-		GameSurfX: int,
-		WindowMargin: int,
-		CardX: int,
-		StartNumber: int
-) -> PositionSequence:
+def get_hand_rects(game_surf_x: int, window_margin: int, card_x: int, start_card_number: int) -> list[Position]:
+	"""Cached, pure, helper-function for calculating the rects onto which cards are to be blitted for the HandSurface."""
 
-	x = WindowMargin
-	DoubleWindowMargin = x * 2
-	PotentialBuffer = CardX // 2
+	x = window_margin
+	double_window_margin = x * 2
+	potential_buffer = card_x // 2
 
-	if ((CardX * StartNumber) + DoubleWindowMargin + (PotentialBuffer * (StartNumber - 1))) < GameSurfX:
-		CardBufferInHand = PotentialBuffer
+	width_with_potential_buffer = sum((
+			(card_x * start_card_number),
+			double_window_margin,
+			(potential_buffer * (start_card_number - 1))
+	))
+
+	if width_with_potential_buffer < game_surf_x:
+		card_buffer_in_hand = potential_buffer
 	else:
-		CardBufferInHand = min(x, ((GameSurfX - DoubleWindowMargin - (CardX * StartNumber)) // (StartNumber - 1)))
+		card_buffer_in_hand = min(
+			x,
+			((game_surf_x - double_window_margin - (card_x * start_card_number)) // (start_card_number - 1))
+		)
 
-	return [((x + (i * (CardX + CardBufferInHand))), 0) for i in range(StartNumber)]
+	return [Position(x=(x + (i * (card_x + card_buffer_in_hand))), y=0) for i in range(start_card_number)]
 
 
 class HandSurface(KnockSurfaceWithCards):
-	__slots__ = 'HandRectsCalculated'
+	"""The surface onto which the player's hand is blitted."""
 
-	x = HAND_SURFACE_X_COORDINATE
+	__slots__ = '_hand_rects_calculated'
 
-	def __init__(self) -> None:
-		self.CardList = self.player.Hand
-		self.CardFadeManager = OpacityFader(COVER_RECT_START_OPACITY, HAND_CARD_FADE_KEY)
-		self.CardUpdateQueue = self.game.NewCardQueues.Hand
-		super().__init__()   # calls SurfDimensions()
-		self.HandRectsCalculated = False
+	# The hand surface's Y-coordinate changes, but the X-coordinate never does
+	x: Final = 0
+
+	def __init__(self, /) -> None:
+		self.card_list = self.player.hand
+		self.card_update_queue = game.new_card_queues.hand
+
+		self.card_fade_manager = OpacityFader(
+			start_opacity=COVER_RECT_START_OPACITY,
+			name=CardFaderNames.HAND_CARD_FADE_KEY
+		)
+
+		super().__init__()   # calls surf_dimensions()
+		self._hand_rects_calculated = False
+
+	@property
+	def hand_rects_calculated(self, /) -> bool:
+		"""Return `True` if the rects for the HandSurface have been calculated, else `False`."""
+		return self._hand_rects_calculated
 
 	# noinspection PyAttributeOutsideInit
-	def SurfDimensions(self) -> None:
-		self.y = self.GameSurf.Height - (self.CardY + self.WindowMargin)
-		self.Width = self.GameSurf.Width
-		self.Height = self.CardY + self.WindowMargin
+	def surf_dimensions(self, /) -> None:
+		"""Calculate the width, height, and y-coordinate for this surface. (The x-coordinate is set as a constant.)"""
+		game_surf, card_y, window_margin = self.game_surf, self.card_y, self.window_margin
+		self.y = game_surf.height - (card_y + window_margin)
+		self.width = game_surf.width
+		self.height = card_y + window_margin
 
-	def GetHandRects(self) -> None:
-		self.AddRectList(GetHandRects(self.Width, self.WindowMargin, self.CardX, self.game.StartCardNumber))
-		self.HandRectsCalculated = True
+	def get_hand_rects(self, /) -> None:
+		"""Calculate the rects for blitting cards onto the HandSurface."""
 
-	def ClearRectList(self) -> None:
-		self.RectList.clear()
-		self.CoverRects.clear()
-		self.HandRectsCalculated = False
+		self.add_rect_list(get_hand_rects(self.width, self.window_margin, self.card_x, game.start_card_no))
+		self._hand_rects_calculated = True
 
-	def UpdateCard(self, card: Card, index: int) -> None:
-		card.ReceiveRect(self.RectList[index], self.attrs.topleft, self.GameSurf.attrs.topleft, CardInHand=True)
+	def clear_rect_list(self, /) -> None:
+		"""Clear the list of rects for blitting cards onto the HandSurface."""
 
-	# Update, GetSurfBlits & Initialise methods not defined here as the base class doesn't need to be overridden.
+		self.rect_list.clear()
+		self.cover_rects.clear()
+		self._hand_rects_calculated = False
+
+	def update_card(self, card: Card, index: int) -> None:
+		"""Update a card that has newly arrived onto this surface."""
+
+		rect = self.rect_list[index]
+		card.rect = rect
+		card.collide_rect = rect.move(*self.attrs.topleft).move(*self.game_surf.attrs.topleft)
+
+	# update, get_surf_blits & initialise methods not defined here as the base class doesn't need to be overridden.

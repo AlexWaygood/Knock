@@ -2,11 +2,11 @@
 <module type="PYTHON_MODULE" version="4">
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$" />
-    <orderEntry type="jdk" jdkName="Python 3.8 (WebGame)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 3.9 (WebGame39)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
   <component name="PackageRequirementsSettings">
-    <option name="versionSpecifier" value="Strong equality (==x.y.z)" />
+    <option name="versionSpecifier" value="Greater or equal (&gt;=x.y.z)" />
   </component>
   <component name="PyDocumentationSettings">
     <option name="format" value="EPYTEXT" />

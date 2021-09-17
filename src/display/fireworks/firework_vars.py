@@ -19,6 +19,6 @@ FPS: {self.FPS}.
 SecondsDuration: {self.SecondsDuration}.
 Bounds: {self.Bounds}.
 LastFirework: {self.LastFirework}.
-EndTime: {self.EndTime}.
+end_time: {self.EndTime}.
 RandomAmount: {self.RandomAmount}.
 '''

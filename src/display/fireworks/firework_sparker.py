@@ -2,12 +2,12 @@
 
 import random, math
 from src.display.fireworks.firework import Firework, ShimmerFirework
-from os import environ
-environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
+# noinspection PyUnresolvedReferences
+from src import pre_pygame_import
 import pygame as pg
 
 
-class Sparker:
+class FireworkSparker:
     __slots__ = 'targetPos', 'fwVelocity', 'particleSize', 'sparsity', 'hasTrail', 'isShimmer', 'fwLifetime', 'radius',\
                 'focusRad', 'WindowDimensions', 'proportion', 'weight', 'pos', 'direction', 'velocity', 'surface', \
                 'colour'
@@ -20,7 +20,7 @@ class Sparker:
     allSparkers = []
 
     def __init__(self, pos, colour, velocity, particleSize, sparsity, hasTrail, lifetime, WindowDimensions,
-                 isShimmer=False, radius=0, proportion=0, focusRad=0, weight=0):
+                 isShimmer=False, radius=0, proportion=0, focusRad=0, weight=0) -> None:
         # store firework attributes
         self.targetPos = pos
         self.colour = colour
@@ -41,12 +41,12 @@ class Sparker:
                     WindowDimensions[1]]
         rad = math.atan2(self.targetPos[1] - self.pos[1], self.targetPos[0] - self.pos[0])
         self.direction = [math.cos(rad), math.sin(rad)]
-        self.velocity = Sparker.startVelocity
+        self.velocity = FireworkSparker.startVelocity
 
-        self.surface = pg.Surface((Sparker.size, Sparker.size))
-        self.surface.fill(Sparker.colour)
+        self.surface = pg.Surface((FireworkSparker.size, FireworkSparker.size))
+        self.surface.fill(FireworkSparker.colour)
 
-        Sparker.allSparkers.append(self)
+        FireworkSparker.allSparkers.append(self)
 
     def update(self, dt):
         # move
@@ -54,10 +54,10 @@ class Sparker:
             self.pos[axis] += self.direction[axis] * self.velocity * dt
 
         # gravity acts
-        self.velocity -= Sparker.gravityPower * dt
+        self.velocity -= FireworkSparker.gravityPower * dt
 
         # if above target y or going slowly, time to detonate
-        if self.pos[1] <= self.targetPos[1] or self.velocity < Sparker.minVelocity:
+        if self.pos[1] <= self.targetPos[1] or self.velocity < FireworkSparker.minVelocity:
             self.detonate()
 
     def draw(self, screen):
@@ -74,4 +74,4 @@ class Sparker:
                      self.sparsity, self.hasTrail, self.fwLifetime, self.WindowDimensions)
 
         # destroy the sparker
-        Sparker.allSparkers.remove(self)
+        FireworkSparker.allSparkers.remove(self)

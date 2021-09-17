@@ -14,55 +14,86 @@ DEFAULT_TINY_MESSAGE_SIZE = 10
 MIN_RECV_BYTES = 8192
 
 
-def GetTime() -> str:
+def get_time() -> str:
 	"""Function to get the time in a fixed format"""
-	return datetime.now().strftime("%H:%M:%S")
+	return datetime.now().strftime("%H:%M:%s")
 
 
-def PadMessage(Message: Any) -> str:
-	return f'{Message:-<{DEFAULT_TINY_MESSAGE_SIZE}}'
+def pad_message(message: Any) -> str:
+	"""Pad a message so that it is the minimum length required before sending it across the network.
+
+	Parameters
+	----------
+	message: Any
+		The message to be padded.
+		Since any type can be converted into a string when passed into an f-string, this annotation is `Any`.
+
+	Returns
+	-------
+	str: The padded message.
+	"""
+
+	return f'{message:-<{DEFAULT_TINY_MESSAGE_SIZE}}'
 
 
 class Network:
-	"""Class object for encoding communication protocols between the server and client."""
-	__slots__ = 'conn'
+	"""Abstract base class encoding communication protocols between the server and client."""
 
-	DefaultTinyMessageSize = DEFAULT_TINY_MESSAGE_SIZE
+	__slots__ = {'conn': 'A socket connection'}
+	default_tiny_message_size = DEFAULT_TINY_MESSAGE_SIZE
 
-	def __init__(self, *args, **kwargs) -> None:
+	def __init__(self, *args: Any, **kwargs: Any) -> None:
 		self.conn = socket(AF_INET, SOCK_STREAM)
 
 	@staticmethod
-	def SubReceive(
-			AmountToReceive: int,
-			conn: socket
-	) -> bytes:
-
+	def sub_receive(amount_to_receive: int, conn: socket) -> bytes:
 		response = []
 
-		while AmountToReceive > 0:
-			chunk = (conn.recv(min(MIN_RECV_BYTES, AmountToReceive)))
-			AmountToReceive -= len(chunk)
+		while amount_to_receive > 0:
+			chunk = (conn.recv(min(MIN_RECV_BYTES, amount_to_receive)))
+			amount_to_receive -= len(chunk)
 			response.append(chunk)
 
 		return b''.join(response)
 
 	@staticmethod
-	def CloseConnection(conn: socket) -> None:
+	def close_connection(conn: socket, /) -> None:
+		"""Close a network connection.
+
+		Parameters
+		----------
+		conn: socket
+			The socket connection which is to be closed.
+
+		Returns
+		-------
+		None
+		"""
+
 		conn.shutdown(SHUT_RDWR)
 		conn.close()
 
 	@staticmethod
-	def send(
-			message: str,
-	        conn: socket
-	) -> None:
+	def send(message: str, conn: socket) -> None:
+		"""Send a message across the network.
+
+		Parameters
+		----------
+		message: str
+			The message to be sent.
+		conn: socket
+			The connection over which the message is to be sent.
+
+		Returns
+		-------
+		None
+		"""
 
 		# Create a header telling the other computer the size of the data we want to send.
 		# Turn the header into a fixed-length message using f-string left-alignment, encode it, send it.
 		# Then send the main message itself.
 		if len(message) > DEFAULT_TINY_MESSAGE_SIZE:
-			conn.sendall(PadMessage(len(message)).encode())
+			conn.sendall(pad_message(len(message)).encode())
 			conn.sendall(message.encode())
 		else:
-			conn.sendall(PadMessage(message).encode())
+			conn.sendall(pad_message(message).encode())

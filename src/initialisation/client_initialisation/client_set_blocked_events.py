@@ -1,8 +1,9 @@
-# noinspection PyUnresolvedReferences
-from src import pre_pygame_import
+"""Set pygame blocked events."""
 
 
-def SetBlockedEvents() -> None:
+def set_pygame_blocked_events() -> None:
+	"""Set pygame blocked events."""
+
 	import pygame as pg
 
 	pg.event.set_blocked((

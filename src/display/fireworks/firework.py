@@ -2,7 +2,7 @@
 
 
 import math, random
-from src.display.fireworks.particle import Particle
+from src.display.fireworks.firework_particle import FireworkParticle
 
 
 class Firework:
@@ -19,7 +19,7 @@ class Firework:
                 if xDir == yDir == 0:
                     continue
                 if ((xDir * xDir) + (yDir * yDir)) <= (0.5 * 0.5):
-                    Particle(
+                    FireworkParticle(
                         pos=pos,
                         colour=colour,
                         direction=[xDir, yDir],
@@ -70,7 +70,7 @@ class ShimmerFirework:
                 else:
                     col = colour
 
-                Particle(
+                FireworkParticle(
                     pos=[x, y],
                     colour=col,
                     direction=self.getDir(x, y, focus[0], focus[1], radius, 0.4),

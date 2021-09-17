@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING, Final
 from itertools import accumulate
 
-from src.global_constants import TYPEWRITER_FONT
-from src.display.surface_coordinator import SurfaceCoordinator
-from src.display.abstract_text_rendering import GetCursor
+from src.config import game
+from src.static_constants import TYPEWRITER_FONT
+from src.display import SurfaceCoordinator, get_cursor
 
 # noinspection PyUnresolvedReferences
 from src import pre_pygame_import
@@ -14,67 +14,62 @@ from pygame import Rect
 from pygame.time import delay
 
 if TYPE_CHECKING:
-	from src.display.abstract_text_rendering import FontAndLinesize
-	from src.special_knock_types import SurfaceList
+	from src.display import FontAndLinesize
 	from queue import Queue
+	from pygame import Surface
 
 
-TYPEWRITER_DELAY = 30
-TEXT_COLOUR = (0, 0, 0)
+TYPEWRITER_DELAY: Final = 30
+TEXT_COLOUR: Final = (0, 0, 0)
 
 
 @dataclass(eq=False, unsafe_hash=True)
 class Typewriter(SurfaceCoordinator):
-	__slots__ = 'RenderedSteps', 'Index', 'Rect', 'Q', 'font'
+	__slots__ = 'rendered_steps', 'index', 'rect', 'q', 'font'
 
-	RenderedSteps: SurfaceList
-	Index: int
-	Q: Queue
-	Rect: Optional[Rect]
+	rendered_steps: list[Surface]
+	index: int
+	q: Queue
+	rect: Optional[rect]
 	font: Optional[FontAndLinesize]
 
 	def __post_init__(self) -> None:
-		self.AllSurfaces.append(self)
-		self.font = self.Fonts[TYPEWRITER_FONT]
+		self.all_surfaces.append(self)
+		self.font = self.fonts[TYPEWRITER_FONT]
 
-	def Initialise(self) -> Typewriter:
-		self.font = self.Fonts[TYPEWRITER_FONT]
+	def initialise(self) -> Typewriter:
+		self.font = self.fonts[TYPEWRITER_FONT]
 		return self
 
-	def Type(
-			self,
-			text: str,
-			WaitAfterwards: int
-	) -> None:
+	def type(self, text: str, /, *, wait_afterwards: int) -> None:
+		self.q.put(text)
 
-		self.Q.put(text)
-
-		while not self.Q.empty():
+		while not self.q.empty():
 			delay(100)
 
 		for _ in text:
-			self.Index += 1
+			self.index += 1
 			delay(TYPEWRITER_DELAY)
 
-		if WaitAfterwards:
-			delay(WaitAfterwards)
+		if wait_afterwards:
+			delay(wait_afterwards)
 
-		self.Index = -1
+		self.index = -1
 
-	# Need to keep **kwargs in as it might be passed ForceUpdate=True
-	def Update(self, **kwargs) -> None:
-		if not self.Q.empty():
-			self.Rect = Rect((0, 0), self.font.size((text := self.Q.get())))
-			self.RenderedSteps = [self.font.render(step, False, TEXT_COLOUR) for step in accumulate(text)]
+	# Need to keep the unused keyword-arg in as it might be passed force_update=True
+	def update(self, /, *, force_update: bool = False) -> None:
+		if not self.q.empty():
+			self.rect = Rect((0, 0), self.font.size((text := self.q.get())))
+			self.rendered_steps = [self.font.render(step, False, TEXT_COLOUR) for step in accumulate(text)]
 
-		if self.Index == -1:
+		if self.index == -1:
 			return None
 
-		with self.game:
-			PlayStarted = self.game.StartPlay
+		with game:
+			play_started = game.play_started
 
-		TypewrittenText = self.RenderedSteps[self.Index]
-		self.Rect.center = self.BoardCentre if PlayStarted else self.GameSurf.attrs.centre
-		SubRect = TypewrittenText.get_rect()
-		SubRect.topleft = self.Rect.topleft
-		self.GameSurf.surf.blits(GetCursor([(TypewrittenText, SubRect)], self.font))
+		typewritten_text = self.rendered_steps[self.index]
+		self.rect.center = self.board_centre if play_started else self.game_surf.attrs.centre
+		sub_rect = typewritten_text.get_rect()
+		sub_rect.topleft = self.rect.topleft
+		self.game_surf.surf.blits(get_cursor([(typewritten_text, sub_rect)], self.font))

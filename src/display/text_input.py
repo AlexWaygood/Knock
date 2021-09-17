@@ -2,21 +2,23 @@ from __future__ import annotations
 
 from contextlib import suppress
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeVar, Final
 from pyperclip import paste
 
-from src.global_constants import USER_INPUT_FONT, PRINTABLE_CHARACTERS_PLUS_SPACE
-from src.display.input_context import InputContext
-from src.display.abstract_text_rendering import TextBlitsMixin, GetCursor
-from src.display.surface_coordinator import SurfaceCoordinator
+from src.config import game, client
+from src.static_constants import USER_INPUT_FONT, PRINTABLE_CHARACTERS_PLUS_SPACE
+from src.display import GameInputContextManager, TextBlitsMixin, get_cursor, SurfaceCoordinator
 
 if TYPE_CHECKING:
 	from src.special_knock_types import OptionalFont
-	from src.display.error_tracker import Errors
+	from src.display import Errors
+
+	# noinspection PyTypeChecker
+	T = TypeVar('T', bound='TextInput')
 
 
-TEXT_COLOUR = (0, 0, 0)
-MAX_PLAYER_NAME_LENGTH = 30
+TEXT_COLOUR: Final = (0, 0, 0)
+MAX_PLAYER_NAME_LENGTH: Final = 30
 
 
 # noinspection PyBroadException
@@ -25,90 +27,99 @@ class TextInput(TextBlitsMixin, SurfaceCoordinator):
 	# Repr & hash automatically defined as it's a dataclass!
 	__slots__ = 'Text', 'font', 'context', 'error_tracker'
 
-	Text: str
+	text: str
 	font: OptionalFont
-	context: InputContext
+	context: GameInputContextManager
 	error_tracker: Errors
 
 	def __post_init__(self) -> None:
-		self.AllSurfaces.append(self)
-		self.font = self.Fonts[USER_INPUT_FONT]
+		self.all_surfaces.append(self)
+		self.font = self.fonts[USER_INPUT_FONT]
 
-	def Initialise(self) -> TextInput:
-		self.font = self.Fonts[USER_INPUT_FONT]
+	def initialise(self: T, /) -> T:
+		self.font = self.fonts[USER_INPUT_FONT]
 		return self
 
-	def PasteEvent(self) -> None:
-		if self.context.TypingNeeded:
+	def paste_event(self, /) -> None:
+		if self.context.typing_needed:
 			t = paste()
 			with suppress(BaseException):
 				assert all(letter in PRINTABLE_CHARACTERS_PLUS_SPACE for letter in t)
-				self.Text += t
+				self.text += t
 
-	def ControlBackspaceEvent(self) -> None:
-		if self.Text and self.context.TypingNeeded:
-			self.Text = ' '.join(self.Text.split(' ')[:-1])
+	def control_backspace_event(self, /) -> None:
+		if self.text and self.context.typing_needed:
+			self.text = ' '.join(self.text.split(' ')[:-1])
 
-	def NormalBackspaceEvent(self) -> None:
-		if self.Text and self.context.TypingNeeded:
-			self.Text = self.Text[:-1]
+	def normal_backspace_event(self, /) -> None:
+		if self.text and self.context.typing_needed:
+			self.text = self.text[:-1]
 
-	def AddTextEvent(self, EventUnicode: str) -> None:
-		if self.context.TypingNeeded and EventUnicode in PRINTABLE_CHARACTERS_PLUS_SPACE:
+	def add_text_event(self, event_unicode: str) -> None:
+		if self.context.typing_needed and event_unicode in PRINTABLE_CHARACTERS_PLUS_SPACE:
 			with suppress(BaseException):
-				self.Text += EventUnicode
+				self.text += event_unicode
 
-	# Need to keep **kwargs in as it might be passed ForceUpdate=True
-	def Update(self, **kwargs) -> None:
-		if self.context.TypingNeeded:
-			with self.game as g:
-				PlayStarted = g.StartPlay
+	# Need to keep **kwargs in as it might be passed force_update=True
+	def update(self, **kwargs) -> None:
+		if self.context.typing_needed:
+			with game as g:
+				play_started = g.play_started
 
-			center = self.PlayStartedInputPos if PlayStarted else self.PreplayInputPos
-			L = [self.GetTextHelper(self.Text, self.font, TEXT_COLOUR, center=center)] if self.Text else center
-			self.GameSurf.surf.blits(GetCursor(L, self.font))
+			center = self.play_started_input_pos if play_started else self.preplay_input_pos
+
+			if self.text:
+				blits_list = [self.get_text_helper(self.text, self.font, TEXT_COLOUR, center=center)]
+			else:
+				blits_list = center
+
+			self.game_surf.surf.blits(get_cursor(blits_list, self.font))
 
 	# Must define hash even though it's in the parent class, because it's a dataclass
 	def __hash__(self) -> int:
 		return id(self)
 
-	def ReportError(self, message: str) -> None:
-		self.error_tracker.Add(message)
+	def report_error(self, message: str) -> None:
+		self.error_tracker.add(message)
 
-	def QueueClientMessage(self, message: str) -> None:
-		self.client.QueueMessage(message)
+	def queue_client_message(self, message: str) -> None:
+		client.queue_message(message)
 
-	def EnterEvent(self) -> None:
-		if not (self.Text and self.context.TypingNeeded):
+	def enter_event(self) -> None:
+		if not (self.text and self.context.typing_needed):
 			return None
 
 		if isinstance(self.player.name, int):
-			if len(self.Text) < MAX_PLAYER_NAME_LENGTH:
+			if len(self.text) < MAX_PLAYER_NAME_LENGTH:
 				# Don't need to check that letters are ASCII-compliant;
 				# wouldn't have been able to type them if they weren't.
-				self.player.name = self.Text
-				self.QueueClientMessage(f'@P{self.Text}{self.player.playerindex}')
+				self.player.name = self.text
+				self.queue_client_message(f'@P{self.text}{self.player.player_index}')
 			else:
-				self.ReportError(f'Name must be <{MAX_PLAYER_NAME_LENGTH} characters; please try again.')
+				self.report_error(f'Name must be <{MAX_PLAYER_NAME_LENGTH} characters; please try again.')
 
-		elif not (self.game.StartCardNumber or self.player.playerindex):
+		elif not (game.start_card_no or self.player.player_index):
 			# Using try/except rather than if/else to catch unexpected errors as well as expected ones.
 			try:
-				assert 1 <= float(self.Text) <= self.game.MaxCardNumber and float(self.Text).is_integer()
-				self.game.StartCardNumber = int(self.Text)
-				self.QueueClientMessage(f'@N{self.Text}')
-			except:
-				self.ReportError(f'Please enter an integer between 1 and {self.game.MaxCardNumber}')
+				if not (1 <= float(self.text) <= game.max_card_number and float(self.text).is_integer()):
+					raise TypeError('No.')
 
-		elif self.player.Bid == -1:
+				game.start_card_no = int(self.text)
+				self.queue_client_message(f'@N{self.text}')
+			except BaseException:
+				self.report_error(f'Please enter an integer between 1 and {game.max_card_number}')
+
+		elif self.player.bid == -1:
 			# Using try/except rather than if/else to catch unexpected errors as well as expected ones.
-			Count = len(self.player.Hand)
+			count = len(self.player.hand)
 
 			try:
-				assert 0 <= float(self.Text) <= Count and float(self.Text).is_integer()
-				self.player.Bid = int(self.Text)
-				self.QueueClientMessage(''.join((f'@B', f'{f"{self.Text}" : 0>2}', f'{self.player.playerindex}')))
-			except:
-				self.ReportError(f'Your bid must be an integer between 0 and {Count}.')
+				if not (0 <= float(self.text) <= count and float(self.text).is_integer()):
+					raise TypeError('No')
 
-		self.Text = ''
+				self.player.bid = int(self.text)
+				self.queue_client_message(''.join((f'@B', f'{f"{self.text}" : 0>2}', f'{self.player.player_index}')))
+			except BaseException:
+				self.report_error(f'Your bid must be an integer between 0 and {count}.')
+
+		self.text = ''

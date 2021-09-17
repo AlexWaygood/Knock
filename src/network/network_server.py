@@ -1,3 +1,5 @@
+"""The server for the game."""
+
 from __future__ import annotations
 
 from select import select
@@ -5,34 +7,32 @@ from logging import getLogger
 from typing import TYPE_CHECKING, NoReturn, Literal, Union
 from pyinputplus import inputYesNo
 
-from src.network.network_abstract import Network, GetTime
+from src import config as rc
+from src.network import Network, get_time
 from src.players.players_server import ServerPlayer as Player
 
-# noinspection PyBroadException
 try:
 	from src.secret_passwords import ACCESS_TOKEN
-except:
+except ModuleNotFoundError:
 	ACCESS_TOKEN = ''
 
 if TYPE_CHECKING:
 	from src.special_knock_types import NetworkFunction, ConnectionDict, ConnectionAddress
 	from socket import socket
 	from src.game.server_game import ServerGame as Game
-	from ipinfo.details import Details
+	from ipinfo.details import Details as IPAddressDetails
 
 
 log = getLogger(__name__)
 
 
-def IP_info(
-		details: Details,
-		addr: ConnectionAddress
-) -> None:
+def report_ip_info(ip_details: IPAddressDetails, ip_address: ConnectionAddress) -> None:
+	"""Print and log information regarding an IP address."""
 
 	messages = (
-		f'Attempted connection from {details.city}, {details.region}, {details.country_name} at {GetTime()}.',
-		f'IP, port: {addr}',
-		f'Hostname: {details.hostname}'
+		f'Attempted connection from {ip_details.city}, {ip_details.region}, {ip_details.country_name} at {get_time()}.',
+		f'IP, port: {ip_address}',
+		f'Hostname: {ip_details.hostname}'
 	)
 
 	for m in messages:
@@ -41,57 +41,71 @@ def IP_info(
 
 
 class Server(Network):
-	__slots__ = 'ConnectionInfo', 'ip_handler', 'password_checker_class', 'password'
+	"""The network server."""
+
+	__slots__ = {
+		'connection_info': 'A dictionary mapping sockets to `Player` objects',
+		'ip_handler': 'An object that will fetch info regarding the IP addresses of computers trying to connect',
+		'password_checker_class': 'A class to handle the checking of passwords',
+		'password': 'The password for users to connect to the game'
+	}
 
 	def __init__(self, password: str) -> None:
 		super().__init__()
-		self.ConnectionInfo: ConnectionDict = {}
-		self.ip_handler = None
+		self.connection_info: ConnectionDict = {}
 		self.password = password
-		self.password_checker_class = None
+
+		password_checker_class, ip_handler = None, None
 
 		if password:
 			try:
 				from src.password_checker.password_server import ServerPasswordChecker as PasswordChecker
-				self.password_checker_class = PasswordChecker
+				password_checker_class = PasswordChecker
 				PasswordChecker.password = password
 			except ModuleNotFoundError:
 				print('Password import failed; will be unable to check passwords for attempted connections.')
 
+		self.password_checker_class = password_checker_class
+
 		if ACCESS_TOKEN:
 			try:
 				from ipinfo import getHandler
-				self.ip_handler = getHandler(ACCESS_TOKEN)
-			except ImportError:
+				ip_handler = getHandler(ACCESS_TOKEN)
+			except ModuleNotFoundError:
 				print("Encountered an error importing ipinfo; won't be able to provide info on IP addresses.")
 				log.debug("Encountered an error importing ipinfo; won't be able to provide info on IP addresses.")
 		else:
 			print('Not checking IP addresses as no access token was supplied.')
 			log.debug('Not checking IP addresses as no access token was supplied.')
 
-	def Run(
+		self.ip_handler = ip_handler
+
+	def run(
 			self,
-			IP: str,
+			/,
+			ip_addr: str,
 			port: int,
-			ManuallyVerify: bool,
-			CommsFunction: NetworkFunction,
+			*,
+			manually_verify: bool,
+			comms_function: NetworkFunction,
 			game: Game
 	) -> NoReturn:
+		"""Continually send and receive messages between the server and the clients as required, until the game ends."""
 
 		log.debug('Initialising server...')
 		print('Initialising server...')
-		self.conn.bind((IP, port))
+		self.conn.bind((ip_addr, port))
 		self.conn.listen()
-		NumberOfClients = 0
-		log.debug(f'Ready to accept connections to the server (time {GetTime()}).\n')
-		print(f'Ready to accept connections to the server (time {GetTime()}).\n')
+		number_of_clients = 0
+		log.debug(f'Ready to accept connections to the server (time {get_time()}).\n')
+		print(f'Ready to accept connections to the server (time {get_time()}).\n')
 
-		Inputs, Outputs = [self.conn], []
+		inputs, outputs = [self.conn], []
 
 		while True:
-			readable, writable, exceptional = select(Inputs, Outputs, Inputs)
+			readable, writable, exceptional = select(inputs, outputs, inputs)
 			for s in readable:
-				if s is self.conn and NumberOfClients < game.PlayerNumber:
+				if s is self.conn and number_of_clients < rc.player_number:
 
 					# if the server itself is appearing in the 'readable' list,
 					# that means the server is ready to accept a new connection
@@ -102,82 +116,81 @@ class Server(Network):
 					# Append it also to the 'outputs' list after the connection is established,
 					# so the server will know to check if that connection is ready to have data sent to it.
 
-					NewConn = self.Connect(
-						NumberOfClients,
-						ManuallyVerify,
-						game
+					new_conn = self.connect(
+						number_of_clients=number_of_clients,
+						manually_verify=manually_verify
 					)
 
-					Inputs.append(NewConn)
-					Outputs.append(NewConn)
-					NumberOfClients += 1
+					inputs.append(new_conn)
+					outputs.append(new_conn)
+					number_of_clients += 1
 
-					if NumberOfClients == game.PlayerNumber:
+					if number_of_clients == rc.player_number:
 						log.debug('Maximum number of connections received; no longer open for connections.')
 						print('Maximum number of connections received; no longer open for connections.')
 				else:
-					CommsFunction(self, s, game)
+					comms_function(self, s, game)
 
 			for s in writable:
-				with self.ConnectionInfo[s].SendQ as q:
+				with self.connection_info[s].send_q as q:
 					self.send(q.get(), s)
-					log.debug(f'Message sent to client: {q.LastUpdate}.')
+					log.debug(f'Message sent to client: {q.last_update}.')
 
 			if exceptional:
 				raise Exception('Exception in one of the client threads!')
 
-	def Connect(
-			self,
-	        NumberOfClients: int,
-	        ManuallyVerify: bool,
-	        game: Game
-	) -> Union[Literal[0], socket]:
+	def connect(self, /, *, number_of_clients: int, manually_verify: bool) -> Union[Literal[0], socket]:
+		"""Connect to a a client."""
 
 		conn, addr = self.conn.accept()
 
 		if self.ip_handler:
 			# noinspection PyBroadException
 			try:
-				IP_info(self.ip_handler.getDetails(addr[0]), addr)
-			except:
+				report_ip_info(self.ip_handler.getDetails(addr[0]), addr)
+			except BaseException:
 				m = f"Couldn't get requested info for this IP address {addr}."
 				print(m)
 				log.debug(m)
 
-		if self.ip_handler and ManuallyVerify:
+		if self.ip_handler and manually_verify:
 			if inputYesNo('\nAccept this connection? ') == 'no':
-				self.CloseConnection(conn)
+				self.close_connection(conn)
 				return 0
 
 		if self.password:
-			Checker = self.password_checker_class(self, conn)
+			checker = self.password_checker_class(self, conn)
 
-			if not Checker.CheckPassword():
+			if not checker.check_password():
 				m = f'Client {addr} entered the wrong password; declining attempted connection.'
 				print(m)
 				log.debug(m)
-				self.CloseConnection(conn)
+				self.close_connection(conn)
 				return 0
 
-		player: Player = Player.player(NumberOfClients)
-		self.ConnectionInfo[conn] = player.connect(addr, f'{game.PlayerNumber}{NumberOfClients}{game.BiddingSystem}')
+		player = Player(number_of_clients)
+		self.connection_info[conn] = player.connect(addr, f'{rc.player_number}{number_of_clients}{rc.bidding_system}')
 
-		m = f'Connection info to client {addr} was placed on the send-queue at {GetTime()}.\n'
+		m = f'Connection info to client {addr} was placed on the send-queue at {get_time()}.\n'
 		print(m)
 		log.debug(m)
 
 		return conn
 
 	def receive(self, conn: socket) -> str:
-		Message = self.SubReceive(self.DefaultTinyMessageSize, conn).decode()
-		Message = Message.split('-')[0]
+		"""Receive a message from a client."""
 
-		if Message[0].isdigit() and Message[1].isdigit():
-			Message = self.SubReceive(int(Message), conn)
+		message = self.sub_receive(self.default_tiny_message_size, conn).decode()
+		message = message.split('-')[0]
 
-		log.debug(f'Message received from client: {Message}.')
-		return Message
+		if message[0].isdigit() and message[1].isdigit():
+			message = self.sub_receive(int(message), conn)
 
-	def CloseDown(self) -> None:
+		log.debug(f'Message received from client: {message}.')
+		return message
+
+	def close_down(self) -> None:
+		"""Shut down the server and all client connections."""
+
 		log.debug('Attempting to close the server down.')
-		[self.CloseConnection(conn) for conn in self.ConnectionInfo]
+		[self.close_connection(conn) for conn in self.connection_info]

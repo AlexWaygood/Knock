@@ -1,47 +1,58 @@
 from pandas import DataFrame, concat
-from src.players.players_client import ClientPlayer as Player
+from src import config as rc
+from src.players.players_client import ClientPlayer as Players
+from typing import Sequence
 
 
-# noinspection PyAttributeOutsideInit
 class Scoreboard:
-	__slots__ = 'PlayerNoTimes4', 'ColumnNo', 'Initialised', 'names', 'columns', 'StartNo', 'scoreboard', \
-	            'DisplayScoreboard'
+	__slots__ = (
+		'player_no_times_4', 'column_no', 'initialised', 'column_names', 'start_card_no', 'scoreboard',
+		'display_scoreboard'
+	)
+
+	column_names: Sequence[str]
+	start_card_no: int
+	scoreboard: DataFrame
+	display_scoreboard: DataFrame
 
 	def __init__(self) -> None:
-		self.Initialised = False
-		self.PlayerNoTimes4 = Player.PlayerNo * 4
-		self.ColumnNo = self.PlayerNoTimes4 + 2
+		self.initialised = False
+		self.player_no_times_4 = player_no_times_4 = (rc.player_number * 4)
+		self.column_no = player_no_times_4 + 2
 
-	def SetUp(self, StartCardNumber: int) -> None:
-		self.names = Player.GetNames()
-		self.columns = ['', ''] + sum((['', name, '', ''] for name in self.names), start=[])
-		self.StartNo = StartCardNumber
+	def setup(self, start_card_number: int) -> None:
+		player_names = Players.names
+		column_names = ('', '') + sum((('', name, '', '') for name in player_names), start=())
+		self.column_names = column_names
+		self.start_card_no = start_card_number
 
 		self.scoreboard = DataFrame(
-			[['Round', 'Cards'] + sum((['Bid', 'Won', 'Points', 'Score'] for _ in self.names), start=[])],
-			columns=self.columns
+			[['Round', 'Cards'] + sum((['bid', 'Won', 'points', 'Score'] for _ in player_names), start=[])],
+			columns=column_names
 		)
 
-		self.DisplayScoreboard = self.FillBlanks(0)
-		self.Initialised = True
+		self.display_scoreboard = self.fill_blanks(0)
+		self.initialised = True
 
-	def UpdateScores(self, RoundNumber: int, CardNumber: int) -> None:
-		NewRow = DataFrame(
-			[[RoundNumber, CardNumber] + Player.ScoreboardThisRound()],
-			columns=self.columns
+	def update_scores(self, round_number: int, card_number: int) -> None:
+		new_row = DataFrame(
+			[(round_number, card_number) + sum(Players.scoreboard_this_round, start=())],
+			columns=self.column_names
 		)
 
-		self.scoreboard = concat(self.scoreboard, NewRow, ignore_index=True)
-		self.DisplayScoreboard = self.FillBlanks(RoundNumber)
+		self.scoreboard = concat(self.scoreboard, new_row, ignore_index=True)
+		self.display_scoreboard = self.fill_blanks(round_number)
 
-	def FillBlanks(self, RoundNumber: int) -> DataFrame:
-		Blanks = DataFrame([
-			([x, y] + [None for _ in range(self.PlayerNoTimes4)])
+	def fill_blanks(self, round_number: int) -> DataFrame:
+		start_card_no = self.start_card_no
+
+		blanks = DataFrame([
+			([x, y] + [None for _ in range(self.player_no_times_4)])
 
 			for x, y in zip(
-				range((RoundNumber + 1), (self.StartNo + 1)),
-				range((self.StartNo - RoundNumber), 0, -1)
+				range((round_number + 1), (start_card_no + 1)),
+				range((start_card_no - round_number), 0, -1)
 			)
 		])
 
-		return concat((self.scoreboard, Blanks), ignore_index=True)
+		return concat((self.scoreboard, blanks), ignore_index=True)

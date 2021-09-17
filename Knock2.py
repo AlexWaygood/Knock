@@ -4,18 +4,19 @@
 
 from threading import Thread
 from traceback_with_variables import printing_exc
-from src.initialisation.startup_sequence.client_startup_sequence import StartupSequence
+from src.initialisation.client_initialisation.client_startup_sequence import startup_sequence
+from src.clientside_gameplay import play
 
 
 with printing_exc():
-	client, clientside_gameplay, display_manager = StartupSequence()
+	client, display_manager = startup_sequence()
 
 # One thread for encoding the order of gameplay according to the rules of Knock.
-Thread(name='Gameplay', target=clientside_gameplay.Play).start()
+Thread(name='Gameplay', target=play).start()
 
 # One thread for receiving messages from the server.
-Thread(name='ServerComms', target=client.UpdateLoop, args=(display_manager.InputContext,)).start()
+Thread(name='ServerComms', target=client.run).start()
 
 # The main thread deals with all things relevant to pygame display.
 with printing_exc():
-	display_manager.Run()
+	display_manager.run()

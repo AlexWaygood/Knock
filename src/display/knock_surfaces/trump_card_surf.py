@@ -1,9 +1,11 @@
 from __future__ import annotations
 from functools import lru_cache
-from typing import Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING, NamedTuple, TypeVar, Final
 
-from src.global_constants import TRUMP_CARD_FONT, TRUMP_CARD_FADE_KEY, OPAQUE_OPACITY_KEY
-from src.display.abstract_surfaces.knock_surface_with_cards import KnockSurfaceWithCards
+from src.config import game
+from src.static_constants import MiscFonts, CardFaderNames, OPAQUE_OPACITY_KEY
+
+from src.display.abstract_surfaces import KnockSurfaceWithCards
 from src.display.abstract_text_rendering import TextBlitsMixin
 from src.display.faders import OpacityFader
 
@@ -11,45 +13,70 @@ if TYPE_CHECKING:
 	from src.cards.client_card import ClientCard as Card
 	from src.special_knock_types import BlitsList, Position
 
+	# noinspection PyTypeChecker
+	T = TypeVar('T', bound='TrumpCardSurfaceDimensions')
 
-START_COVER_RECT_OPACITY = OPAQUE_OPACITY_KEY
-TRUMPCARD_SURFACE_TITLE = 'TrumpCard'
+
+START_COVER_RECT_OPACITY: Final[str] = OPAQUE_OPACITY_KEY
+TRUMPCARD_SURFACE_TITLE: Final = 'trump_card'
 
 
-@lru_cache
-def TrumpCardDimensionsHelper(
-		GameX: int,
-		CardX: int,
-		CardY: int,
-		NormalLinesize: int
-) -> Tuple[int, int, int, Position]:
-	return (GameX - (CardX + 50)), (CardX + 2), (CardY + int(NormalLinesize * 2.5) + 10), (1, int(NormalLinesize * 2.5))
+class TrumpCardSurfaceDimensions(NamedTuple):
+	x: int
+	width: int
+	height: int
+	trumpcard_pos: Position
+
+	@classmethod
+	@lru_cache
+	def from_game_dimensions(cls: type[T], /, *, game_x: int, card_x: int, card_y: int, normal_linesize: int) -> T:
+		# noinspection PyArgumentList
+		return cls(
+			x=(game_x - (card_x + 50)),
+			width=(card_x + 2),
+			height=(card_y + int(normal_linesize * 2.5) + 10),
+			trumpcard_pos=(1, int(normal_linesize * 2.5))
+		)
 
 
 # noinspection PyAttributeOutsideInit
 class TrumpCardSurface(KnockSurfaceWithCards, TextBlitsMixin):
 	__slots__ = 'font'
 
-	def __init__(self) -> None:
-		self.CardList = self.game.TrumpCard
-		self.CardFadeManager = OpacityFader(START_COVER_RECT_OPACITY, TRUMP_CARD_FADE_KEY)
-		self.CardUpdateQueue = self.game.NewCardQueues.TrumpCard
-		super().__init__()   # Calls SurfDimensions()
+	def __init__(self, /) -> None:
+		self.card_list = game.trump_card
 
-	def Initialise(self) -> TrumpCardSurface:
-		self.font = self.Fonts[TRUMP_CARD_FONT]
-		return super().Initialise()
+		self.card_fade_manager = OpacityFader(
+			start_opacity=START_COVER_RECT_OPACITY,
+			name=CardFaderNames.TRUMP_CARD_FADE_KEY
+		)
 
-	def SurfDimensions(self) -> None:
-		Vals = TrumpCardDimensionsHelper(self.GameSurf.Width, self.CardX, self.CardY, self.font.linesize)
-		self.x, self.Width, self.Height, TrumpCardPos = Vals
-		self.y = self.WindowMargin
-		self.AddRectList((TrumpCardPos,))
+		self.card_update_queue = game.new_card_queues.trump_card
+		super().__init__()   # Calls surf_dimensions()
 
-	def UpdateCard(self, card: Card, index: int) -> None:
-		card.ReceiveRect(self.RectList[0])
+	def initialise(self, /) -> TrumpCardSurface:
+		self.font = self.fonts[MiscFonts.TRUMP_CARD_FONT]
+		return super().initialise()
 
-	def GetSurfBlits(self) -> BlitsList:
-		L = super().GetSurfBlits()
-		font, LineSize = self.font, self.font.linesize
-		return L + [self.GetText(TRUMPCARD_SURFACE_TITLE, font, center=((self.attrs.centre[0] / 2), (LineSize / 2)))]
+	def surf_dimensions(self, /) -> None:
+		dimensions = TrumpCardSurfaceDimensions.from_game_dimensions(
+			game_x=self.game_surf.width,
+			card_x=self.card_x,
+			card_y=self.card_y,
+			normal_linesize=self.font.linesize
+		)
+
+		self.x, self.width, self.height, trump_card_pos = dimensions
+		self.y = self.window_margin
+		self.add_rect_list((trump_card_pos,))
+
+	def update_card(self, card: Card, index: int) -> None:
+		card.rect = self.rect_list[0]
+
+	def get_surf_blits(self, /) -> BlitsList:
+		blits_list = super().get_surf_blits()
+		font, linesize = self.font, self.font.linesize
+		return (
+				blits_list
+				+ [self.get_text(TRUMPCARD_SURFACE_TITLE, font, center=((self.attrs.centre[0] / 2), (linesize / 2)))]
+		)

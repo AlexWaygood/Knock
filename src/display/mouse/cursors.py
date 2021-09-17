@@ -1,8 +1,9 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, NamedTuple
+from typing import TYPE_CHECKING, NamedTuple, Final
 
 # noinspection PyUnresolvedReferences
-from src import pre_pygame_import
+from src import pre_pygame_import, Position
+# noinspection PyPep8Naming
 from pygame.cursors import (
 	diamond as DIAMOND_CURSOR,
 	compile as cursor_compile
@@ -296,33 +297,36 @@ NW_ARROW = (
 	)
 
 
-NORTH_ARROW_HOTSPOT = (64, 0)
-NE_ARROW_HOTSPOT    = (97, 8)
-EAST_ARROW_HOSTPOT  = (111, 4)
-SE_ARROW_HOSTPOT    = (99, 36)
-SOUTH_ARROW_HOTSPOT = (64, 39)
-SW_ARROW_HOTSPOT    = (31, 35)
-WEST_ARROW_HOTSPOT  = (17, 4)
-NW_ARROW_HOTSPOT    = (32, 6)
+NORTH_ARROW_HOTSPOT: Final = Position(64, 0)
+NE_ARROW_HOTSPOT: Final    = Position(97, 8)
+EAST_ARROW_HOSTPOT: Final  = Position(111, 4)
+SE_ARROW_HOSTPOT: Final    = Position(99, 36)
+SOUTH_ARROW_HOTSPOT: Final = Position(64, 39)
+SW_ARROW_HOTSPOT: Final    = Position(31, 35)
+WEST_ARROW_HOTSPOT: Final  = Position(17, 4)
+NW_ARROW_HOTSPOT: Final    = Position(32, 6)
 
 
-def MakeCursor(Arrow: ArrowCursor, Hotspot: Position) -> Cursor_Type:
-	return (len(Arrow[0]), len(Arrow)), Hotspot, *cursor_compile(Arrow)
+def make_cursor(arrow: ArrowCursor, hotspot: Position) -> Cursor_Type:
+	return (len(arrow[0]), len(arrow)), hotspot, *cursor_compile(arrow)
 
 
 class Cursors(NamedTuple):
-	North:          Cursor_Type     =   MakeCursor(NORTH_ARROW, NORTH_ARROW_HOTSPOT)
-	NorthEast:      Cursor_Type     =   MakeCursor(NE_ARROW,    NE_ARROW_HOTSPOT)
-	East:           Cursor_Type     =   MakeCursor(EAST_ARROW,  EAST_ARROW_HOSTPOT)
-	SouthEast:      Cursor_Type     =   MakeCursor(SE_ARROW,    SE_ARROW_HOSTPOT)
-	South:          Cursor_Type     =   MakeCursor(SOUTH_ARROW, SOUTH_ARROW_HOTSPOT)
-	SouthWest:      Cursor_Type     =   MakeCursor(SW_ARROW,    SW_ARROW_HOTSPOT)
-	West:           Cursor_Type     =   MakeCursor(WEST_ARROW,  WEST_ARROW_HOTSPOT)
-	NorthWest:      Cursor_Type     =   MakeCursor(NW_ARROW,    NW_ARROW_HOTSPOT)
+	north:          Cursor_Type     =   make_cursor(NORTH_ARROW,    NORTH_ARROW_HOTSPOT)
+	northeast:      Cursor_Type     =   make_cursor(NE_ARROW,       NE_ARROW_HOTSPOT)
+	east:           Cursor_Type     =   make_cursor(EAST_ARROW,     EAST_ARROW_HOSTPOT)
+	southeast:      Cursor_Type     =   make_cursor(SE_ARROW,       SE_ARROW_HOSTPOT)
+	south:          Cursor_Type     =   make_cursor(SOUTH_ARROW,    SOUTH_ARROW_HOTSPOT)
+	southwest:      Cursor_Type     =   make_cursor(SW_ARROW,       SW_ARROW_HOTSPOT)
+	west:           Cursor_Type     =   make_cursor(WEST_ARROW,     WEST_ARROW_HOTSPOT)
+	northwest:      Cursor_Type     =   make_cursor(NW_ARROW,       NW_ARROW_HOTSPOT)
 
-	Diamond:        Cursor_Type     =   DIAMOND_CURSOR
+	diamond:        Cursor_Type     =   DIAMOND_CURSOR
 
-	Hand:           Cursor_Type     =   (SYSTEM_CURSOR_HAND,)
-	Default:        Cursor_Type     =   (SYSTEM_CURSOR_ARROW,)
-	IllegalMove:    Cursor_Type     =   (SYSTEM_CURSOR_NO,)
-	Wait:           Cursor_Type     =   (SYSTEM_CURSOR_WAIT,)
+	hand:           Cursor_Type     =   (SYSTEM_CURSOR_HAND,)
+	default:        Cursor_Type     =   (SYSTEM_CURSOR_ARROW,)
+	illegal_move:   Cursor_Type     =   (SYSTEM_CURSOR_NO,)
+	wait:           Cursor_Type     =   (SYSTEM_CURSOR_WAIT,)
+
+
+cursors = Cursors()

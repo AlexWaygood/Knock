@@ -1,63 +1,59 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
 from pyinputplus import inputInt, inputMenu, inputCustom, inputYesNo
-from src.password_checker.password_abstract import GeneratePassword, PasswordInput
-from src.global_constants import CLASSIC_BIDDING_SYSTEM, RANDOM_BIDDING_SYSTEM
-
-if TYPE_CHECKING:
-	from src.special_knock_types import ServerUserInputsReturn
+from src.password_checker.password_abstract import generate_password, validate_inputted_password
+from src.static_constants import CLASSIC_BIDDING_SYSTEM, RANDOM_BIDDING_SYSTEM
 
 
 MIN_PLAYERS = 2
 MAX_PLAYERS = 6
 
 
-def UserInputs() -> ServerUserInputsReturn:
-	NumberOfPlayers = inputInt('How many players will be playing? ', min=MIN_PLAYERS, max=MAX_PLAYERS)
+def user_inputs() -> tuple[int, str, str, bool]:
+	number_of_players = inputInt('How many players will be playing? ', min=MIN_PLAYERS, max=MAX_PLAYERS)
 	print()
 
-	BiddingRuleChoices = [
+	bidding_rule_choices = [
 		'Classic rules (players decide what they will bid prior to each round)',
 		'Anna Benjer rules (bids are randomly generated for each player prior to each round)'
 	]
 
-	BiddingSystem = inputMenu(
-		choices=BiddingRuleChoices,
+	bidding_system = inputMenu(
+		choices=bidding_rule_choices,
 		prompt='Which variant of the rules will this tournament use?\n\n',
 		numbered=True,
 		blank=True
 	)
 
-	BiddingSystem = RANDOM_BIDDING_SYSTEM if BiddingSystem == BiddingRuleChoices[1] else CLASSIC_BIDDING_SYSTEM
+	bidding_system = RANDOM_BIDDING_SYSTEM if bidding_system == bidding_rule_choices[1] else CLASSIC_BIDDING_SYSTEM
 	print()
 
-	PasswordChoices = [
+	password_choices = [
 		"I want a new, randomly generated password for this game",
 		"I've already got a password for this game",
 		"I don't want a password for this game"
 	]
 
-	Choice = inputMenu(
-		choices=PasswordChoices,
+	choice = inputMenu(
+		choices=password_choices,
 		prompt='Select whether you want to set a password for this game:\n\n',
 		numbered=True,
 		blank=True
 	)
 
-	if Choice == PasswordChoices[0]:
-		password = GeneratePassword()
+	if choice == password_choices[0]:
+		password = generate_password()
 		print(f'\nYour randomly generated password for this session is {password}')
-	elif Choice == PasswordChoices[1]:
-		password = inputCustom(PasswordInput, '\nPlease enter the password for this session: ')
+	elif choice == password_choices[1]:
+		password = inputCustom(validate_inputted_password, '\nPlease enter the password for this session: ')
 	else:
 		password = ''
 
 	print()
 
-	ManuallyVerify = inputYesNo(
+	manually_verify = inputYesNo(
 		'\nDo you want to manually authorise each connection? '
 		'(If "no", new connections will be accepted automatically if they have entered the correct password.) ',
 		blank=True
 	)
 
-	return NumberOfPlayers, BiddingSystem, password, ManuallyVerify
+	return number_of_players, bidding_system, password, manually_verify

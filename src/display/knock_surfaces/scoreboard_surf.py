@@ -1,120 +1,139 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import TYPE_CHECKING, Optional, Tuple
+from typing import TYPE_CHECKING, Optional, Final
 
-import src.global_constants as gc
+import src.static_constants as gc
+from src.config import game
 
-from src.display.abstract_surfaces.knock_surface import KnockSurface
+from src.display.abstract_surfaces import KnockSurface
 from src.display.abstract_text_rendering import TextBlitsMixin
 from src.display.faders import ColourFader
-from src.players.players_client import ClientPlayer as Player
+
+from src.players.players_client import ClientPlayer as Players
 
 if TYPE_CHECKING:
 	from src.special_knock_types import BlitsList, Blittable
-	from src.display.abstract_text_rendering import FontAndLinesize
+	from src.display import FontAndLinesize
 
 
-SCOREBOARD_TITLE = 'SCOREBOARD'
+SCOREBOARD_TITLE: Final = 'SCOREBOARD'
 
 
-def TrickText(TrickNo: int, CardNo: int) -> str:
-	if TrickNo:
-		return f'Trick {TrickNo} of {CardNo}'
+def trick_text(trick_no: int, card_no: int) -> str:
+	if trick_no:
+		return f'Trick {trick_no} of {card_no}'
 	return 'Trick not in progress'
 
 
-def RoundText(RoundNo: int, StartCardNo: int) -> str:
-	return f'Round {RoundNo} of {StartCardNo}'
+def round_text(round_no: int, start_card_no: int) -> str:
+	return f'Round {round_no} of {start_card_no}'
 
 
-def DimensionFunctionGenerator(PlayerNo: int):
+def dimension_function_generator(player_no: int):
 	@lru_cache
-	def ScoreboardDimensionsHelper(
-			NormalFont: FontAndLinesize,
-			UnderlinedFont: FontAndLinesize,
-			GamesPlayed: int
-	) -> Tuple[float, float, Blittable, int]:
+	def scoreboard_dimensions_helper(
+			normal_font: FontAndLinesize,
+			underlined_font: FontAndLinesize,
+			games_played: int
+	) -> tuple[float, float, Blittable, int]:
 
-		NormalLineSize = NormalFont.linesize
-		LeftMargin = int(NormalLineSize * 1.75)
-		MaxPointsText = max(NormalFont.size(f'{player}: 188 points')[0] for player in Player.iter())
-		Width = ((2 * LeftMargin) + max(MaxPointsText, UnderlinedFont.size('Trick not in progress')[0]))
-		Multiplier = ((PlayerNo * 2) + 7) if GamesPlayed else (PlayerNo + 4)
-		Height = (NormalLineSize * Multiplier) + (2 * LeftMargin)
-		title = (UnderlinedFont.render(SCOREBOARD_TITLE), ((Width // 2), int(NormalLineSize * 1.5)))
-		return Width, Height, title, LeftMargin
-	return ScoreboardDimensionsHelper
+		normal_linesize = normal_font.linesize
+		left_margin = int(normal_linesize * 1.75)
+		max_points_text = max(normal_font.size(f'{player}: 188 points')[0] for player in Players)
+		width = ((2 * left_margin) + max(max_points_text, underlined_font.size('Trick not in progress')[0]))
+		multiplier = ((player_no * 2) + 7) if games_played else (player_no + 4)
+		height = (normal_linesize * multiplier) + (2 * left_margin)
+		title = (underlined_font.render(SCOREBOARD_TITLE), ((width // 2), int(normal_linesize * 1.5)))
+		return width, height, title, left_margin
+	return scoreboard_dimensions_helper
 
 
 # noinspection PyAttributeOutsideInit,PyMissingConstructor
-class Scoreboard(KnockSurface, TextBlitsMixin):
-	__slots__ = 'LeftMargin', 'title', 'FillFade', 'NormalFont', 'UnderlinedFont', 'Initialised', 'DimensionsHelperFunc'
+class ScoreboardSurface(KnockSurface, TextBlitsMixin):
+	__slots__ = (
+		'left_margin', 'title', 'fill_fade', 'normal_font', 'underlined_font', '_initialised', 'dimensions_helper_func'
+	)
 
-	def __init__(self) -> None:
-		self.Initialised = False
-		self.DimensionsHelperFunc = DimensionFunctionGenerator(self.PlayerNo)
+	def __init__(self, /) -> None:
+		self._initialised = False
+		self.dimensions_helper_func = dimension_function_generator(self.player_no)
 
-	def RealInit(self) -> None:
-		super().__init__()    # calls SurfDimensions()
-		self.FillFade = ColourFader(gc.SCOREBOARD_FILL_COLOUR)
-		self.GetSurf()
-		self.Initialised = True
-		self.OnScreen = True
+	@property
+	def initialised(self, /) -> bool:
+		return self._initialised
 
-	def GetSurf(self) -> None:
-		if self.Initialised:
-			super().GetSurf()
+	def real_init(self) -> None:
+		super().__init__()    # calls surf_dimensions()
+		self.fill_fade = ColourFader(gc.SCOREBOARD_FILL_COLOUR)
+		self.get_surf()
+		self._initialised = True
+		self.activate()
 
-	def Initialise(self) -> Optional[Scoreboard]:
-		if self.Initialised:
-			super().Initialise()
-			self.NormalFont = self.Fonts[gc.NORMAL_SCOREBOARD_FONT]
-			self.UnderlinedFont = self.Fonts[gc.UNDERLINED_SCOREBOARD_FONT]
+	def get_surf(self, /) -> None:
+		if self.initialised:
+			super().get_surf()
+
+	def initialise(self, /) -> Optional[ScoreboardSurface]:
+		if self.initialised:
+			super().initialise()
+			self.normal_font = self.fonts[gc.NORMAL_SCOREBOARD_FONT]
+			self.underlined_font = self.fonts[gc.UNDERLINED_SCOREBOARD_FONT]
 			return self
 
-	def fill(self) -> None:
-		self.surf.fill(self.FillFade.GetColour())
+	def fill(self, /) -> None:
+		self.surf.fill(self.fill_fade.get_colour())
 
-	def SurfDimensions(self) -> None:
-		self.x = self.y = self.WindowMargin
-		self.TextColour = self.ColourScheme[gc.TEXT_DEFAULT_FILL_COLOUR]
-		self.Width, self.Height, self.title, self.LeftMargin = self.DimensionsHelperFunc(
-			self.NormalFont,
-			self.UnderlinedFont,
-			self.game.GamesPlayed
+	def surf_dimensions(self, /) -> None:
+		self.x = self.y = self.window_margin
+		self.text_colour = self.colour_scheme[gc.TEXT_DEFAULT_FILL_COLOUR]
+		self.width, self.height, self.title, self.left_margin = self.dimensions_helper_func(
+			self.normal_font,
+			self.underlined_font,
+			game.games_played
 		)
 
-	def TextBlitsHelper(
+	def text_blits_helper(
 			self,
 			y: int,
-			ToBlit: BlitsList,
+			to_blit: BlitsList,
 			attr: str
-	) -> Tuple[BlitsList, int]:
+	) -> tuple[BlitsList, int]:
 
-		font, linesize, width, Margin = self.NormalFont, self.NormalFont.linesize, self.Width, self.LeftMargin
-		ToBlit += [self.GetText(t[0], font, **t[1]) for t in Player.ScoreboardText(linesize, y, width, Margin, attr)]
-		return ToBlit, (y + (linesize * self.PlayerNo))
+		normalfont = self.normal_font
+		linesize = normalfont.linesize
 
-	def GetSurfBlits(self) -> BlitsList:
-		TrickNo, CardNo, RoundNo, StartCardNo, GamesPlayed = self.game.GetAttributes((
-			'TrickNumber', 'CardNumber', 'RoundNumber', 'StartCardNumber', 'GamesPlayed'
+		to_blit += [
+			self.get_text(t[0], normalfont, **t[1])
+			for t in Players.scoreboard_text(
+				linesize=linesize,
+				start_y=y,
+				surf_width=self.width,
+				left_margin=self.left_margin,
+				attribute=attr)
+		]
+
+		return to_blit, (y + (linesize * self.player_no))
+
+	def get_surf_blits(self, /) -> BlitsList:
+		trick_no, card_no, round_no, start_card_no, games_played = game.get_attributes((
+			'trick_number', 'card_number', 'round_number', 'start_card_no', 'games_played'
 		))
 
-		ScoreboardBlits = [self.title]
-		NormalFont, LineSize = self.NormalFont, self.NormalFont.linesize
-		y = self.title[1] + LineSize
-		ScoreboardBlits, y = self.TextBlitsHelper(y, ScoreboardBlits, gc.SCOREBOARD_TEXT_KEY_1)
-		y += LineSize * 2
+		scoreboard_blits = [self.title]
+		normal_font, linesize = self.normal_font, self.normal_font.linesize
+		y = self.title[1] + linesize
+		scoreboard_blits, y = self.text_blits_helper(y, scoreboard_blits, gc.SCOREBOARD_TEXT_KEY_1)
+		y += linesize * 2
 
-		Message1 = self.GetText(RoundText(RoundNo, StartCardNo), NormalFont, center=(self.attrs.centre[0], y))
-		Message2 = self.GetText(TrickText(CardNo, TrickNo), NormalFont, center=(self.attrs.centre[0], (y + LineSize)))
-		ScoreboardBlits += [Message1, Message2]
+		message1 = self.get_text(round_text(round_no, start_card_no), normal_font, center=(self.attrs.centre[0], y))
+		message2 = self.get_text(trick_text(card_no, trick_no), normal_font, center=(self.attrs.centre[0], (y + linesize)))
+		scoreboard_blits += [message1, message2]
 
-		if GamesPlayed:
-			y += LineSize * 3
-			ScoreboardBlits.append(self.GetText('-----', NormalFont, center=(self.attrs.centre[0], y)))
-			y += LineSize
-			ScoreboardBlits, y = self.TextBlitsHelper(y, ScoreboardBlits, gc.SCOREBOARD_TEXT_KEY_2)
+		if games_played:
+			y += linesize * 3
+			scoreboard_blits.append(self.get_text('-----', normal_font, center=(self.attrs.centre[0], y)))
+			y += linesize
+			scoreboard_blits, y = self.text_blits_helper(y, scoreboard_blits, gc.SCOREBOARD_TEXT_KEY_2)
 
-		return ScoreboardBlits
+		return scoreboard_blits

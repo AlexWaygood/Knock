@@ -1,325 +1,337 @@
+"""Functions controlling the gameplay sequence for the client."""
+
 from typing import NoReturn
 from random import randint
 from traceback_with_variables import printing_exc
 
-import src.global_constants as gc
-
-from src.display.display_manager import DisplayManager
-from src.game.client_game import ClientGame as Game
-from src.players.players_client import ClientPlayer as Player
-from src.network.network_client import Client
+import src.config as rc
+from src.static_constants import StandardFonts, ContextConstants, BiddingChoices
+from src.players.players_client import ClientPlayer as Players
 
 # noinspection PyUnresolvedReferences
 from src import pre_pygame_import
 from pygame.time import delay
 
+game = rc.game
+display_manager = rc.display_manager
+typewriter = rc.typewriter
+client = rc.client
+player: Players = Players(rc.playerindex)
+BiddingSystem = rc.bidding_system
+context = rc.input_context
 
-class ClientsideGameplay:
-	__slots__ = 'game', 'displayManager', 'typewriter', 'client', 'player', 'BiddingSystem', 'context'
 
-	def __init__(self, playerindex: int) -> None:
-		self.game = Game.OnlyGame
-		self.displayManager = DisplayManager.OnlyDisplayManager
-		self.typewriter = self.displayManager.Typewriter
-		self.client = Client.OnlyClient
-		self.player: Player = Player.player(playerindex)
-		self.BiddingSystem: str = self.game.BiddingSystem
-		self.context = self.displayManager.InputContext
+with ContextConstants as c:
+	MESSAGE, FONT, GAME_UPDATES_NEEDED, CLICK_TO_START, TRICK_CLICK_NEEDED, TYPING_NEEDED, GAME_RESET, FIREWORKS = c
 
-	def Play(self) -> NoReturn:
-		with printing_exc():
-			self.PlayTournament()
 
-	def PlayTournament(self) -> NoReturn:
-		# Menu sequence
-		with self.context(TypingNeeded=True, Message='Please enter your name', font=gc.STANDARD_MASSIVE_FONT):
-			while isinstance(self.player.name, int):
-				delay(100)
+def play() -> NoReturn:
+	"""Play a tournament of Knock."""
 
-		self.client.BlockingMessageToServer(message='')
-		delay(100)
+	with printing_exc():
+		play_tournament()
 
-		Args = {
-			gc.MESSAGE: 'Waiting for all players to connect and enter their names',
-			gc.FONT: gc.STANDARD_MASSIVE_FONT,
-			gc.GAME_UPDATES_NEEDED: True
-		}
 
-		with self.context(**Args):
-			while not Player.AllPlayersHaveJoinedTheGame():
-				delay(100)
+def play_tournament() -> NoReturn:
+	"""Gameplay sequence for an entire tournament of Knock."""
 
-		while True:
-			self.PlayGame(self.game.GamesPlayed)
-			self.game.GamesPlayed += 1
+	# Menu sequence
+	with context(TypingNeeded=True, Message='Please enter your name', font=StandardFonts.STANDARD_MASSIVE_FONT):
+		while isinstance(player.name, int):
+			delay(100)
 
-	def PlayGame(self, GamesPlayed: int) -> None:
-		self.GameInitialisation(GamesPlayed)
-		self.AttributeWait('StartNumberSet')
+	client.blocking_message_to_server(message='')
+	delay(100)
 
-		for roundnumber, cardnumber, RoundLeader in zip(*self.game.GetGameParameters()):
-			self.PlayRound(roundnumber, cardnumber, RoundLeader, GamesPlayed)
+	kwargs = {
+		ContextConstants.MESSAGE: 'Waiting for all players to connect and enter their player_names',
+		ContextConstants.FONT: StandardFonts.STANDARD_MASSIVE_FONT,
+		ContextConstants.GAME_UPDATES_NEEDED: True
+	}
 
-		self.EndGame(GamesPlayed)
+	with context(**kwargs):
+		while not Players.all_players_named:
+			delay(100)
 
-	def GameInitialisation(self, GamesPlayed: int) -> None:
-		if GamesPlayed:
-			Message = 'NEW GAME STARTING:'
-			self.Type(Message, WaitAfterwards=1000)
+	while True:
+		with game.context(game_in_progress=True):
+			play_game(games_played=game.games_played)
+		game.games_played += 1
 
-		if self.playerindex() and GamesPlayed:
-			text = f"Waiting for {Player.first()} to decide how many cards the game will start with."
 
-		elif self.playerindex():
-			text = f"As the first player to join this game, it is {Player.first()}'s " \
-			       f"turn to decide how many cards the game will start with."
+def play_game(*, games_played: int) -> None:
+	"""Gameplay sequence for an entire game of Knock."""
 
-		elif GamesPlayed:
-			self.Type('Your turn to decide the starting card number!')
-			text = "Please enter how many cards you wish the game to start with:"
+	game_initialisation(games_played=games_played)
+	attribute_wait('StartNumberSet')
 
-		else:
-			text = "As the first player to join this game, it is your turn to decide " \
-			       "how many cards you wish the game to start with:"
+	for roundnumber, cardnumber, RoundLeader in zip(*game.get_game_parameters()):
+		play_round(roundnumber, cardnumber, RoundLeader, games_played)
 
-		self.Type(text, WaitAfterwards=0)
+	end_game(games_played=games_played)
 
-		with self.context(GameUpdatesNeeded=True, Message=text, font=gc.STANDARD_TITLE_FONT):
-			self.context.TypingNeeded = not self.playerindex()
-			while not self.game.StartCardNumber:
-				delay(100)
 
-		# Do some maths w.r.t. board dimensions, now that we know how many cards the game is going to start with.
-		self.displayManager.GetHandRects()
+def game_initialisation(*, games_played: int) -> None:
+	"""Gameplay sequence during the initialisation sequence
+	The initialisation sequence involves entering players' names and how many cards the game will start with, etc.
+	"""
 
-		self.Type('Click to start the game for all players!', WaitAfterwards=0)
+	if games_played:
+		type_msg('NEW GAME STARTING:', wait_afterwards=1000)
 
-		Args = {
-			gc.CLICK_TO_START: True,
-			gc.GAME_UPDATES_NEEDED: True,
-			gc.MESSAGE: 'Click to start the game for all players!',
-			gc.FONT: gc.STANDARD_TITLE_FONT
-		}
+	if playerindex() and games_played:
+		text = f"Waiting for {Players(0)} to decide how many cards the game will start with."
 
-		with self.context(**Args):
-			while not self.game.StartPlay:
-				delay(100)
+	elif playerindex():
+		text = (
+			f"As the first player to join this game, it is {Players(0)}'s "
+			f"turn to decide how many cards the game will start with."
+		)
 
-		self.displayManager.GameInitialisationFade()
-		self.client.QueueMessage('@A')
-		self.game.StartPlay = True
+	elif games_played:
+		type_msg('Your turn to decide the starting card number!')
+		text = "Please enter how many cards you wish the game to start with:"
 
-	def PlayRound(
-			self,
-			RoundNumber: int,
-			cardno: int,
-			RoundLeader: Player,
-			GamesPlayed: int,
-	) -> None:
+	else:
+		text = (
+			"As the first player to join this game, it is your turn to decide "
+			"how many cards you wish the game to start with:"
+		)
 
-		self.game.StartRound(cardno, RoundLeader.playerindex, RoundNumber)
+	type_msg(text, wait_afterwards=0)
 
-		Message = f'ROUND {RoundNumber} starting! This round has {cardno} card{"s" if cardno != 1 else ""}.'
-		Message2 = f'{RoundLeader.name} starts this round.'
+	with context(GameUpdatesNeeded=True, Message=text, font=StandardFonts.STANDARD_TITLE_FONT):
+		context.typing_needed = not playerindex()
+		while not game.start_card_no:
+			delay(100)
 
-		for m in (Message, Message2):
-			self.Type(m)
+	# Do some maths w.r.t. board dimensions, now that we know how many cards the game is going to start with.
+	display_manager.get_hand_rects()
 
-		if not GamesPlayed and RoundNumber == 1:
-			Message = "Over the course of the game, your name will be underlined if it's your turn to play."
-			Message2 = 'Press the Tab key at any time to toggle in and out of full-screen mode.'
+	type_msg('Click to start the game for all players!', wait_afterwards=0)
 
-			self.Type(Message)
-			self.Type(Message2)
+	kwargs = {
+		CLICK_TO_START: True,
+		GAME_UPDATES_NEEDED: True,
+		MESSAGE: 'Click to start the game for all players!',
+		FONT: StandardFonts.STANDARD_TITLE_FONT
+	}
 
-		# Wait for the server to make a new pack of cards.
-		self.AttributeWait('NewPack')
-		Trump = self.game.TrumpCard
-		self.Type(f'The trumpcard for this round is the {Trump}, which has been removed from the pack.')
+	with context(**kwargs):
+		while not game.play_started:
+			delay(100)
 
-		# Wait for the server to deal cards for this round.
-		self.AttributeWait('CardsDealt')
+	display_manager.game_initialisation_fade()
+	client.queue_message('@A')
+	game.play_started = True
 
-		self.displayManager.RoundStartFade()
+
+def play_round(round_number: int, card_number: int, round_leader: Players, games_played: int) -> None:
+	"""Gameplay sequence during the playing of a round."""
+
+	with game.context(round_in_progress=True):
+		message = f'ROUND {round_number} starting! This round has {card_number} card{"s" if card_number != 1 else ""}.'
+		message2 = f'{round_leader.name} starts this round.'
+
+		for m in (message, message2):
+			type_msg(m)
+
+		if not games_played and round_number == 1:
+			message = "Over the course of the game, your name will be underlined if it's your turn to play."
+			message2 = 'Press the Tab key at any time to toggle in and out of full-screen mode.'
+
+			type_msg(message)
+			type_msg(message2)
+
+		# wait for the server to make a new pack of cards.
+		attribute_wait('new_pack')
+		trump = game.trump_card
+		type_msg(f'The trumpcard for this round is the {trump}, which has been removed from the pack.')
+
+		# wait for the server to deal cards for this round.
+		attribute_wait('CardsDealt')
+
+		display_manager.round_start_fade()
 		delay(250)
 
-		if self.BiddingSystem == gc.CLASSIC_BIDDING_SYSTEM:
-			self.ClassicBidding(RoundNumber, GamesPlayed)
+		if BiddingSystem == BiddingChoices.CLASSIC_BIDDING_SYSTEM:
+			classic_bidding(round_number=round_number, games_played=games_played)
 		else:
-			self.RandomBidding(RoundNumber, cardno, GamesPlayed)
+			random_bidding(round_number=round_number, card_number=card_number, games_played=games_played)
 
-		self.client.BlockingMessageToServer()
+		client.blocking_message_to_server()
 
 		# Announce what all the players are bidding this round.
-		for Message in Player.BidText():
-			self.Type(Message)
+		for message in Players.bid_text():
+			type_msg(message)
 
-		self.client.QueueMessage('@A')
+		client.queue_message('@A')
 
-		FirstPlayerIndex = RoundLeader.playerindex
+		first_player_index = round_leader.player_index
 
-		for i in range(cardno):
-			FirstPlayerIndex = self.PlayTrick(FirstPlayerIndex, (i + 1), cardno)
-
-		self.displayManager.RoundEndFade()
-
-		# Award points etc.
-		self.game.EndRound()
-		self.client.QueueMessage('@A')
-
-		delay(500)
-
-		for message in Player.EndRoundText(FinalRound=(cardno == 1)):
-			self.Type(message)
-
-		self.client.QueueMessage('@A')
-
-	def ClassicBidding(
-			self,
-			RoundNumber: int,
-			GamesPlayed: int
-	) -> None:
-
-		if RoundNumber == 1 and not GamesPlayed:
-			self.Type('Cards for this round have been dealt; each player must decide what they will bid.')
-
-		Args = {
-			gc.GAME_UPDATES_NEEDED: True,
-			gc.TYPING_NEEDED: True,
-			gc.MESSAGE: 'Please enter your bid:',
-			gc.FONT: gc.STANDARD_TITLE_FONT
-		}
-
-		with self.context(**Args):
-			# We need to enter our bid.
-			while self.player.Bid == -1:
-				delay(100)
-
-			# We now need to wait until everybody else has bid.
-			self.context.TypingNeeded = False
-			i = self.playerindex()
-
-			while not Player.AllBid():
-				delay(100)
-				self.context.Text = Player.BidWaitingText(i)
-
-	def RandomBidding(
-			self,
-			RoundNumber: int,
-			cardnumber: int,
-			GamesPlayed: int
-	) -> None:
-
-		if RoundNumber == 1 and not GamesPlayed:
-			self.Type('Cards for this round have been dealt; each player must now bid.')
-
-			self.Type(
-				"The host for this game has decided that everybody's bid in this game "
-				"will be randomly generated rather than decided"
+		for i in range(card_number):
+			first_player_index = play_trick(
+				first_player_index=first_player_index,
+				trick_number=(i + 1),
+				card_number_this_round=card_number
 			)
 
-		Bid = randint(0, cardnumber)
-		self.Type(f'Your randomly generated bid for this round is {Bid}!')
+		display_manager.round_end_fade()
 
-		with self.game as g:
-			g.PlayerMakesBid(Bid, self.playerindex())
+	client.queue_message('@A')
 
-		self.client.QueueMessage(f'@B{Bid}')
+	delay(500)
 
-		with self.context(GameUpdatesNeeded=True):
-			while not Player.AllBid():
-				delay(100)
-				self.context.Text = Player.BidWaitingText(self.playerindex())
+	for message in Players.end_of_round_text(final_round=(card_number == 1)):
+		type_msg(message)
 
-	def PlayTrick(
-			self,
-			FirstPlayerIndex: int,
-			TrickNumber: int,
-			CardNumberThisRound: int,
-	) -> int:
+	client.queue_message('@A')
 
-		PlayerOrder, PosInTrick = self.game.StartTrick(TrickNumber, FirstPlayerIndex, self.player)
-		self.client.QueueMessage('@A')
-		Text = f'{f"TRICK {TrickNumber} starting" if CardNumberThisRound != 1 else "TRICK STARTING"}:'
-		self.Type(Text)
+
+def classic_bidding(*, round_number: int, games_played: int) -> None:
+	"""Gameplay sequence during bidding at the beginning of a round.
+	This function is only used if the 'classic bidding' option has been selected.
+	"""
+
+	if round_number == 1 and not games_played:
+		type_msg('Cards for this round have been dealt; each player must decide what they will bid.')
+
+	kwargs = {
+		GAME_UPDATES_NEEDED: True,
+		TYPING_NEEDED: True,
+		MESSAGE: 'Please enter your bid:',
+		FONT: StandardFonts.STANDARD_TITLE_FONT
+	}
+
+	with context(**kwargs):
+		# We need to enter our bid.
+		while player.bid == -1:
+			delay(100)
+
+		# We now need to wait until everybody else has bid.
+		context.typing_needed = False
+		i = playerindex()
+
+		while not Players.all_bid():
+			delay(100)
+			context.text = Players.bid_waiting_text(i)
+
+
+def random_bidding(*, round_number: int, card_number: int, games_played: int) -> None:
+	"""Gameplay sequence during bidding at the beginning of a round.
+	This function is only used if the 'random bidding' option has been selected.
+	"""
+
+	if round_number == 1 and not games_played:
+		type_msg('Cards for this round have been dealt; each player must now bid.')
+
+		type_msg(
+			"The host for this game has decided that everybody's bid in this game "
+			"will be randomly generated rather than decided"
+		)
+
+	bid = randint(0, card_number)
+	type_msg(f'Your randomly generated bid for this round is {bid}!')
+
+	with game as g:
+		g.player_makes_bid(bid, playerindex())
+
+	client.queue_message(f'@B{bid}')
+
+	with context(GameUpdatesNeeded=True):
+		while not Players.all_bid():
+			delay(100)
+			context.text = Players.bid_waiting_text(playerindex())
+
+
+def play_trick(*, first_player_index: int, trick_number: int, card_number_this_round: int) -> int:
+	"""Gameplay sequence during the playing of tricks_this_round."""
+
+	player_order, pos_in_trick = game.start_trick(trick_number, first_player_index, player)
+
+	with game.context(trick_in_progress=True):
+		client.queue_message('@A')
+		text = f'{f"TRICK {trick_number} starting" if card_number_this_round != 1 else "TRICK STARTING"}:'
+		type_msg(text)
 
 		# Make sure the server is ready for the trick to start.
-		self.AttributeWait('TrickStart')
+		attribute_wait('TrickStart')
 
 		# Tell the server we're ready to play the trick.
-		self.client.BlockingMessageToServer('@A')
+		client.blocking_message_to_server('@A')
 
-		self.game.PlayTrick(self.context, PosInTrick)
+		game.play_trick(context, pos_in_trick)
 
-		self.AttributeWait('TrickWinnerLogged')
-		Winner = self.game.EndTrick()
+		attribute_wait('TrickWinnerLogged')
 
-		# Tell the server we've logged the winner
-		self.client.QueueMessage('@A')
+	winner = game.trick_winner
 
-		delay(500)
-		self.Type(f'{Winner} won {f"trick {TrickNumber}" if CardNumberThisRound != 1 else "the trick"}!')
-		self.displayManager.TrickEndFade()
+	# Tell the server we've logged the winner
+	client.queue_message('@A')
 
-		if TrickNumber != CardNumberThisRound:
-			self.client.QueueMessage('@A')
+	delay(500)
+	type_msg(f'{winner} won {f"trick {trick_number}" if card_number_this_round != 1 else "the trick"}!')
+	display_manager.trick_end_fade()
 
-		return Winner.playerindex
+	if trick_number != card_number_this_round:
+		client.queue_message('@A')
 
-	def EndGame(self, GamesPlayed: int) -> None:
-		self.displayManager.DeactivateHand()
+	return winner.player_index
 
-		# Announce the final scores + who won the game.
-		for text in Player.GameCleanUp():
-			self.Type(text)
 
-		self.game.StartPlay = False
-		delay(500)
+def end_game(*, games_played: int) -> None:
+	"""Gameplay sequence at the end of a game."""
 
-		self.displayManager.FireworksSequence()
+	display_manager.deactivate_hand()
 
-		# Announce who's currently won the most games in this tournament so far.
-		if GamesPlayed:
-			for text in Player.TournamentLeaders():
-				self.Type(text)
+	# Announce the final scores + who won the game.
+	for text in Players.end_of_game_text():
+		type_msg(text)
 
-		Message = 'Press the spacebar to play again with the same players, or close the window to exit the game.'
-		self.Type(Message, WaitAfterwards=0)
+	game.play_started = False
+	delay(500)
 
-		self.AttributeWait('NewGameReset', GameReset=True)
-		self.game.NewGameReset()
-		self.client.QueueMessage('@A')
-		self.displayManager.ClearHandRects()
+	display_manager.fireworks_sequence()
 
-	def playerindex(self) -> int:
-		# Has to be dynamic as the player's playerindex is liable to change
-		return self.player.playerindex
+	# Announce who's currently won the most games in this tournament so far.
+	if games_played:
+		for text in Players.tournament_leaders_text():
+			type_msg(text)
 
-	def Type(
-			self,
-			message: str,
-			WaitAfterwards: int = 1200
-	) -> None:
-		self.typewriter.Type(message, WaitAfterwards=WaitAfterwards)
+	message = 'Press the spacebar to play again with the same players, or close the window to exit the game.'
+	type_msg(message, wait_afterwards=0)
 
-	def AttributeWait(
-			self,
-			Attribute: str,
-			GameReset: bool = False
-	) -> None:
+	attribute_wait('new_game_reset', game_reset=True)
+	game.new_game_reset()
+	client.queue_message('@A')
+	display_manager.clear_hand_rects()
 
-		Args = {
-			gc.GAME_UPDATES_NEEDED: True,
-			gc.GAME_RESET: GameReset
-		}
 
-		if GameReset:
-			m = 'Press the spacebar to play again with the same players, or close the window to exit the game.'
+def playerindex() -> int:
+	"""Return the player_index of the client.
+	This function has to be dynamic, as a player's player_index is liable to change between games.
+	"""
+	return player.player_index
 
-			Args.update({
-				gc.MESSAGE: m,
-				gc.FONT: gc.STANDARD_TITLE_FONT
-			})
 
-		with self.context(**Args):
-			self.game.AttributeWait(Attribute)
+def type_msg(message: str, /, *, wait_afterwards: int = 1200) -> None:
+	"""Type a message on the typewriter (convenience function)."""
+	typewriter.type(message, wait_afterwards=wait_afterwards)
+
+
+def attribute_wait(attribute: str, /, *, game_reset: bool = False) -> None:
+	kwargs = {
+		GAME_UPDATES_NEEDED: True,
+		GAME_RESET: game_reset
+	}
+
+	if game_reset:
+		m = 'Press the spacebar to play again with the same players, or close the window to exit the game.'
+
+		kwargs.update({
+			MESSAGE: m,
+			FONT: StandardFonts.STANDARD_TITLE_FONT
+		})
+
+	with context(**kwargs):
+		game.attribute_wait(attribute)

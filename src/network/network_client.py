@@ -1,74 +1,59 @@
+"""A class representing a network client."""
+
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, NoReturn
-from queue import Queue
+from typing import Union, NamedTuple, Optional
+from collections import deque
+from logging import getLogger
 from time import time
-from traceback_with_variables import printing_exc
 
-from src.network.network_abstract import Network, GetTime
-from src.misc import GetLogger
-
-# noinspection PyUnresolvedReferences
-from src import pre_pygame_import
-from pygame.time import delay, get_ticks as GetTicks
-
-if TYPE_CHECKING:
-	from src.display.input_context import InputContext
-	from src.special_knock_types import OptionalClient, ClientUpdateReturn
+from src.network import Network, get_time
 
 
 CONNECTION_ERROR_MESSAGE_INTERVAL = 5
 PING_INTERVAL = 5
 CLIENT_DEFAULT_MESSAGE = 'ping'
 MESSAGE_TO_TERMINATE = '@T'
+logger = getLogger(__name__)
 
 
-def DetectBrokenConnection(LastUpdateTime: int) -> bool:
-	return LastUpdateTime < (GetTicks() - 10000)
+class NetworkInfoParcel(NamedTuple):
+	"""A two-item tuple containing the latest message from the server, and whether the connection is still alive."""
+	msg_from_server: Optional[str]
+	connection_broken: bool
 
 
 class Client(Network):
-	__slots__ = 'addr', 'ConnectionMessage', 'SendQueue', 'ReceiveQueue', 'LastUpdate', 'ConnectionBroken', 'log'
+	"""A network client.
 
-	OnlyClient: OptionalClient = None
+	The SOLE purpose of this class is to send and receive messages to the network server.
 
-	# This is only going to be called once, so we don't need to muck around with singleton patterns etc.
-	def __new__(
-			cls,
-			FrozenState: bool,
-			IP: str,
-			port: int,
-			password: str,
-	) -> Client:
+	This class knows NOTHING about how to interpret these messages
+	with respect to updating the state of the tournament or game currently in progress.
+	"""
 
-		# noinspection PyDunderSlots,PyUnresolvedReferences
-		cls.OnlyClient = super(Client, cls).__new__(cls)
-		return cls.OnlyClient
+	__slots__ = {
+		'addr': 'The (IP, port) connection address of the server.',
+		'send_queue': 'A deque of messages to be sent to the server.',
+		'receive_queue': 'A queue of messages received from the server, of maximum length 1.',
+		'last_update_time': 'The time at which the last update from the server was received.'
+	}
 
-	def __init__(
-			self,
-			FrozenState: bool,
-			IP: str,
-			port: int,
-			password: str,
-	) -> NoReturn:
-
+	def __init__(self, ip_addr: str, port: int, password: str, send_queue_len: int, receive_queue_len: int) -> None:
 		super().__init__()
-		self.addr = (IP, port)
-		self.SendQueue = Queue()
-		self.ReceiveQueue = Queue(maxsize=1)
-		self.LastUpdate = 0
-		self.ConnectionBroken = False
-		self.log = GetLogger(FrozenState)
+		self.addr = (ip_addr, port)
+		self.send_queue = deque(maxlen=send_queue_len)
+		self.receive_queue = deque(maxlen=receive_queue_len)
+		self.last_update_time = time()
 
-		print(f'Starting attempt to connect at {GetTime()}, loading data...')
+		print(f'Starting attempt to connect at {get_time()}, loading data...')
 
-		ErrorTuple = (
+		error_tuple = (
 			"'NoneType' object is not subscriptable",
 			'[WinError 10061] No connection could be made because the target machine actively refused it'
 		)
 
-		Time = time()
+		start_time = time()
 
 		while True:
 			try:
@@ -76,14 +61,15 @@ class Client(Network):
 
 				if password:
 					from src.password_checker.password_client import ClientPasswordChecker as PasswordChecker
-					PasswordChecker(self, self.conn, password)  # Sends the password to the server in __init__()
+					# Sends the password to the server in __init__()
+					PasswordChecker(self, self.conn, password)
 
-				print(f'Connected at {GetTime()}.')
+				print(f'Connected at {get_time()}.')
 				self.receive(connecting=True)
 				break
 
 			except (TypeError, ConnectionRefusedError) as e:
-				if str(e) in ErrorTuple:
+				if str(e) in error_tuple:
 					print('Initial connection failed; has the server been initialised?')
 					print('Further attempts will be made to connect until a connection is successful.')
 					continue
@@ -94,73 +80,64 @@ class Client(Network):
 					print("OSError. Check you're connected to the internet?")
 					raise e
 
-			if (CurrentTime := time()) > Time + CONNECTION_ERROR_MESSAGE_INTERVAL:
+			if (current_time := time()) > start_time + CONNECTION_ERROR_MESSAGE_INTERVAL:
 				print(
 					"Connection failed; trying again. "
 					"Check that the server script is running and you're connected to the internet."
 				)
 
-				Time = CurrentTime
+				start_time = current_time
 
-	def Update(self) -> ClientUpdateReturn:
-		if (IsBroken := (DetectBrokenConnection(self.LastUpdate))) is self.ConnectionBroken:
-			pass
+	def update(self, /) -> NetworkInfoParcel:
+		"""Return the latest message from the server, and whether or not the connection is still alive."""
+		return NetworkInfoParcel(self.latest_message_from_server, self.connection_broken)
 
-		elif IsBroken:
-			print(f'Connection to the server lost at {GetTime()}!')
-			self.log.debug('Connection to the server lost')
-			self.ConnectionBroken = True
+	def receive(self, /, *, connecting: bool = False) -> None:
+		"""Receive a message from the server, and add it to the queue of received messages."""
 
-		else:
-			print(f'Connection to the server restored at {GetTime()}!')
-			self.log.debug('Connection to the server restored.')
-			self.ConnectionBroken = False
+		message = self.sub_receive(self.default_tiny_message_size, self.conn).decode()
+		message = message.split('-')[0]
 
-		return (None if self.ReceiveQueue.empty() else self.ReceiveQueue.get()), self.ConnectionBroken
+		if message[0].isdigit() and message[1].isdigit() and not connecting:
+			message = self.sub_receive(int(message), self.conn)
 
-	def receive(self, connecting: bool = False) -> None:
-		Message = self.SubReceive(self.DefaultTinyMessageSize, self.conn).decode()
-		Message = Message.split('-')[0]
+		self.last_update = time()
+		logger.debug(f'Message received from server, {message}.')
+		self.receive_queue.append(message)
 
-		if Message[0].isdigit() and Message[1].isdigit() and not connecting:
-			Message = self.SubReceive(int(Message), self.conn)
+	def client_send(self, message: str) -> None:
+		"""Send a message to the server."""
 
-		self.LastUpdate = GetTicks()
-		self.log.debug(f'Message received from server, {Message}.')
-		self.ReceiveQueue.put(Message)
-
-	def BlockingMessageToServer(
-			self,
-			message: str = CLIENT_DEFAULT_MESSAGE
-	) -> None:
-
-		if message:
-			self.SendQueue.put(message)
-
-		while not self.SendQueue.empty():
-			delay(100)
-
-	def ClientSend(self, message: str) -> None:
 		self.send(message, self.conn)
-		self.log.debug(f'Message sent to server, {message}.')
+		logger.debug(f'Message sent to server, {message}.')
 		self.receive()
 
-	def UpdateLoop(self, context: InputContext) -> NoReturn:
-		with printing_exc():
-			while True:
-				delay(100)
+	def queue_message(self, message: str, /) -> None:
+		"""Queue a message to be sent to the server."""
+		self.send_queue.append(message)
 
-				if self.SendQueue.empty():
-					if context.GameUpdatesNeeded or self.LastUpdate < (time() - PING_INTERVAL):
-						self.ClientSend(CLIENT_DEFAULT_MESSAGE)
-					continue
+	@property
+	def latest_message_from_server(self, /) -> Union[str, None]:
+		"""Get the latest message from the server, if there is one."""
 
-				self.ClientSend(self.SendQueue.get())
+		try:
+			return self.receive_queue.popleft()
+		except KeyError:
+			return None
 
-	def QueueMessage(self, message: str) -> None:
-		self.SendQueue.put(message)
+	@property
+	def connection_broken(self, /) -> bool:
+		"""Detect whether the connection is broken."""
+		is_broken = self.last_update_time < (time() - 10)
 
-	def CloseDown(self) -> None:
-		self.log.debug('Attempting to close connection')
-		self.ClientSend(MESSAGE_TO_TERMINATE)
-		self.CloseConnection(self.conn)
+		if is_broken:
+			logger.debug('Connection to the server lost')
+
+		return is_broken
+
+	def close_down(self, /) -> None:
+		"""Close the network connection."""
+
+		logger.debug('Attempting to close connection')
+		self.client_send(MESSAGE_TO_TERMINATE)
+		self.close_connection(self.conn)

@@ -1,134 +1,106 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, List, Tuple
 
-from functools import lru_cache
+from typing import TYPE_CHECKING, TypeVar, Optional, Final
 from fractions import Fraction
-from math import ceil
 
-from src.display.abstract_text_rendering import Fonts
+from src.config import client
+
 from src.display.colours import ColourScheme
+from src.display.abstract_text_rendering import Fonts
 
 from src.cards.client_card import ClientCard as Card
-from src.game.client_game import ClientGame as Game
-from src.network.network_client import Client
-from src.global_constants import ORIGINAL_CARD_IMAGE_DIMENSIONS
+from src import Position, Dimensions
+from src.get_dimensions import get_dimensions
 
 if TYPE_CHECKING:
-	from src.players.players_client import ClientPlayer as Player
-	from src.display.knock_surfaces.game_surf import GameSurface
-	from src.display.knock_surfaces.board_surf import BoardSurface
-	from src.special_knock_types import Position, DimensionTuple, SurfaceCoordinatorTypeVar
+	from src.players.players_client import ClientPlayer as Players
+	from src.display import GameSurface, BoardSurface
 
 
-INPUT_POS_OFFSET = 50
-
-
-@lru_cache
-def GetDimensions(
-		GameX: int,
-		GameY: int,
-		CurrentCardDimensions: DimensionTuple = ORIGINAL_CARD_IMAGE_DIMENSIONS
-) -> Tuple[int, int, int, Fraction]:
-
-	"""This function is designed to be used both at the beginning of the game and midway through the game"""
-
-	# Calculate the required size of the card images, based on various ratios of surfaces that will appear on the screen.
-	# Lots of "magic numbers" here, based purely on the principle of "keep the proportions that look good on my laptop".
-
-	WindowMargin = int(GameX * Fraction(15, 683))
-	CardY = min(((GameY // Fraction(768, 150)) - WindowMargin), (GameY // 5.5))
-	CardX, CardY = ceil(CardY * Fraction(*CurrentCardDimensions)), ceil(CardY)
-	RequiredResizeRatio = Fraction(CurrentCardDimensions[1], CardY)
-	return WindowMargin, CardX, CardY, RequiredResizeRatio
+# noinspection PyTypeChecker
+S = TypeVar('S', bound='SurfaceCoordinator')
+INPUT_POS_OFFSET: Final = 50
 
 
 class SurfaceCoordinator:
 	__slots__ = tuple()
 
-	game: Game = None
-	player: Player = None
-	GameSurf: GameSurface = None  # Will add itself as a class attribute in its own __init__()
-	BoardSurf: BoardSurface = None  # Will add itself as a class attribute in its own __init__()
-	Fonts: Fonts = None
-	client: Client = None
-	ColourScheme: ColourScheme = None
-	PlayerNo = 0
+	player: Optional[Players] = None
+	game_surf: Optional[GameSurface] = None  # Will add itself as a class attribute in its own __init__()
+	board_surf: Optional[BoardSurface] = None  # Will add itself as a class attribute in its own __init__()
+	fonts: Optional[Fonts] = None
+	colour_scheme: Optional[ColourScheme] = None
+	player_no = 0
 
-	WindowMargin = 0
-	CardX = 0
-	CardY = 0
-	RequiredResizeRatio: Fraction = None
+	window_margin = 0
+	card_x = 0
+	card_y = 0
+	required_resize_ratio: Optional[Fraction] = None
 
-	BoardCentre: Position = tuple()
-	PlayStartedInputPos: Position = tuple()
-	PreplayInputPos: Position = tuple()
+	board_centre: Position = tuple()
+	play_started_input_pos: Position = tuple()
+	preplay_input_pos: Position = tuple()
 
-	AllSurfaces: List[SurfaceCoordinator] = []
+	all_surfaces: list[SurfaceCoordinator] = []
 
 	@classmethod
-	def AddClassVars(cls, player: Player) -> None:
-		cls.game = Game.OnlyGame
-		cls.client = Client.OnlyClient
-		cls.ColourScheme = ColourScheme.OnlyColourScheme
+	def add_class_vars(cls, /, *, player: Players) -> None:
+		cls.colour_scheme = ColourScheme.OnlyColourScheme
 		cls.player = player
-		cls.PlayerNo = Game.PlayerNumber
-		cls.GameSurf.Hand = cls.player.Hand
-		GameX, GameY = cls.GameSurf.Width, cls.GameSurf.Height
-		cls.Fonts = Fonts(GameX, GameY)
-		cls.WindowMargin, cls.CardX, cls.CardY, cls.RequiredResizeRatio = GetDimensions(GameX, GameY)
+		cls.game_surf.hand = cls.player.hand
+		game_x, game_y = cls.game_surf.dimensions
+		cls.fonts = Fonts(game_x, game_y)
+		cls.window_margin, cls.card_x, cls.card_y, cls.required_resize_ratio = get_dimensions(game_x, game_y)
 
 	@classmethod
-	def AddSurfs(cls) -> None:
-		for surf in cls.AllSurfaces:
-			surf.GetSurf()
-
-		Card.AddImages(cls.RequiredResizeRatio)
+	def add_surfs(cls, /) -> None:
+		for surf in cls.all_surfaces:
+			surf.get_surf()
 
 	@classmethod
-	def NewWindowSize1(cls) -> None:
-		GameX, GameY = cls.GameSurf.Width, cls.GameSurf.Height
+	def new_window_size_1(cls, /) -> None:
+		game_x, game_y = cls.game_surf.dimensions
 
-		cls.WindowMargin, cls.CardX, cls.CardY, RequiredResizeRatio = GetDimensions(
-			GameX,
-			GameY,
-			CurrentCardDimensions=(cls.CardX, cls.CardY)
+		cls.window_margin, cls.card_x, cls.card_y, RequiredResizeRatio = get_dimensions(
+			game_x,
+			game_y,
+			current_card_dimensions=Dimensions(cls.card_x, cls.card_y)
 		)
 
-		Card.UpdateImages(RequiredResizeRatio)
-		cls.Fonts.__init__(cls.GameSurf.Width, cls.GameSurf.Height)
+		Card.update_images(RequiredResizeRatio)
+		cls.fonts.__init__(*cls.game_surf.dimensions)
 
 	@classmethod
-	def NewWindowSize2(cls) -> None:
-		for surf in cls.AllSurfaces:
-			surf.Initialise().GetSurf()
+	def new_window_size_2(cls, /) -> None:
+		for surf in cls.all_surfaces:
+			surf.initialise().get_surf()
 
-		cls.BoardCentre = BoardX, BoardY = cls.BoardSurf.NonrelativeBoardCentre
-		cls.PreplayInputPos = (cls.GameSurf.attrs.centre[0], (cls.GameSurf.attrs.centre[1] + INPUT_POS_OFFSET))
-		cls.PlayStartedInputPos = (BoardX, (BoardY + INPUT_POS_OFFSET))
+		cls.board_centre = BoardX, BoardY = cls.board_surf.nonrelative_board_centre
+		cls.play_started_input_pos = Position(BoardX, (BoardY + INPUT_POS_OFFSET))
 
-	@classmethod
-	def NewWindowSize(
-			cls,
-			WindowX: int,
-			WindowY: int,
-			ResetPos: bool
-	) -> None:
-
-		cls.GameSurf.NewWindowSize(WindowX, WindowY, ResetPos)
-		cls.NewWindowSize1()
-		cls.NewWindowSize2()
+		cls.preplay_input_pos = Position(
+			cls.game_surf.attrs.centre[0],
+			(cls.game_surf.attrs.centre[1] + INPUT_POS_OFFSET)
+		)
 
 	@classmethod
-	def UpdateAll(cls, ForceUpdate: bool = False) -> None:
-		if not cls.client.ConnectionBroken:
-			for surf in cls.AllSurfaces:
-				surf.Update(ForceUpdate=ForceUpdate)
+	def new_window_size(cls, /, *, window_dimensions: Dimensions, reset_pos: bool) -> None:
 
-	def Initialise(self: SurfaceCoordinatorTypeVar) -> SurfaceCoordinatorTypeVar:
+		cls.game_surf.new_window_size(*window_dimensions, reset_pos)
+		cls.new_window_size_1()
+		cls.new_window_size_2()
+
+	@classmethod
+	def update_all(cls, /, *, force_update: bool = False) -> None:
+		if not client.connection_broken:
+			for surf in cls.all_surfaces:
+				surf.update(force_update=force_update)
+
+	def initialise(self: S, /) -> S:
 		return self
 
-	def Update(self, ForceUpdate: bool = False) -> None:
+	def update(self, /, *, force_update: bool = False) -> None:
 		pass
 
-	def GetSurf(self) -> None:
+	def get_surf(self, /) -> None:
 		pass

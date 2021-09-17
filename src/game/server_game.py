@@ -1,183 +1,191 @@
 from __future__ import annotations
 
 from traceback_with_variables import printing_exc
-from random import shuffle
-from typing import TYPE_CHECKING, NoReturn
+from typing import TYPE_CHECKING, NoReturn, Final
 
-from src.game.abstract_game import Game, EventsDict
-from src.players.players_server import ServerPlayer as Player
-from src.cards.server_card_suit_rank import ServerCard as Card
+from src.game import AbstractGame, events_dict
+from src.players.players_server import ServerPlayers as Players
+from src.cards.server_card import ServerCard as Card, ServerPack as Pack
 
 # noinspection PyUnresolvedReferences
-from src import pre_pygame_import
+from src import pre_pygame_import, config as rc
 from pygame.time import delay
 
 if TYPE_CHECKING:
-	from src.special_knock_types import NumberInput, ServerCardList, OptionalStr
+	from src.special_knock_types import NumberInput, OptionalStr
 
 
-DEFAULT_NETWORK_MESSAGE = 'pong'
-KILL_PROGRAMME_MESSAGE = 'Terminate'
+DEFAULT_NETWORK_MESSAGE: Final = 'pong'
+KILL_PROGRAMME_MESSAGE: Final = 'Terminate'
 
 
-class ServerGame(Game):
-	__slots__ = 'Operations', 'PlayerNumber'
+# noinspection PyPropertyDefinition
+class ServerGame(AbstractGame[Card, Players]):
+	"""Serverside simulation of a game of Knock."""
 
-	def __init__(
-			self,
-			BiddingSystem: str,
-			PlayerNumber: int
-	) -> None:
-		super().__init__(BiddingSystem)
+	__slots__ = 'operations', 'triggers'
 
-		# The PlayerNumber is set as an instance variable on the server side but a class variable on the client side.
-		self.PlayerNumber = PlayerNumber
-		self.Triggers = EventsDict()
+	def __init__(self, /) -> None:
+		super().__init__()
+		self.triggers = events_dict()
 
-		Player.MakePlayers(PlayerNumber)
-		Card.MakePack()
+		Players.make_players()
 
-		self.Operations = {
+		self.operations = {
 			# if the client is sending the name of that player
-			'@P': lambda Info: self.AddPlayerName(Info),
+			'@P': lambda info: self.add_player_name(info),
 
 			# if the client is telling us how many cards the game should start with
-			'@N': lambda Info: self.SetCardNumber(Info),
+			'@N': lambda info: self.set_card_number(info),
 
 			# if the client is trying to play a card
-			'@C': lambda Info: self.ExecutePlay(Info[2:4], int(Info[4])),
+			'@C': lambda info: self.execute_play(info[2:4], int(info[4])),
 
 			# if the client is telling us the players are ready to start the game
-			'@S': lambda Info: self.TimeToStart(),
+			'@s': lambda info: self.time_to_start(),
 
-			# if the client is telling us how many tricks they are going to bid in this round.
-			'@B': lambda Info: self.PlayerMakesBid(Info),
+			# if the client is telling us how many tricks_this_round they are going to bid in this round.
+			'@B': lambda info: self.player_makes_bid(info),
 
 			# If the client is telling us whether they want an instant rematch after the game has ended.
-			'@1': lambda Info: self.RepeatQuestionAnswer(),
+			'@1': lambda info: self.repeat_question_answer(),
 
 			# If the client is saying they don't want a repeat game.
-			'@T': lambda Info: KILL_PROGRAMME_MESSAGE,
+			'@T': lambda info: KILL_PROGRAMME_MESSAGE,
 
 			# If the client is telling us they've completed an animation sequence.
-			'@A': lambda Info: self.PlayerActionCompleted(Info),
+			'@A': lambda info: self.player_action_completed(info),
 
 			# If it's just a ping to keep the connection going
-			'pi': lambda Info: DEFAULT_NETWORK_MESSAGE
+			'pi': lambda info: DEFAULT_NETWORK_MESSAGE
 		}
 
-	@staticmethod
-	def AddPlayerName(Info: str) -> None:
-		Player.AddName(Info[2:-1], int(Info[-1]))
+	@classmethod
+	@property
+	def players(cls, /) -> type[Players]:
+		return Players
 
-	def SetCardNumber(self, number: NumberInput) -> None:
-		self.StartCardNumber = int(number)
-
-	def TimeToStart(self) -> None:
-		self.StartPlay = True
-
-	@staticmethod
-	def PlayerActionCompleted(Info: str) -> None:
-		Player.PlayerActionCompleted(int(Info[2]))
+	@classmethod
+	@property
+	def cards(cls, /) -> type[Card]:
+		return Card
 
 	@staticmethod
-	def PlayerMakesBid(Info: str) -> None:
-		Player.PlayerMakesBid(int(Info[4]), int(Info[2:4]))
+	def add_player_name(info: str, /) -> None:
+		Players(int(info[-1])).name = info[2:-1]
+		return Players.all_players_named
 
-	def RepeatQuestionAnswer(self) -> None:
-		self.RepeatGame = True
+	def set_card_number(self, number: NumberInput, /) -> None:
+		self.start_card_number = int(number)
 
-	def WaitForPlayers(self, attribute: str) -> None:
-		self.Triggers[attribute] += 1
-		Player.WaitForPlayers()
+	def time_to_start(self, /) -> None:
+		self._play_started = True
 
-	def PlayGame(self) -> None:
-		# Wait until the opening sequence is complete
+	@staticmethod
+	def player_action_completed(info: str, /) -> None:
+		Players(int(info[2])).action_complete = True
 
-		while not self.StartCardNumber:
+	@staticmethod
+	def player_makes_bid(info: str, /) -> None:
+		Players(int(info[4])).bids(int(info[2:4]))
+
+	def repeat_question_answer(self, /) -> None:
+		self.repeat_game = True
+
+	def wait_for_players(self, attribute: str) -> None:
+		self.triggers[attribute] += 1
+		Players.wait_for_players()
+
+	def play_game(self, /) -> None:
+		# wait until the opening sequence is full_message_received
+
+		while not self.start_card_number:
 			delay(1)
 
-		Player.NextStage()
+		Players.next_stage()
 
-		self.WaitForPlayers('GameInitialisation')
-		self.Triggers['StartNumberSet'] += 1
+		self.wait_for_players('game_initialisation')
+		self.triggers['StartNumberSet'] += 1
 
-		for cardnumber in range(self.StartCardNumber, 0, -1):
-			self.PlayRound(cardnumber)
+		for cardnumber in range(self.start_card_number, 0, -1):
+			self.play_round(cardnumber)
 
-		self.RepeatGame = False
+		self.repeat_game = False
 
-		while not self.RepeatGame:
+		while not self.repeat_game:
 			delay(1)
 
-		self.NewGameReset()
+		self.new_game_reset()
 
-		# Wait until all players have logged their new playerindex.
-		self.WaitForPlayers('NewGameReset')
+		# wait until all players have logged their new player_index.
+		self.wait_for_players('new_game_reset')
 
-	def PlayRound(self, cardnumber: int) -> None:
+	def play_round(self, cardnumber: int) -> None:
 		# Make a new pack of cards, set the trumpsuit.
-		Pack = Card.AllCardsList.copy()
-		shuffle(Pack)
-		self.TrumpCard = ((TrumpCard := Pack.pop()),)
-		self.trumpsuit = (trumpsuit := TrumpCard.Suit)
-		self.Triggers['NewPack'] += 1
+		shuffled_pack = Pack.randomly_shuffled()
+		self.trump_card = ((TrumpCard := shuffled_pack.pop()),)
+		self._trump_suit = (trumpsuit := TrumpCard.Suit)
+		self.triggers['new_pack'] += 1
 
 		# Deal cards
-		Player.NewPack(Pack, cardnumber, trumpsuit)
-		self.WaitForPlayers('CardsDealt')
+		for player in Players:
+			player.receives_card([shuffled_pack.pop() for _ in range(cardnumber)], trumpsuit)
 
-		# Play tricks
+		self.wait_for_players('CardsDealt')
+
+		# play tricks_this_round
 		for i in range(cardnumber):
-			self.PlayTrick()
+			self.play_trick()
 
 		# Reset players for the next round.
-		Player.EndOfRound()
-		self.RoundCleanUp()
+		for player in Players:
+			player.reset_bid()
 
-	def PlayTrick(self) -> None:
-		self.WaitForPlayers('TrickStart')
+		self.end_round()
 
-		for i in range(self.PlayerNumber):
-			while len(self.PlayedCards) == i:
+	def play_trick(self, /) -> None:
+		self.wait_for_players('TrickStart')
+
+		for i in range(rc.player_number):
+			while len(self.played_cards) == i:
 				delay(100)
 
-		Player.NextStage()
-		self.WaitForPlayers('TrickWinnerLogged')
-		self.PlayedCards.clear()
-		self.WaitForPlayers('TrickEnd')
+		Players.next_stage()
+		self.wait_for_players('TrickWinnerLogged')
+		self.played_cards.clear()
+		self.wait_for_players('TrickEnd')
 
-	def ClientCommsLoop(self) -> NoReturn:
+	def client_comms_loop(self, /) -> NoReturn:
 		with printing_exc():
 			while True:
-				if Player.number() != self.PlayerNumber:
+				if len(Players) != rc.player_number:
 					raise Exception('A client appears to have left the game!')
 
 				delay(300)
-				self.Export()
+				self.export()
 
-	def Export(self) -> None:
-		StartNo = self.StartCardNumber
+	def export(self, /) -> None:
+		start_no = self.start_card_number
 
-		String = '---'.join((
-			'--'.join([f'{v}' for v in self.Triggers.values()]),
-			Player.ExportString(),
-			CardsToString(self.PlayedCards),
-			f'{int(self.StartPlay)}{int(self.RepeatGame)}{StartNo}{repr(self.TrumpCard) if self.TrumpCard else ""}'
+		string = '---'.join((
+			'--'.join([f'{v}' for v in self.triggers.values()]),
+			Players.export_string(),
+			cards_to_string(self.played_cards),
+			f'{int(self._play_started)}{int(self.repeat_game)}{start_no}{repr(self.trump_card) if self.trump_card else ""}'
 		))
 
-		for player in Player.iter():
-			player.ScheduleSend('---'.join((String, CardsToString(player.Hand))))
+		for player in Players:
+			player.schedule_send('---'.join((string, cards_to_string(player.hand))))
 
 	# PlayerNumber is given in the abstract_game repr
 	def __repr__(self) -> str:
 		return '\n'.join((
 			super().__repr__(),
-			f'gameplayers = {Player.reprList()}\nTriggers: {self.Triggers}'
+			f'gameplayers = {Players.repr_list}\ntriggers: {self.triggers}'
 		))
 
 
-def CardsToString(L: ServerCardList) -> OptionalStr:
-	if not L:
+def cards_to_string(cards_list: list[Card]) -> OptionalStr:
+	if not cards_list:
 		return 'None'
-	return '--'.join([f'{Card.AllCardsList.index(card)}-{card.PlayedBy}' for card in L])
+	return '-'.join([str(card.index_in_pack) for card in cards_list])

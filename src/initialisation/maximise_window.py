@@ -1,4 +1,5 @@
-import os, ctypes
+import os
+import ctypes
 
 from subprocess import check_call
 from ctypes import wintypes
@@ -8,11 +9,12 @@ from msvcrt import get_osfhandle
 MAX_TERMINAL_HEIGHT = 200
 
 
-def MaximiseWindow() -> None:
+def maximise_window() -> None:
 	# Maximise the console window
 	kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
 	user32 = ctypes.WinDLL('user32', use_last_error=True)
 
+	# noinspection PyPep8Naming
 	SW_MAXIMIZE = 3
 
 	kernel32.GetConsoleWindow.restype = wintypes.HWND
@@ -24,18 +26,18 @@ def MaximiseWindow() -> None:
 	fd = os.open('CONOUT$', os.O_RDWR)
 
 	try:
-		hCon = get_osfhandle(fd)
-		max_size = kernel32.GetLargestConsoleWindowSize(hCon)
+		h_con = get_osfhandle(fd)
+		max_size = kernel32.GetLargestConsoleWindowSize(h_con)
 		if max_size.X == 0 and max_size.Y == 0:
 			raise ctypes.WinError(ctypes.get_last_error())
 	finally:
 		os.close(fd)
 
 	cols = max_size.X
-	hWnd = kernel32.GetConsoleWindow()
+	h_wnd = kernel32.GetConsoleWindow()
 
-	if cols and hWnd:
+	if cols and h_wnd:
 		check_call('mode.com con cols={} lines={}'.format(cols, max(MAX_TERMINAL_HEIGHT, max_size.Y)))
-		user32.ShowWindow(hWnd, SW_MAXIMIZE)
+		user32.ShowWindow(h_wnd, SW_MAXIMIZE)
 
 	# Console window now maximised.

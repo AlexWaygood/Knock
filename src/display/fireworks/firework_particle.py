@@ -15,7 +15,7 @@ def isOnScreen(pos, WindowDimensions):
 
 
 # hasTrail is whether this firework has the little different coloured trailer particles too
-class Particle:
+class FireworkParticle:
     __slots__ = 'pos', 'colour', 'direction', 'velocity', 'size', 'hasTrail', 'lifetime', 'age', 'shrink', 'gravity', \
                 'WindowDimensions', 'surface'
 
@@ -39,7 +39,7 @@ class Particle:
         self.surface = pg.Surface((size, size))
         self.surface.fill(self.colour)
 
-        Particle.allParticles.append(self)
+        FireworkParticle.allParticles.append(self)
 
         if hasTrail and random.uniform(0, 1) < trailPercent:
             self.spawnTrail(trailColour)
@@ -67,9 +67,9 @@ class Particle:
         screen.blit(self.surface, self.pos)
 
     def die(self):
-        if self in Particle.allParticles:
-            Particle.allParticles.remove(self)
+        if self in FireworkParticle.allParticles:
+            FireworkParticle.allParticles.remove(self)
 
     def spawnTrail(self, trailColour):
-        Particle(self.pos, trailColour, self.direction, self.velocity*2, self.size*0.25,
-                 lifetime=self.lifetime*2.5, WindowDimensions=self.WindowDimensions)
+        FireworkParticle(self.pos, trailColour, self.direction, self.velocity * 2, self.size * 0.25,
+                         lifetime=self.lifetime*2.5, WindowDimensions=self.WindowDimensions)

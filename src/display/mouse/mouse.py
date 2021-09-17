@@ -3,149 +3,153 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from dataclasses import dataclass
 from src.display.surface_coordinator import SurfaceCoordinator
-from src.display.mouse.cursors import Cursors
+from src.display.mouse.cursors import cursors
 
 # noinspection PyUnresolvedReferences
 from src import pre_pygame_import
+from src.config import game, client
 from pygame.mouse import get_pressed, get_pos, set_cursor
-from pygame.time import get_ticks as GetTicks
+from pygame.time import get_ticks
 
 if TYPE_CHECKING:
 	from src.special_knock_types import Position, Cursor_Type
-	from src.display.input_context import InputContext
+	from src.display import GameInputContextManager
 
 
-def ScrollwheelDownCursor(
-		ScrollwheelDownX: float,
-		ScrollwheelDownY: float,
-		MousePosX: int,
-		MousePosY: int,
+# noinspection PyPep8Naming
+def scrollwheel_down_cursor(
+		scrollwheel_down_x: float,
+		scrollwheel_down_y: float,
+		mouse_pos_x: int,
+		mouse_pos_y: int,
 		MAGIC_NUMBER: int = 50
 ) -> Cursor_Type:
-	if MousePosX < (ScrollwheelDownX - MAGIC_NUMBER):
-		if MousePosY < (ScrollwheelDownY - MAGIC_NUMBER):
-			return Cursors.NorthWest
-		if MousePosY > (ScrollwheelDownY + MAGIC_NUMBER):
-			return Cursors.SouthWest
-		return Cursors.West
 
-	if MousePosX > (ScrollwheelDownX + MAGIC_NUMBER):
-		if MousePosY < (ScrollwheelDownY - MAGIC_NUMBER):
-			return Cursors.NorthEast
-		if MousePosY > (ScrollwheelDownY + MAGIC_NUMBER):
-			return Cursors.SouthEast
-		return Cursors.East
+	if mouse_pos_x < (scrollwheel_down_x - MAGIC_NUMBER):
+		if mouse_pos_y < (scrollwheel_down_y - MAGIC_NUMBER):
+			return cursors.northwest
+		if mouse_pos_y > (scrollwheel_down_y + MAGIC_NUMBER):
+			return cursors.southwest
+		return cursors.west
 
-	if MousePosY > (ScrollwheelDownY + MAGIC_NUMBER):
-		return Cursors.South
-	if MousePosY < (ScrollwheelDownY - MAGIC_NUMBER):
-		return Cursors.North
-	return Cursors.Diamond
+	if mouse_pos_x > (scrollwheel_down_x + MAGIC_NUMBER):
+		if mouse_pos_y < (scrollwheel_down_y - MAGIC_NUMBER):
+			return cursors.northeast
+		if mouse_pos_y > (scrollwheel_down_y + MAGIC_NUMBER):
+			return cursors.southeast
+		return cursors.east
+
+	if mouse_pos_y > (scrollwheel_down_y + MAGIC_NUMBER):
+		return cursors.south
+	if mouse_pos_y < (scrollwheel_down_y - MAGIC_NUMBER):
+		return cursors.north
+	return cursors.diamond
 
 
 @dataclass(eq=False, unsafe_hash=True)
 class Scrollwheel:
 	# Repr automatically defined as it's a dataclass!
 
-	__slots__ = 'IsDown', 'DownPos', 'DownTime', 'OriginalDownTime'
+	__slots__ = '_is_down', 'down_pos', 'down_time', 'original_down_time'
 
-	IsDown: bool
-	DownPos: Position
-	DownTime: int
-	OriginalDownTime: int
+	_is_down: bool
+	down_pos: Position
+	down_time: int
+	original_down_time: int
 
-	def clicked(self) -> None:
-		self.IsDown = not self.IsDown
-		if self.IsDown:
-			self.DownPos = get_pos()
-			self.DownTime = self.OriginalDownTime = GetTicks()
+	@property
+	def is_down(self, /) -> bool:
+		return self._is_down
 
-	def ComesUp(self) -> None:
-		self.IsDown = False
+	def clicked(self, /) -> None:
+		self._is_down = not self.is_down
+		if self.is_down:
+			self.down_pos = get_pos()
+			self.down_time = self.original_down_time = get_ticks()
 
-	def IsMoving(self) -> bool:
-		return self.IsDown and GetTicks() > self.OriginalDownTime + 20
+	def comes_up(self, /) -> None:
+		self._is_down = False
 
-	def GetMovement(self) -> Position:
+	@property
+	def is_moving(self, /) -> bool:
+		return self.is_down and get_ticks() > self.original_down_time + 20
+
+	def get_movement(self, /) -> Position:
 		# noinspection PyTupleAssignmentBalance
-		DownX, DownY, MouseX, MouseY = *self.DownPos, *get_pos()
-		return ((DownX - MouseX) / 200), ((DownY - MouseY) / 200)
+		down_x, down_y, mouse_x, mouse_y = *self.down_pos, *get_pos()
+		return ((down_x - mouse_x) / 200), ((down_y - mouse_y) / 200)
 
 
 class Mouse(SurfaceCoordinator):
-	__slots__ = 'Scrollwheel', 'cursor', 'ScoreboardButton', 'CardHoverID', 'click', 'CardsInHand', 'context'
+	__slots__ = 'scrollwheel', 'cursor', 'scoreboard_button', 'card_hover_ID', 'click', 'cards_in_hand', 'context'
 
-	def __init__(
-			self,
-			ScoreboardButton,
-			context: InputContext
-	) -> None:
-
+	def __init__(self, /, *, scoreboard_button, context: GameInputContextManager) -> None:
 		self.context = context
-		self.Scrollwheel = Scrollwheel(False, tuple(), 0, 0)
-		self.cursor = Cursors.Default
-		self.ScoreboardButton = ScoreboardButton
-		self.CardHoverID = ''
+		self.scrollwheel = Scrollwheel(False, tuple(), 0, 0)
+		self.cursor = cursors.default
+		self.scoreboard_button = scoreboard_button
+		self.card_hover_ID = ''
 		self.click = False
-		self.CardsInHand = self.player.Hand
-		self.AllSurfaces.append(self)
+		self.cards_in_hand = self.player.hand
+		self.all_surfaces.append(self)
 
-	# **kwargs included because it might be passed ForceUpdate=True
-	def Update(self, **kwargs) -> None:
-		if (cur := self.CursorValue()) != self.cursor:
+	# It might be passed force_update=True, so we can't take that argument out.
+	def update(self, /, *, force_update: bool = False) -> None:
+		if (cur := self.cursor_value) != self.cursor:
 			self.cursor = cur
 			set_cursor(*cur)
 
 		if self.click:
-			if self.context.ClickToStart:
-				self.game.TimeToStart()
+			if self.context.click_to_start:
+				game.time_to_start()
 
 			elif (
-					self.context.TrickClickNeeded
-					and self.cursor == 'Hand'
-					and self.player.PosInTrick == len(self.game.PlayedCards)
+					self.context.trick_click_needed
+					and self.cursor == 'hand'
+					and self.player.pos_in_trick == len(game.played_cards)
 			):
-				self.game.ExecutePlay(self.CardHoverID, self.player.playerindex)
+				game.execute_play(self.card_hover_ID, self.player.player_index)
 
-	def CursorValue(self) -> Cursor_Type:
-		if self.client.ConnectionBroken:
-			return Cursors.Wait
+	@property
+	def cursor_value(self, /) -> Cursor_Type:
+		if client.connection_broken:
+			return cursors.wait
 
-		MousePos = get_pos()
+		mouse_pos = get_pos()
 
-		if self.Scrollwheel.IsDown:
-			return ScrollwheelDownCursor(*self.Scrollwheel.DownPos, *MousePos)
+		if self.scrollwheel.is_down:
+			return scrollwheel_down_cursor(*self.scrollwheel.down_pos, *mouse_pos)
 
-		if get_pressed(5)[0] and get_pressed(5)[2]:  # or self.ScoreboardButton.colliderect.collidepoint(*MousePos))
-			return Cursors.Hand
+		if get_pressed(5)[0] and get_pressed(5)[2]:  # or self.scoreboard_button.colliderect.collidepoint(*MousePos))
+			return cursors.hand
 
-		Condition = all((
-			self.CardsInHand,
-			self.game.TrickInProgress,
-			self.game.WhoseTurnPlayerIndex == self.player.playerindex
+		condition = all((
+			self.cards_in_hand,
+			game.trick_in_progress,
+			game.whose_turn_playerindex == self.player.player_index
 		))
 
-		if not Condition:
-			return Cursors.Default
+		if not condition:
+			return cursors.default
 
-		cur = Cursors.Default
-		for card in self.CardsInHand:
-			if card.colliderect.collidepoint(*MousePos):
-				self.CardHoverID = repr(card)
-				cur = Cursors.Hand
+		cur = cursors.default
+		for card in self.cards_in_hand:
+			if card.colliderect.collidepoint(*mouse_pos):
+				self.card_hover_ID = repr(card)
+				cur = cursors.hand
 
-				if PlayedCards := self.game.PlayedCards:
-					SuitLed = PlayedCards[0].Suit
-					Condition = any(UnplayedCard.Suit == SuitLed for UnplayedCard in self.CardsInHand)
+				if PlayedCards := game.played_cards:
+					suit_led = PlayedCards[0].Suit
+					condition = any(UnplayedCard.Suit == suit_led for UnplayedCard in self.cards_in_hand)
 
-					if card.Suit != SuitLed and Condition:
-						cur = Cursors.IllegalMove
+					if card.Suit != suit_led and condition:
+						cur = cursors.illegal_move
 		return cur
 
-	def __repr__(self) -> str:
+	def __repr__(self, /) -> str:
 		return f'''Object representing current state of the mouse. Current state:
 -cursor: {self.cursor}
--CardHoverID: {self.CardHoverID}
+-card_hover_ID: {self.card_hover_ID}
 -click: {self.click}
 
 '''
