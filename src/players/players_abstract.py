@@ -13,7 +13,7 @@ from types import MappingProxyType
 
 import src.config as rc
 from src import DocumentedMetaclassMixin, DataclassyReprBase, IntEnumNiceStr, DocumentedPlaceholders
-from src.players.sequence_proxy import SequenceProxy
+from src.utils.sequence_proxy import SequenceProxy
 from src.cards import Suit
 from src.cards.abstract_card import AbstractCard
 

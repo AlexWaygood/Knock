@@ -24,8 +24,10 @@ from time import strftime, localtime
 from typing import Any, Sequence, NamedTuple, Callable, TypeVar, Literal, cast, ClassVar, final, Annotated
 from functools import singledispatchmethod, cache
 from aenum import Enum, NamedConstantMeta, NamedConstant, constant
-from enum import IntEnum
+from enum import IntEnum, auto
+from abc import abstractmethod
 from inspect import getmro
+from itertools import count
 
 # noinspection PyTypeChecker
 D = TypeVar('D', bound='DocumentedEnum')
@@ -211,6 +213,12 @@ class DocumentedPlaceholdersMeta(type):
 			raise FrozenClassError('Placeholder class cannot be altered at runtime.')
 		super().__setattr__(name, value)
 
+	def __bool__(self, /) -> Literal[False]:
+		return False
+
+	def __repr__(cls, /) -> str:
+		return f'<{cls.__name__}>'
+
 
 class DocumentedPlaceholders(metaclass=DocumentedPlaceholdersMeta):
 	"""Always Falsey Enum-like sentinel classes that have nice __repr__/__str__ methods."""
@@ -226,6 +234,13 @@ class DocumentedPlaceholders(metaclass=DocumentedPlaceholdersMeta):
 
 
 _marker = object()
+
+
+class StrEnum(str, Enum):
+	"""String Enum."""
+
+	def __str__(self) -> str:
+		return self.value
 
 
 class IntEnumNiceStr(IntEnum):
@@ -252,6 +267,10 @@ class DocumentedEnum(Enum):
 		"""Helper method for raising an error message if an argument of the wrong type is passed to `__new__`"""
 		return f"Since you have mixed in {base_cls}, you must provide a value of type '{base_cls.__name__}'"
 
+	@staticmethod
+	def _generate_next_value_(number_so_far=count(1)) -> Any:
+		"""Empty method that can be optionally overriden in subclasses."""
+
 	def __new__(cls: D, docstring: str, value: Any = _marker, /) -> D:
 		# First, work out which __new__ method we need to use
 
@@ -268,9 +287,11 @@ class DocumentedEnum(Enum):
 				obj = object.__new__(cls)
 			else:
 				raise TypeError(cls.__incorrect_value_message(first_non_enum_base))
-		elif not isinstance(value, first_non_enum_base):
+		elif not isinstance(value, (first_non_enum_base, auto)):
 			raise TypeError(cls.__incorrect_value_message(first_non_enum_base))
 		else:
+			if isinstance(value, auto):
+				value = cls._generate_next_value_()
 			# noinspection PyTypeChecker
 			obj = first_non_enum_base.__new__(cls, value)
 
@@ -280,12 +301,35 @@ class DocumentedEnum(Enum):
 		return obj
 
 
-# noinspection PyPep8Naming
-class cached_readonly_property(property):
-	"""A `property` subclass that uses `functools.cache` to cache the result of its `fget` function."""
+AnyFunction = Callable[..., Any]
 
-	def __init__(self, func: Callable[[Any], Any]) -> None:
-		super().__init__(fget=cache(func))
+
+def cached_readonly_property(func: AnyFunction) -> property:
+	"""Make a cached readonly property"""
+	return property(cache(func))
+
+
+def classmethod_property(func: AnyFunction) -> classmethod:
+	"""Make a classmethod property"""
+	# noinspection PyTypeChecker
+	return classmethod(property(func))
+
+
+def cached_classmethod_property(func: AnyFunction) -> classmethod:
+	"""Make a cached classmethod property"""
+	# noinspection PyTypeChecker
+	return classmethod(property(cache(func)))
+
+
+def abstract_classmethod(func: AnyFunction) -> classmethod:
+	"""Make an abstract classmethod."""
+	return classmethod(abstractmethod(func))
+
+
+def abstract_classmethod_property(func: AnyFunction) -> classmethod:
+	"""Make an abstract classmethod property"""
+	# noinspection PyTypeChecker
+	return classmethod(property(abstractmethod(func)))
 
 
 class DataclassyReprBase:
@@ -302,7 +346,12 @@ class DataclassyReprBase:
 		repr_attrs = []
 
 		for parent in getmro(type(self)):
-			repr_attrs.extend(s for s in parent.__slots__ if s not in getattr(parent, 'NON_REPR_SLOTS', ()))
+
+			repr_attrs.extend(
+				s for s in getattr(parent, '__slots__', ())
+				if s not in getattr(parent, 'NON_REPR_SLOTS', ())
+			)
+
 			repr_attrs.extend(getattr(parent, 'EXTRA_REPR_ATTRS', ()))
 
 		return tuple(repr_attrs)

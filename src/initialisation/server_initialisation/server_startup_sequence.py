@@ -7,6 +7,8 @@ if TYPE_CHECKING:
 
 
 def startup_sequence() -> tuple[Server, Game, bool]:
+	"""Startup sequence for the server script."""
+
 	from src.initialisation.maximise_window import maximise_window
 	maximise_window()
 
@@ -16,7 +18,7 @@ def startup_sequence() -> tuple[Server, Game, bool]:
 	from src.network.network_server import Server
 	from src.game.server_game import ServerGame as Game
 
-	configure_logging(False)
+	configure_logging(client_side=False)
 	print_intro_message()
 	number_of_players, bidding_system, password, manually_verify = user_inputs()
 	return Server(password), Game(), (manually_verify == 'yes')

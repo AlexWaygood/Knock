@@ -1,18 +1,54 @@
 """A series of lies to make the type-checker happy."""
 
-from enum import Enum, IntEnum
-from typing import ClassVar, final, Sequence, Any, NamedTuple, TypeVar
+from abc import abstractmethod
+from enum import Enum, IntEnum, EnumMeta
+from typing import ClassVar, final, Sequence, Any, NamedTuple, TypeVar, Callable, Iterator
 # noinspection PyUnresolvedReferences
-from functools import singledispatchmethod
+from functools import singledispatchmethod, cache
 
-class DocumentedPlaceholders(Enum): ...
+class StrEnum(Enum): ...
+class DocumentedPlaceholdersMeta(EnumMeta): ...
+class DocumentedPlaceholders(Enum, metaclass=EnumMeta): ...
 class DocumentedConstants(Enum): ...
-class DocumentedEnum(Enum): ...
 class FrozenError(AttributeError): ...
 class FrozenInstanceError(FrozenError): ...
 class FrozenClassError(FrozenError): ...
 class IntEnumNiceStr(IntEnum): ...
 cached_readonly_property = property
+
+
+class DocumentedEnum(Enum):
+	# noinspection PyMethodOverriding
+	@staticmethod
+	def _generate_next_value_(number_so_far: Iterator[int] = ...) -> Any: ...
+
+
+AnyFunction = Callable[..., Any]
+
+
+# noinspection PyPep8Naming
+class abstract_classmethod(classmethod):
+	def __init__(self, func: AnyFunction) -> None:
+		super().__init__(abstractmethod(func))
+
+
+# noinspection PyPep8Naming
+class classmethod_property(property):
+	def __init__(self, fget: AnyFunction) -> None:
+		super().__init__(fget=classmethod(fget))
+
+
+# noinspection PyPep8Naming
+class cached_classmethod_property(property):
+	def __init__(self, fget: AnyFunction) -> None:
+		super().__init__(fget=classmethod(cache(fget)))
+
+
+# noinspection PyPep8Naming
+class abstract_classmethod_property(property):
+	def __init__(self, fget: AnyFunction) -> None:
+		super().__init__(fget=classmethod(abstractmethod(fget)))
+
 def get_date() -> str: ...
 
 class DataclassyReprBase:

@@ -1,0 +1,1106 @@
+23:23:20.685 - MainThread - logging_config - Line 18 - 
+
+NEW RUN OF PROGRAMME STARTING
+
+
+23:23:20.824 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:23:20.824 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3839
+23:23:20.824 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:23:20.824 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3424
+23:23:20.840 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:23:20.840 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3000
+23:23:20.840 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:23:20.840 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3768
+23:23:20.840 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:23:20.840 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3839
+23:23:20.840 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:23:20.840 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3424
+23:23:20.855 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:23:20.855 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3000
+23:23:20.855 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:23:20.855 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3768
+23:24:18.16 - MainThread - logging_config - Line 18 - 
+
+NEW RUN OF PROGRAMME STARTING
+
+
+23:24:18.55 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:24:18.55 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3839
+23:24:18.55 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:24:18.55 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3424
+23:24:18.55 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:24:18.55 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3000
+23:24:18.55 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:24:18.55 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3768
+23:24:18.71 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:24:18.71 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3839
+23:24:18.71 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:24:18.71 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3424
+23:24:18.71 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:24:18.71 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3000
+23:24:18.71 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:24:18.71 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3768
+23:24:24.604 - MainThread - network_server - Line 62 - Initialising server...
+23:24:24.605 - MainThread - network_server - Line 67 - Ready to accept connections to the server (time 23:24:24).
+
+23:24:27.155 - MainThread - connectionpool - Line 971 - Starting new HTTPS connection (1): ipinfo.io:443
+23:24:27.495 - MainThread - connectionpool - Line 452 - https://ipinfo.io:443 "GET /86.14.41.223 HTTP/1.1" 200 None
+23:24:27.501 - MainThread - network_server - Line 132 - Attempted connection from Watford, England, United Kingdom at 23:24:27.
+23:24:27.503 - MainThread - network_server - Line 132 - IP, port: ('127.0.0.1', 50582)
+23:24:27.503 - MainThread - network_server - Line 132 - Hostname: cpc141888-watf13-2-0-cust478.15-2.cable.virginm.net
+23:27:07.416 - MainThread - logging_config - Line 18 - 
+
+NEW RUN OF PROGRAMME STARTING
+
+
+23:27:07.447 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:27:07.447 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3839
+23:27:07.447 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:27:07.447 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3424
+23:27:07.463 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:27:07.463 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3000
+23:27:07.470 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:27:07.470 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3768
+23:27:07.475 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:27:07.476 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3839
+23:27:07.481 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:27:07.481 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3424
+23:27:07.485 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:27:07.485 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3000
+23:27:07.488 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:27:07.489 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3768
+23:27:13.280 - MainThread - network_server - Line 62 - Initialising server...
+23:27:13.281 - MainThread - network_server - Line 67 - Ready to accept connections to the server (time 23:27:13).
+
+23:27:15.998 - MainThread - connectionpool - Line 971 - Starting new HTTPS connection (1): ipinfo.io:443
+23:27:16.353 - MainThread - connectionpool - Line 452 - https://ipinfo.io:443 "GET /86.14.41.223 HTTP/1.1" 200 None
+23:27:16.359 - MainThread - network_server - Line 132 - Attempted connection from Watford, England, United Kingdom at 23:27:16.
+23:27:16.359 - MainThread - network_server - Line 132 - IP, port: ('127.0.0.1', 50621)
+23:27:16.359 - MainThread - network_server - Line 132 - Hostname: cpc141888-watf13-2-0-cust478.15-2.cable.virginm.net
+23:35:43.331 - MainThread - logging_config - Line 18 - 
+
+NEW RUN OF PROGRAMME STARTING
+
+
+23:35:43.363 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:35:43.363 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3839
+23:35:43.363 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:35:43.363 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3424
+23:35:43.378 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:35:43.378 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3000
+23:35:43.378 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:35:43.378 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3768
+23:35:43.378 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:35:43.378 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3839
+23:35:43.378 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:35:43.378 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3424
+23:35:43.378 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:35:43.378 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3000
+23:35:43.394 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:35:43.394 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3768
+23:35:48.343 - MainThread - network_server - Line 62 - Initialising server...
+23:35:48.343 - MainThread - network_server - Line 67 - Ready to accept connections to the server (time 23:35:48).
+
+23:35:50.920 - MainThread - connectionpool - Line 971 - Starting new HTTPS connection (1): ipinfo.io:443
+23:35:51.366 - MainThread - connectionpool - Line 452 - https://ipinfo.io:443 "GET /86.14.41.223 HTTP/1.1" 200 None
+23:35:51.372 - MainThread - network_server - Line 132 - Attempted connection from Watford, England, United Kingdom at 23:35:51.
+23:35:51.372 - MainThread - network_server - Line 132 - IP, port: ('127.0.0.1', 50706)
+23:35:51.373 - MainThread - network_server - Line 132 - Hostname: cpc141888-watf13-2-0-cust478.15-2.cable.virginm.net
+23:35:51.373 - MainThread - network_server - Line 164 - Connection info to client ('127.0.0.1', 50706) was placed on the send-queue at 23:35:51.
+
+23:35:51.373 - MainThread - network_server - Line 105 - Message sent to client: 20Classic.
+23:35:51.573 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:38:48.784 - MainThread - logging_config - Line 18 - 
+
+NEW RUN OF PROGRAMME STARTING
+
+
+23:38:48.834 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:38:48.834 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3839
+23:38:48.834 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:38:48.834 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3424
+23:38:48.834 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:38:48.834 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3000
+23:38:48.834 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:38:48.834 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3768
+23:38:48.849 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:38:48.849 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3839
+23:38:48.849 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:38:48.849 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3424
+23:38:48.849 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:38:48.849 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3000
+23:38:48.849 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:38:48.849 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3768
+23:38:54.944 - MainThread - network_server - Line 62 - Initialising server...
+23:38:54.944 - MainThread - network_server - Line 67 - Ready to accept connections to the server (time 23:38:54).
+
+23:38:57.583 - MainThread - connectionpool - Line 971 - Starting new HTTPS connection (1): ipinfo.io:443
+23:38:58.129 - MainThread - connectionpool - Line 452 - https://ipinfo.io:443 "GET /86.14.41.223 HTTP/1.1" 200 None
+23:38:58.135 - MainThread - network_server - Line 132 - Attempted connection from Watford, England, United Kingdom at 23:38:58.
+23:38:58.136 - MainThread - network_server - Line 132 - IP, port: ('127.0.0.1', 50734)
+23:38:58.136 - MainThread - network_server - Line 132 - Hostname: cpc141888-watf13-2-0-cust478.15-2.cable.virginm.net
+23:38:58.136 - MainThread - network_server - Line 164 - Connection info to client ('127.0.0.1', 50734) was placed on the send-queue at 23:38:58.
+
+23:38:58.137 - MainThread - network_server - Line 105 - Message sent to client: 20Classic.
+23:38:58.244 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:38:58.332 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:38:58.332 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:38:58.433 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:38:58.544 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:01.348 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:01.348 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:01.454 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:01.549 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:01.556 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:01.557 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:01.663 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:01.763 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:01.851 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:01.952 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:01.953 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:02.53 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:02.150 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:02.252 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:02.253 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:02.353 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:02.453 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:02.554 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:02.554 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:02.659 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:02.752 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:02.853 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:02.853 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:02.955 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:03.52 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:03.158 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:03.158 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:03.264 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:03.352 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:03.459 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:03.459 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:03.559 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:03.653 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:03.754 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:03.755 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:03.855 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:03.952 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:04.60 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:04.60 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:04.161 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:04.252 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:04.359 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:04.359 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:04.472 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:04.552 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:04.655 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:04.656 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:04.756 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:04.853 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:04.953 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:04.953 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:05.72 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:05.155 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:05.257 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:05.257 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:05.363 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:05.454 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:05.561 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:05.561 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:05.669 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:05.754 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:05.862 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:05.863 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:05.986 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:06.54 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:06.163 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:06.164 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:06.277 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:06.354 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:06.464 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:06.464 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:06.577 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:06.654 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:06.758 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:06.764 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:06.865 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:06.954 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:07.58 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:07.64 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:07.165 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:07.254 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:07.364 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:07.365 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:07.470 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:07.554 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:07.660 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:07.662 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:07.778 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:07.854 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:07.955 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:07.955 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:08.56 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:08.154 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:08.264 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:08.264 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:08.371 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:08.454 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:08.564 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:08.564 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:08.674 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:08.754 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:08.857 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:08.857 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:08.966 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:09.54 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:09.157 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:09.158 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:09.259 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:09.354 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:09.455 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:09.456 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:09.556 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:09.654 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:09.755 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:09.756 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:09.856 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:09.954 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:10.56 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:10.56 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:10.157 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:10.254 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:10.361 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:10.363 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:10.469 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:10.554 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:10.657 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:10.657 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:10.768 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:10.854 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:10.961 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:10.962 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:11.64 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:11.154 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:11.255 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:11.255 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:11.362 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:11.454 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:11.561 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:11.562 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:11.671 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:11.754 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:11.859 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:11.859 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:11.973 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:12.54 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:12.160 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:12.160 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:12.269 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:12.358 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:12.464 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:12.464 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:12.573 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:12.659 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:12.767 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:12.774 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:12.869 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:12.958 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:13.59 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:13.59 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:13.160 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:13.258 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:13.361 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:13.362 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:13.462 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:13.558 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:13.659 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:13.659 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:13.765 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:13.858 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:13.959 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:13.959 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:14.66 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:14.158 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:14.259 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:14.259 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:14.365 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:14.458 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:14.562 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:14.562 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:14.663 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:14.758 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:14.864 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:14.864 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:14.965 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:15.58 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:15.160 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:15.160 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:15.267 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:15.358 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:15.459 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:15.459 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:15.568 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:15.659 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:15.760 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:15.762 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:15.863 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:15.958 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:16.59 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:16.59 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:16.160 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:16.258 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:16.361 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:16.362 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:16.485 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:16.558 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:16.662 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:16.664 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:16.764 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:16.859 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:16.963 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:16.963 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:17.66 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:17.159 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:17.259 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:17.262 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:17.374 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:17.458 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:17.561 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:17.563 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:17.665 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:17.759 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:17.864 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:17.864 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:17.972 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:18.58 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:18.165 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:18.165 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:18.267 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:18.358 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:18.463 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:18.463 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:18.575 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:18.658 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:18.762 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:18.763 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:18.875 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:18.958 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:19.59 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:19.59 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:19.159 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:19.258 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:19.365 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:19.365 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:19.475 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:19.558 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:19.664 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:19.664 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:19.765 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:19.858 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:19.975 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:19.976 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:20.90 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:20.158 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:20.262 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:20.262 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:20.363 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:20.460 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:20.561 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:20.562 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:20.663 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:20.762 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:20.863 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:20.867 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:20.968 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:21.66 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:21.175 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:21.176 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:21.284 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:21.365 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:21.466 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:21.469 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:21.568 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:21.665 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:21.772 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:21.773 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:21.878 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:21.965 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:22.73 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:22.74 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:22.175 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:22.265 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:22.366 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:22.367 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:22.473 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:22.565 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:22.666 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:22.668 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:22.768 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:22.865 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:22.971 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:22.972 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:23.75 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:23.166 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:23.274 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:23.275 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:23.375 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:23.468 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:23.576 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:23.577 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:23.677 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:23.768 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:23.875 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:23.876 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:23.976 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:24.68 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:24.172 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:24.173 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:24.272 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:24.368 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:24.468 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:24.469 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:24.569 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:24.668 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:24.772 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:24.773 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:24.873 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:24.971 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:25.71 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:25.72 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:25.173 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:25.269 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:25.371 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:25.372 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:25.472 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:25.569 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:25.671 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:25.672 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:25.773 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:25.870 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:25.970 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:25.971 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:26.72 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:26.169 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:26.272 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:26.273 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:26.378 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:26.469 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:26.575 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:26.576 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:26.675 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:26.769 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:26.869 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:26.870 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:26.971 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:27.69 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:27.169 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:27.170 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:27.270 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:27.369 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:27.475 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:27.476 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:27.583 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:27.669 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:27.775 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:27.776 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:27.883 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:27.972 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:28.72 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:28.73 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:28.173 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:28.271 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:28.377 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:28.378 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:28.478 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:28.571 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:28.673 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:28.674 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:28.780 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:28.871 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:28.977 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:28.978 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:29.85 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:29.171 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:29.272 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:29.273 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:29.380 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:29.471 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:29.572 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:29.573 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:29.679 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:29.771 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:29.872 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:29.873 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:29.973 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:30.71 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:30.173 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:30.175 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:30.281 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:30.371 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:30.473 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:30.475 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:30.575 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:30.671 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:30.778 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:30.779 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:30.879 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:30.971 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:31.79 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:31.80 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:31.190 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:31.271 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:31.373 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:31.374 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:31.475 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:31.571 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:31.672 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:31.673 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:31.777 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:31.871 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:31.974 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:31.974 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:32.84 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:32.171 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:32.273 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:32.274 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:32.379 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:32.471 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:32.572 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:32.573 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:32.677 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:32.771 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:39:32.876 - MainThread - network_server - Line 175 - Message received from client: @S.
+23:39:32.877 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:32.977 - MainThread - network_server - Line 175 - Message received from client: @S.
+23:39:33.71 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---110---None.
+23:39:33.172 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:33.173 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:33.273 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:33.371 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---110---None.
+23:39:33.475 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:33.477 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:33.577 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:33.671 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---110---None.
+23:39:33.771 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:33.772 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:33.871 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:33.971 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---110---None.
+23:39:34.75 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:34.76 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:34.176 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:34.271 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---110---None.
+23:39:34.372 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:34.373 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:34.473 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:34.571 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---110---None.
+23:39:34.675 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:34.676 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:34.776 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:34.871 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---110---None.
+23:39:34.976 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:34.977 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:35.77 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:35.171 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---110---None.
+23:39:35.273 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:35.274 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:35.374 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:35.471 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---110---None.
+23:39:35.571 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:35.574 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:35.675 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:35.771 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---110---None.
+23:39:35.875 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:35.876 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:35.985 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:36.71 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---110---None.
+23:39:36.176 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:36.177 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:36.278 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:36.371 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---110---None.
+23:39:36.491 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:36.493 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:36.594 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:36.671 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---110---None.
+23:39:36.771 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:36.772 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:36.876 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:36.976 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---110---None.
+23:39:37.76 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:37.78 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:37.178 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:37.276 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---110---None.
+23:39:37.377 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:37.377 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:37.485 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:37.577 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---110---None.
+23:39:37.708 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:37.729 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:37.877 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---110---None.
+23:39:37.898 - MainThread - network_server - Line 175 - Message received from client: ping.
+23:39:37.901 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:39:38.175 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---110---None.
+23:47:20.41 - MainThread - logging_config - Line 18 - 
+
+NEW RUN OF PROGRAMME STARTING
+
+
+23:47:20.73 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:47:20.73 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3839
+23:47:20.88 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:47:20.88 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3424
+23:47:20.88 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:47:20.88 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3000
+23:47:20.88 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:47:20.88 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3768
+23:47:20.88 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:47:20.88 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3839
+23:47:20.88 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:47:20.88 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3424
+23:47:20.104 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:47:20.104 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3000
+23:47:20.104 - MainThread - PngImagePlugin - Line 187 - STREAM b'IHDR' 16 13
+23:47:20.104 - MainThread - PngImagePlugin - Line 187 - STREAM b'IDAT' 41 3768
+23:47:26.464 - MainThread - network_server - Line 62 - Initialising server...
+23:47:26.465 - MainThread - network_server - Line 67 - Ready to accept connections to the server (time 23:47:26).
+
+23:47:29.402 - MainThread - connectionpool - Line 971 - Starting new HTTPS connection (1): ipinfo.io:443
+23:47:29.698 - MainThread - connectionpool - Line 452 - https://ipinfo.io:443 "GET /86.14.41.223 HTTP/1.1" 200 None
+23:47:29.704 - MainThread - network_server - Line 132 - Attempted connection from Watford, England, United Kingdom at 23:47:29.
+23:47:29.704 - MainThread - network_server - Line 132 - IP, port: ('127.0.0.1', 50776)
+23:47:29.705 - MainThread - network_server - Line 132 - Hostname: cpc141888-watf13-2-0-cust478.15-2.cable.virginm.net
+23:47:29.705 - MainThread - network_server - Line 159 - Connection info to client ('127.0.0.1', 50776) was placed on the send-queue at 23:47:29.
+
+23:47:29.705 - MainThread - network_server - Line 105 - Message sent to client: 20Classic.
+23:47:29.764 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:29.902 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:29.902 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:30.4 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:30.65 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:32.887 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:32.888 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:32.991 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:33.65 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:33.95 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:33.101 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:33.200 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:33.308 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:33.371 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:33.471 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:33.473 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:33.573 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:33.671 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:33.772 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:33.773 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:33.873 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:33.971 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:34.77 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:34.78 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:34.178 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:34.273 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:34.387 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:34.390 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:34.488 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:34.573 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:34.684 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:34.685 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:34.786 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:34.873 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:34.974 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:34.977 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:35.77 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:35.174 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:35.282 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:35.283 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:35.388 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:35.474 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:35.579 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:35.580 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:35.684 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:35.774 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:35.882 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:35.883 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:35.983 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:36.74 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:36.178 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:36.179 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:36.279 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:36.374 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:36.488 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:36.488 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:36.588 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:36.674 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:36.780 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:36.781 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:36.886 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:36.975 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:37.85 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:37.87 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:37.187 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:37.274 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:37.382 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:37.383 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:37.483 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:37.574 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:37.676 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:37.677 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:37.787 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:37.874 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:37.975 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:37.976 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:38.79 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:38.174 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:38.276 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:38.277 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:38.386 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:38.474 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:38.587 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:38.588 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:38.697 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:38.776 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:38.882 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:38.883 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:38.996 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:39.77 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:39.186 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:39.187 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:39.297 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:39.378 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:39.481 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:39.482 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:39.597 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:39.678 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:39.785 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:39.786 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:39.886 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:39.977 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:40.82 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:40.83 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:40.183 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:40.277 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:40.379 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:40.380 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:40.480 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:40.577 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:40.677 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:40.678 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:40.778 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:40.877 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:40.977 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:40.978 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:41.81 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:41.178 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:41.279 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:41.280 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:41.380 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:41.477 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:41.582 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:41.584 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:41.684 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:41.777 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:41.878 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:41.879 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:41.979 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:42.78 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:42.179 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:42.179 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:42.283 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:42.393 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:42.493 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:42.494 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:42.594 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:42.693 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:42.800 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:42.801 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:42.905 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:43.0 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:43.106 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:43.107 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:43.207 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:43.300 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:43.401 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:43.402 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:43.503 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:43.600 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:43.700 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:43.701 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:43.801 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:43.901 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:44.7 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:44.10 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:44.110 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:44.200 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:44.300 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:44.301 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:44.402 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:44.501 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:44.602 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:44.603 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:44.702 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:44.801 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:44.901 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:44.902 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:45.2 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:45.101 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:45.206 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:45.207 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:45.313 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:45.401 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:45.503 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:45.504 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:45.604 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:45.701 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:45.804 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:45.805 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:45.905 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:46.1 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:46.101 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:46.102 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:46.202 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:46.301 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:46.403 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:46.404 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:46.503 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:46.601 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:46.703 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:46.704 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:46.804 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:46.902 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:47.2 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:47.3 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:47.103 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:47.202 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:47.302 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:47.304 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:47.404 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:47.503 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:47.603 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:47.604 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:47.705 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:47.803 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:47.910 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:47.911 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:48.11 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:48.104 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:48.204 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:48.205 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:48.305 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:48.403 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:48.504 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:48.505 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:48.604 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:48.703 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:48.803 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:48.805 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:48.905 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:49.3 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:49.103 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:49.104 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:49.203 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:49.304 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:49.410 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:49.411 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:49.516 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:49.604 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:49.709 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:49.710 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:49.810 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:49.904 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:50.9 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:50.10 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:50.111 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:50.204 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:50.304 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:50.305 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:50.411 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:50.504 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:50.604 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:50.606 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:50.714 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:50.804 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:50.912 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:50.913 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:51.55 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:51.104 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:51.204 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:51.205 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:51.304 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:51.405 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:51.511 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:51.512 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:51.613 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:51.704 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:51.812 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:51.813 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:51.918 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:52.4 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:52.112 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:52.112 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:52.218 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:52.304 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:52.405 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:52.412 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:52.515 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:52.604 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:52.712 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:52.712 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:52.817 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:52.904 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:53.12 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:53.12 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:53.117 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:53.204 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:53.305 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:53.306 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:53.412 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:53.505 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:53.612 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:53.612 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:53.716 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:53.806 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:53.917 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:53.920 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:54.19 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:54.105 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:54.232 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:54.251 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:54.339 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:54.409 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:54.536 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:54.536 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:54.645 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:54.707 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:54.812 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:54.812 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:54.912 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:55.6 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:55.111 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:55.112 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:55.217 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:55.306 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:55.414 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:55.415 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:55.515 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:55.606 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:55.711 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:55.712 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:55.812 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:55.906 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:56.18 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:56.20 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:56.120 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:56.208 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:56.311 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:56.311 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:56.411 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:56.506 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:56.611 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:56.612 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:56.718 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:56.806 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:56.911 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:56.912 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:57.12 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:57.106 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:57.214 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:57.215 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:57.320 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:57.407 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:57.509 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:57.510 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:57.611 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:57.707 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:57.810 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:57.811 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:57.916 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:58.6 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:58.111 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:58.112 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:58.211 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:58.306 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:58.411 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:58.412 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:58.511 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:58.607 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:58.714 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:58.715 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:58.814 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:58.906 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:59.12 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:59.12 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:59.112 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:59.206 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:59.313 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:59.313 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:59.413 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:59.506 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:59.612 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:59.613 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:47:59.717 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:59.807 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:47:59.909 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:47:59.909 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:48:00.14 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:48:00.107 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:48:00.215 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:48:00.217 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:48:00.325 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:48:00.406 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:48:00.511 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:48:00.512 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:48:00.612 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:48:00.707 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:48:00.812 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:48:00.813 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:48:00.915 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:48:01.7 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:48:01.110 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:48:01.111 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:48:01.212 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:48:01.307 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:48:01.411 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:48:01.412 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:48:01.512 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:48:01.607 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:48:01.710 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:48:01.711 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:48:01.816 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:48:01.908 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:48:02.10 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:48:02.12 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:48:02.119 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:48:02.208 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:48:02.315 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:48:02.315 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:48:02.415 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:48:02.507 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:48:02.622 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:48:02.624 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:48:02.726 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:48:02.807 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:48:02.916 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:48:02.917 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:48:03.24 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:48:03.107 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:48:03.208 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:48:03.208 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:48:03.308 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:48:03.407 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:48:03.510 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:48:03.511 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:48:03.616 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:48:03.707 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:48:03.819 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:48:03.820 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:48:03.921 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:48:04.8 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:48:04.115 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:48:04.116 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:48:04.216 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:48:04.306 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:48:04.413 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:48:04.415 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:48:04.521 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:48:04.606 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.
+23:48:04.708 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:48:04.708 - MainThread - network_server - Line 105 - Message sent to client: pong.
+23:48:04.808 - MainThread - network_server - Line 170 - Message received from client: ping.
+23:48:04.918 - MainThread - network_server - Line 105 - Message sent to client: 0--0--0--0--0--0--0--0--0--0--0--0--0---0-*1--1-*1---None---010---None.

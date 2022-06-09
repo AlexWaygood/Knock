@@ -36,3 +36,14 @@ def set_pygame_blocked_events() -> None:
 		pg.USEREVENT,
 		pg.VIDEOEXPOSE,
 	))
+
+
+def test_set_blocked_events() -> None:
+	"""Test if `set_blocked_events()` works."""
+
+	import pygame as pg
+	pg.init()
+	pg.display.init()
+	set_pygame_blocked_events()
+	assert pg.event.get_blocked(pg.WINDOWMAXIMIZED)
+	assert pg.event.get_blocked((pg.AUDIODEVICEADDED, pg.WINDOWMOVED))

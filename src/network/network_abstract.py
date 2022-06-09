@@ -7,7 +7,7 @@ Two classes that have to do with communications between the server and clients..
 
 from typing import Any
 from socket import socket, AF_INET, SOCK_STREAM, SHUT_RDWR
-from datetime import datetime
+import time
 
 
 DEFAULT_TINY_MESSAGE_SIZE = 10
@@ -16,7 +16,7 @@ MIN_RECV_BYTES = 8192
 
 def get_time() -> str:
 	"""Function to get the time in a fixed format"""
-	return datetime.now().strftime("%H:%M:%s")
+	return time.strftime('%H:%M:%S')
 
 
 def pad_message(message: Any) -> str:

@@ -15,8 +15,15 @@ def configure_logging(*, client_side: bool) -> None:
 	If this script is being run in Python, we log a lot of detail to a file.
 	If, instead, this script is frozen, that means the script has been compiled using pyinstaller.
 
-	In that eventuality, we don't do any logging at all;
-	logging is circumvented by adding a `NullHandler` object to the logging configuration.
+	In that eventuality, we don't do any logging at all,
+	as it would be unexpected for another user to have files logged to their hard drive by a computer game.
+	Instead, logging is circumvented by adding a `NullHandler` object to the logging configuration.
+
+	Parameters
+	----------
+	client_side: bool
+		`True` if this function is being run from the client script.
+		`False` if this function is being run from the server script.
 	"""
 
 	if rc.FrozenState:

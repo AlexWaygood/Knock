@@ -434,7 +434,7 @@ class DisplayManager:
 		)
 
 		if resize_needed1 or resize_needed2:
-			self.new_window_size(window_dimensions=Dimensions(width, height), toggle_fullscreen=False)
+			self.new_window_size(window_dimensions=Dimensions(width, height))
 
 	def zoom_out(self, /) -> None:
 		"""Zoom out one notch."""

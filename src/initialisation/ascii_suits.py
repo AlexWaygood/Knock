@@ -4,32 +4,29 @@ This creates a pretty "welcome" message when the client starts the game.
 
 from __future__ import annotations
 
+from os import path, chdir, get_terminal_size as stdlib_get_terminal_size
+
+if __name__ == '__main__':
+	# For testing from the command line.
+	import sys
+	ROOT_DIRECTORY = r'C:\Users\Alex\Desktop\Code dump\Knock model\Final version - Local copy'
+	sys.path.append(ROOT_DIRECTORY)
+	chdir(ROOT_DIRECTORY)
+
 from PIL import Image
 from fractions import Fraction
-from os import path, get_terminal_size
-from typing import Iterator, Final, Literal, TYPE_CHECKING
+from typing import Iterator, Final, NamedTuple, TypeVar
+from src import Dimensions, StrEnum, cached_readonly_property
 
 from rich.text import Text
 from rich.panel import Panel
-from rich import print as rprint
-
-if TYPE_CHECKING:
-	SuitNameLiteral = Literal['Club', 'Diamond', 'Heart', 'Spade']
-	SuitNameLiteralTuple = tuple[SuitNameLiteral, SuitNameLiteral, SuitNameLiteral, SuitNameLiteral]
+from rich import print as rich_print
 
 
-CLUB: SuitNameLiteral = 'Club'
-DIAMOND: SuitNameLiteral = 'Diamond'
-HEART: SuitNameLiteral = 'Heart'
-SPADE: SuitNameLiteral = 'Spade'
-
-DEFAULT_WIDTH: Final = 140
-DEFAULT_HEIGHT: Final = 40
-CLUBS_LENGTH_START_VALUE: Final = 1000
+DEFAULT_TERMINAL_DIMENSIONS: Final = Dimensions(140, 40)
 DIVISOR_START_VALUE: Final = 5
 IMAGE_RESIZE_RATIO: Final = Fraction(55, 100)
 ASCII_ART_FILL_CHARACTER: Final = '@'
-IMAGE_NAMES: Final[SuitNameLiteralTuple] = (CLUB, DIAMOND, HEART, SPADE)
 TEXT_JUSTIFY: Final = 'center'
 TEXT_STYLE: Final = 'bold white on red'
 VERTICAL_PADDING: Final = 3
@@ -48,49 +45,94 @@ TEXT_TO_PRINT: Final = ''.join((
 ))
 
 
-def get_path(suit_name: SuitNameLiteral) -> str:
-	"""Return the file path of an image of a specified suit."""
-	return path.join('Images', 'Suits', f'{suit_name}.png')
+class ASCIISuits(StrEnum):
+	"""Names of the four suits in a pack of cards"""
+
+	CLUB = 'Club'
+	DIAMOND = 'Diamond'
+	HEART = 'Heart'
+	SPADE = 'Spade'
+
+	@cached_readonly_property
+	def image(self, /) -> Image.Image:
+		"""Get the image for this suit."""
+		return Image.open(path.join('Images', 'Suits', f'{self}.png'))
+
+	@cached_readonly_property
+	def image_ratio(self, /) -> Fraction:
+		"""[Description here.]"""
+		width, height = self.image.size
+		return Fraction(width, height) * IMAGE_RESIZE_RATIO
+
+	def ascii_from_image(self, /, *, new_width: int) -> list[str]:
+		"""Return a list of strings comprising ASCII art corresponding to this suit."""
+		image, image_ratio = self.image, self.image_ratio
+		image = image.resize((new_width, int(new_width * image_ratio)))
+		ascii_image = ''.join((' ' if p else ASCII_ART_FILL_CHARACTER) for p in image.getdata())
+		return [ascii_image[i:(i + new_width)] for i in range(0, len(ascii_image), new_width)]
+
+	@classmethod
+	def generate_all(cls, /, *, terminal_width: int, divisor: int, max_height: int) -> list[list[str]]:
+		"""Return a list of lists, with each sublist representing ASCII art for a single suit."""
+		all_suits = [suit.ascii_from_image(new_width=(terminal_width // divisor)) for suit in cls]
+
+		while len(all_suits[0]) > max_height:
+			all_suits = [suit.ascii_from_image(new_width=(terminal_width // divisor)) for suit in cls]
+			divisor += 1
+
+		return all_suits
 
 
-def convert_image(suit_name: SuitNameLiteral, new_width: int) -> list[str]:
-	"""Return a list of strings comprising ASCII art corresponding to a card suit."""
-
-	im = Image.open(get_path(suit_name))
-	ratio = Fraction(im.size[1], im.size[0]) * IMAGE_RESIZE_RATIO
-	im = im.resize((new_width, int(new_width * ratio)))
-	ascii_image = ''.join((' ' if p else ASCII_ART_FILL_CHARACTER) for p in im.getdata())
-	return [ascii_image[i:(i + new_width)] for i in range(0, len(ascii_image), new_width)]
-
-
-# noinspection PyUnboundLocalVariable
-def ascii_suits(text_len: int) -> Iterator[str]:
-	"""Yield successive lines of ASCII art such that the cards_grouped_by_suits_dict appear side by side, evenly spaced, in the terminal."""
-
+def get_terminal_dimensions(default_dimensions=DEFAULT_TERMINAL_DIMENSIONS) -> Dimensions:
+	"""Attempt to get the dimensions of the terminal, return a fallback if an error arises."""
 	try:
-		terminal = get_terminal_size()
+		terminal = stdlib_get_terminal_size()
 	except OSError:
-		width, height = DEFAULT_WIDTH, DEFAULT_HEIGHT
+		return default_dimensions
 	else:
-		width, height = terminal.columns, terminal.lines
+		return Dimensions(terminal.columns, terminal.lines)
 
-	divisor = DIVISOR_START_VALUE
-	clubs_length = CLUBS_LENGTH_START_VALUE
 
-	while clubs_length > (height - text_len):
-		image_width = width // divisor
+# noinspection PyTypeChecker
+P = TypeVar('P', bound='PrintableSuits')
 
-		clubs, diamonds, hearts, spades = [
-			convert_image(string, image_width) for string in IMAGE_NAMES
-		]
 
-		clubs_length = len(clubs)
-		divisor += 1
+class PrintableSuits(NamedTuple):
+	"""All the info required for printing the ASCII suits"""
 
-	buffer = ''.join(' ' for _ in range(((width - (image_width * 4)) // 5)))
+	ascii_clubs: list[str]
+	ascii_diamonds: list[str]
+	ascii_hearts: list[str]
+	ascii_spades: list[str]
+	buffer: str
 
-	for c, d, h, s in zip(clubs, diamonds, hearts, spades):
-		yield ''.join((buffer, c, buffer, d, buffer, h, buffer, s, buffer))
+	@classmethod
+	def generate(cls: type[P], *, number_of_preceding_lines_of_text: int) -> P:
+		"""Get the width at which the images need to be displayed on the screen."""
+		terminal_width, terminal_height = get_terminal_dimensions()
+
+		clubs, diamonds, hearts, spades = ASCIISuits.generate_all(
+			terminal_width=terminal_width,
+			divisor=DIVISOR_START_VALUE,
+			max_height=(terminal_height - number_of_preceding_lines_of_text)
+		)
+
+		# noinspection PyArgumentList
+		return cls(
+			ascii_clubs=clubs,
+			ascii_diamonds=diamonds,
+			ascii_hearts=hearts,
+			ascii_spades=spades,
+			buffer=''.join(' ' for _ in range(((terminal_width - (len(clubs[0]) * 4)) // 5)))
+		)
+
+	def iter_lines(self, /) -> Iterator[str]:
+		"""Yield successive lines of ASCII art such that suits appear side by side, evenly spaced, in the terminal."""
+
+		*suits, buffer = self
+
+		for suit_tuple in zip(*suits):
+			yield f'{buffer}{buffer.join(suit_tuple)}{buffer}'
 
 
 def print_intro_message() -> None:
@@ -98,9 +140,29 @@ def print_intro_message() -> None:
 
 	# noinspection PyTypeChecker
 	text = Text(TEXT_TO_PRINT, justify=TEXT_JUSTIFY, style=TEXT_STYLE)
-	text_length = len(TEXT_TO_PRINT.splitlines()) + (VERTICAL_PADDING * 2) + 6
+	number_of_preceding_lines = len(TEXT_TO_PRINT.splitlines()) + (VERTICAL_PADDING * 2) + 6
+	suits: PrintableSuits = PrintableSuits.generate(number_of_preceding_lines_of_text=number_of_preceding_lines)
 
-	for line in ascii_suits(text_length):
+	for line in suits.iter_lines():
 		print(line)
 
-	rprint(Panel(text, padding=(VERTICAL_PADDING, 2), style="black"))
+	rich_print(Panel(text, padding=(VERTICAL_PADDING, 2), style="black"))
+
+
+def test_intro_message() -> None:
+	"""Test this module.
+
+	To run this test:
+		- Open up a terminal window.
+		- cd C:\Users\Alex\Desktop\Code dump\Knock model\Final version - Local copy\src\initialisation
+		- conda activate WebGame39
+		- python ascii_suits.py
+	"""
+
+	from src.initialisation.maximise_window import maximise_window
+	maximise_window()
+	print_intro_message()
+
+
+if __name__ == '__main__':
+	test_intro_message()

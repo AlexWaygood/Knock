@@ -3,17 +3,17 @@
 from __future__ import annotations
 
 from os import path
-from typing import TYPE_CHECKING, Final, Mapping, Optional, Any, TypeVar, Union, Sequence
-from functools import lru_cache, wraps
+from typing import TYPE_CHECKING, Final, Mapping, Optional, Any, TypeVar
+from functools import lru_cache
 from fractions import Fraction
 
 from PIL import Image
-from src import Position
-from src import cached_readonly_property
+from src import Position, cached_readonly_property
 from src.cards.abstract_card import AbstractCard, CardEnumMeta, next_card, CardEnumConstructor
 from src.cards.card_typing_constants import PossibleWinValues
 from src.config import card_resize_ratio_at_game_start
 from src.cards import Suit
+from src.display.window import Window, GameDimensions
 from immutables import Map
 from aenum import skip
 
@@ -69,6 +69,8 @@ def resize_cards(*card_images: tuple[str, Surface], resize_ratio: Fraction) -> C
 	-------
 	A [str, pygame.Surface] `immutables.Map` object mapping card_IDs to card images.
 	"""
+	if resize_ratio == 1:
+		return Map(card_images)
 	return Map({ID: rotozoom(card_image, 0, (1 / resize_ratio)) for ID, card_image in card_images})
 
 
@@ -85,56 +87,45 @@ class ClientCardEnumMeta(CardEnumMeta):
 	def base_card_images(cls, /) -> CardImageMap:
 		"""A one-time constant that is calculated at the start of the game."""
 
-		# This mapping, however, CANNOT be calculated on import
+		# This mapping CANNOT be calculated on import
 		# as this module needs to be imported prior to `pygame.display` being initialised.
-		#
-		# Instead, we add a callback to `pygame.display.set_mode`
-		# to ensure it is calculated as eagerly as possible (see __new__).
 
 		return Map({
 			card_value: pg_image_from_file(card_concise_name, card_resize_ratio_at_game_start)
 			for card_value, card_concise_name, *_ in CardEnumConstructor.construct_pack()
 		})
 
-	def __new__(metacls: type[M], cls_name: str, cls_bases: tuple[type, ...], cls_dict: dict[str, Any]) -> M:
-		"""Add a callback to `pygame.display.set_mode` to load card images as soon as pygame display is initialised."""
-
-		new = super().__new__(metacls, cls_name, cls_bases, cls_dict)
-
-		import pygame
-		old_set_mode = pygame.display.set_mode
-
-		@wraps(old_set_mode)
-		def set_mode(
-				size: Union[tuple[int, int], Sequence[int], None],
-				flags: Any,
-				depth: Any,
-				display: Any,
-				vsync: Any
-		) -> None:
-			"""pygame.set_mode but with a callback added."""
-
-			old_set_mode(size, flags, depth, display, vsync)
-			# noinspection PyStatementEffect
-			ClientPack.base_card_images
-
-		pygame.display.set_mode = set_mode
-		return new
-
 	@property
 	def card_images(cls, /) -> CardImageMap:
 		"""Get the card images at the size they are with the user's current zoom level."""
 
-		# The first time this property is accessed, cls._card_images won't exist.
-		# But it will exist all other times.
-		images = cls._card_images
-		if images is None:
-			images = cls._card_images = Map(cls.base_card_images)
-		return images
+		return cls._card_images
 
-	def update_images(cls, resize_ratio: Fraction) -> None:
-		"""Resize the card images according to a certain ratio if the player is zooming in or out."""
-		cls._card_images = resize_cards(*cls.base_card_images.items(), resize_ratio=resize_ratio)
+	@Window.on_window_resize
+	def update_images(cls, game_dimensions: GameDimensions) -> None:
+		"""Resize the card images according to a certain ratio if the player is zooming in or out.
+
+		This function is registered with the `Window` class through the `Window.on_window_resize` decorator,
+		such that it is called every time the window is resized.
+
+		Parameters
+		----------
+		game_dimensions: GameDimensions
+			A `NamedTuple` containing the new dimensions of the game.
+
+		Returns
+		-------
+		None
+
+		Modifies
+		--------
+		cls._card_images: A read-only map of card IDs to card images.
+		"""
+
+		cls._card_images = resize_cards(
+			*cls.base_card_images.items(),
+			resize_ratio=game_dimensions.card_image_resize_ratio
+		)
 
 
 class ClientCard(AbstractCard, metaclass=ClientCardEnumMeta):
@@ -162,7 +153,7 @@ class ClientCard(AbstractCard, metaclass=ClientCardEnumMeta):
 
 		if suit is led_suit:
 			return rank_val
-		elif suit is trump_suit:
+		if suit is trump_suit:
 			return rank_val + 13
 		return 0
 
